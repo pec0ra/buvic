@@ -4,8 +4,12 @@ import re
 from dataclasses import dataclass
 from datetime import date
 from typing import Tuple, List, TextIO
+from warnings import warn
 
-import numpy as np
+from numpy import divide, multiply, maximum, mean, exp, sqrt
+
+from brewer_infos import get_brewer_info, BrewerInfo
+from calibration_file import Calibration
 
 
 class UVFileReader(object):
@@ -24,20 +28,21 @@ class UVFileReader(object):
     def __init__(self, file_name: str):
         """
         Create an instance of this class and parse the given file
-        :param file_name: the name of the given file
+        :param file_name: the name of the file to read
         """
 
         self._file_name: str = file_name
-        self._uv_file_entries: List[RawUVFileEntry] = []
         with open(file_name, newline='\r\n') as file:
-            self.__parse(file)
+            self._uv_file_entries: List[UVFileEntry] = self.__parse(file)
 
-    def __parse(self, file: TextIO) -> None:
+    def __parse(self, file: TextIO) -> List[UVFileEntry]:
         """
-        Parse the given file and create the corresponding instances of `UVFileEntry`
+        Parse the given file and return the corresponding instances of `UVFileEntry`
         :param file: the file to parse
+        :return the list of `UVFileEntry`
         """
 
+        entries = []
         header_line = self.__read_line(file)
 
         # Loop until end of file. Each iteration in the loop corresponds to one entry (header + values)
@@ -53,16 +58,19 @@ class UVFileReader(object):
                 values.append(RawUVValue(next_line))
                 next_line = self.__read_line(file)
 
-            # Create the resulting entry
-            entry = RawUVFileEntry(
+            # Create the resulting entry and add it to the result
+            entry = UVFileEntry(
+                get_brewer_info(self.__get_brewer_id()),
                 header,
                 values
             )
-            self._uv_file_entries.append(entry)
+            entries.append(entry)
 
             header_line = self.__read_line(file)
 
-    def get_uv_file_entries(self) -> List[RawUVFileEntry]:
+        return entries
+
+    def get_uv_file_entries(self) -> List[UVFileEntry]:
         """
         Get the list of parsed `UVFileEntry`
         :return: the list of `UVFileEntry`
@@ -85,6 +93,9 @@ class UVFileReader(object):
         """
         return file.readline().replace('\r', ' ').replace('\n', '')
 
+    def __get_brewer_id(self) -> str:
+        return self._file_name.split('.')[-1]
+
 
 @dataclass
 class RawUVFileHeader:
@@ -98,9 +109,9 @@ class RawUVFileHeader:
         "dh\s+(?P<day>\d+) (?P<month>\d+) (?P<year>\d+)\s+"  # Day, month and year are all integers
         "(?P<place>(?: ?[a-zA-Z])+)\s+"  # The localisation name is composed of 1 or more words followed by spaces. 
         # NOTE: special chars (é, ö, ä,etc) are not matched 
-        "(?P<latitude>\S+) +(?P<longitude>\S+) +(?P<temp>\S+)\s+"
+        "(?P<latitude>\S+) +(?P<longitude>\S+) +(?P<temperature>\S+)\s+"
         # TODO: Check that this is really an int:
-        "pr\s*(?P<pr>\d+).*"  # Pr is an integer
+        "pr\s*(?P<pressure>\d+).*"  # Pressure is an integer
         "dark\s*(?P<dark>\S+)\s*"  # We match any non blank chars ("\S") for the dark to allow scientific notation
         "$"  # Matches the end of the line
     )
@@ -113,8 +124,8 @@ class RawUVFileHeader:
     date: date
     place: str
     position: Tuple[float, float]
-    temp: float
-    pr: int  # TODO
+    temperature: float
+    pressure: int
     dark: float
 
     def __init__(self, header_line: str):
@@ -139,9 +150,13 @@ class RawUVFileHeader:
         self.date = date(int(res.group('year')), int(res.group('month')), int(res.group('day')))
         self.place = res.group('place')
         self.position = (float(res.group('latitude')), float(res.group('longitude')))
-        self.temp = float(res.group('temp'))
-        self.pr = int(res.group('pr'))  # TODO: Check that this is really an int
+        self.temperature = float(res.group('temperature'))  # TODO: Temperature might need a conversion
+        self.pressure = int(res.group('pressure'))  # TODO: Check that this is really always an int
         self.dark = float(res.group('dark'))
+
+        if self.integration_time == 0.1147:
+            warn("Integration time is 0.1147. This might be correct but there is a high chance that the value that you"
+                 "want is 0.2294 instead.")
 
     @property
     def day_of_year(self) -> int:
@@ -179,47 +194,60 @@ class RawUVValue:
             raise ValueError("Unable to parse value line.\nLine: '" + value_line + "'")
 
         self.time = float(res.group("time"))
-        self.wavelength = float(res.group("wavelength")) / 10  # TODO: check if we need angstrom or nm
+        self.wavelength = float(res.group("wavelength")) / 10
         self.step = int(res.group("step"))
         events = float(res.group("events"))
         self.events = events
         if events == 0:
             self.std = 0
         else:
-            self.std = np.divide(1, np.sqrt(events))
+            self.std = divide(1, sqrt(events))
 
 
 @dataclass
-class RawUVFileEntry:
+class UVFileEntry:
+    brewer_info: BrewerInfo
     header: RawUVFileHeader
-    values: List[RawUVValue]
+    raw_values: List[RawUVValue]
 
-    def convert_to_abs(self) -> List[float]:
+    def to_calibrated_spectrum(self, calibration: Calibration) -> List[float]:
         """
         Convert raw (count) measures to a calibrated spectrum
         :return: the calibrated spectrum
         """
 
-        below_292 = list(filter(lambda x: x.wavelength < 292, self.values))
-        straylight_correction = np.mean([v.events for v in below_292])
-
         # Remove dark signal
-        raw_values = [v.events for v in self.values]
+        raw_values = [v.events for v in self.raw_values]
         corrected_values = [v - self.header.dark for v in raw_values]
 
-        # Remove straylight
-        corrected_values = [v - straylight_correction for v in corrected_values]
+        if not self.brewer_info.dual:
+            # Remove straylight
+            below_292 = list(filter(lambda x: x.wavelength < 292, self.raw_values))
+            if len(below_292) > 0:
+                straylight_correction = mean([v.events for v in below_292])
+                corrected_values = [v - straylight_correction for v in corrected_values]
 
         # Convert to photon/sec
         photon_rate = [v * 4 / (self.header.cycles * self.header.integration_time) for v in corrected_values]
 
         # Correct for linearity
-        # TODO: Check that this is the correct way to do it
         photon_rate0 = photon_rate
         for i in range(25):
-            photon_rate = np.multiply(photon_rate0, np.exp(np.multiply(photon_rate, self.header.dead_time)))
-
-        # TODO: Apply sensitivity
+            photon_rate = multiply(photon_rate0, exp(multiply(photon_rate, self.header.dead_time)))
 
         # Set negative values to 0
-        return np.maximum(0, photon_rate)
+        photon_rate = maximum(0, photon_rate)
+
+        # Apply sensitivity
+        values = calibration.interpolated_values(self.wavelengths)
+        photon_rate = divide(photon_rate, values)
+
+        return photon_rate
+
+    @property
+    def wavelengths(self) -> List[float]:
+        return [v.wavelength for v in self.raw_values]
+
+    @property
+    def events(self) -> List[float]:
+        return [v.events for v in self.raw_values]

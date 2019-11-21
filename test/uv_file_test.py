@@ -19,7 +19,8 @@ class UVFileReaderTestCase(unittest.TestCase):
         self.assertEqual(h.place, "Arenosillo")
         self.assertEqual(h.position[0], 37.1)
         self.assertEqual(h.position[1], 6.73)
-        self.assertEqual(h.pr, 1000)
+        self.assertEqual(h.temperature, 3)
+        self.assertEqual(h.pressure, 1000)
         self.assertEqual(h.dark, 1.2)
 
         # Single space after place
@@ -54,7 +55,7 @@ class UVFileReaderTestCase(unittest.TestCase):
         # Space between pr and dark
         h = RawUVFileHeader("ux Integration time is 0.2294 seconds per sample dt 0.000000031 cy 3 dh 20 02 17 "
                             "Arenosillo  37.1 6.73 3 pr 44 dark 1.2")
-        self.assertEqual(h.pr, 44)
+        self.assertEqual(h.pressure, 44)
 
     def test_header_failures(self):
         # Three letter type
@@ -73,14 +74,14 @@ class UVFileReaderTestCase(unittest.TestCase):
 
         v = RawUVValue("3.1E-08 3.1E-08 44444444 3.1E-08")
         self.assertEqual(v.time, 0.000000031)
-        self.assertEqual(v.wavelength, 0.0000000031)
+        self.assertEqual(v.wavelength, 0.000000031)
         self.assertEqual(v.step, 44444444)
         self.assertEqual(v.events, 0.000000031)
         self.assertAlmostEqual(v.std, 5679.618342471, 9)
 
         v = RawUVValue("123.4567 0.0043 1 40000.0")
         self.assertEqual(v.time, 123.4567)
-        self.assertEqual(v.wavelength, 0.00043)
+        self.assertEqual(v.wavelength, 0.0043)
         self.assertEqual(v.step, 1)
         self.assertEqual(v.events, 40000)
         self.assertEqual(v.std, 0.005)
