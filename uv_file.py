@@ -102,7 +102,7 @@ class RawUVFileHeader:
     HEADER_REGEX = re.compile(
         "^"  # Matches the beginning of the line
         "(?P<type>[a-z]{2})\s+"  # The type is composed of two lower case letters (e.g. ux).
-        "Integration time is (?P<integration_time>\S+) seconds.+"  # We match any non blank chars ("\S") for the integration time
+        "Integration time is (?P<integration_time>\S+) seconds.+"  # We match any non blank chars ("\S")
         "dt\s+(?P<dead_time>\S+).+"  # We match any non blank chars ("\S") for the dead time to allow scientific 
         # notation 
         "cy\s+(?P<cycles>\d+).+"  # The number of cycles can be any integer (multiple digits "\d")
@@ -132,8 +132,8 @@ class RawUVFileHeader:
         """
         Init from a given header line
 
-        The given header line will be parsed against `HEADER_REGEX` and a `ValueError` will be thrown if the line doesn't
-        have the correct format.
+        The given header line will be parsed against `HEADER_REGEX` and a `ValueError` will be thrown if the line
+        doesn't have the correct format.
 
         :param header_line: the line to parse
         """

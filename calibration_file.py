@@ -38,4 +38,3 @@ class Calibration:
 
     def interpolated_values(self, wavelengths: List[float]) -> List[float]:
         return interp(wavelengths, self.wavelengths, self.values)
-
