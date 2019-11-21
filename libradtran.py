@@ -6,16 +6,16 @@ import uuid
 from dataclasses import dataclass
 from enum import Enum
 from subprocess import PIPE, run
-from typing import List, Dict
+from typing import List, Dict, Any
 
 
 class Libradtran:
 
     def __init__(self):
         self._outputs: List[str] = []
-        self._inputs: Dict[LibradtranInput, List[float]] = {}
+        self._inputs: Dict[LibradtranInput, List[Any]] = {}
 
-    def add_input(self, input_type: LibradtranInput, input_values: List[float]) -> None:
+    def add_input(self, input_type: LibradtranInput, input_values: List[Any]) -> None:
         """
         Add an input parameter to include in the LibRadtran input file.
 
@@ -75,7 +75,7 @@ class Libradtran:
         """
 
         # Generate a unique file name
-        file_name = str(uuid.uuid4()) + ".in"
+        file_name = "input_" + str(uuid.uuid4()) + ".in"
 
         with open(file_name, "w") as input_file:
             # Write static content to the file
@@ -137,14 +137,26 @@ class LibradtranInputInfo:
     value_count: int
     line: str
 
-    def check_input_values(self, values: List[float]) -> bool:
+    def check_input_values(self, values: List[Any]) -> bool:
         return len(values) == self.value_count
 
 
 class LibradtranInput(Enum):
+    AEROSOL = LibradtranInputInfo(
+        2,
+        "aerosol_angstrom {} {}"
+    )
     ALBEDO = LibradtranInputInfo(
         1,
         "albedo {}"
+    )
+    LATITUDE = LibradtranInputInfo(
+        2,
+        "latitude {} {}"
+    )
+    LONGITUDE = LibradtranInputInfo(
+        2,
+        "longitude {} {}"
     )
     OZONE = LibradtranInputInfo(
         1,
@@ -154,21 +166,21 @@ class LibradtranInput(Enum):
         1,
         "pressure {}"
     )
-    AEROSOL = LibradtranInputInfo(
-        2,
-        "aerosol_angstrom {} {}"
-    )
-    WAVELENGTH = LibradtranInputInfo(
-        2,
-        "wavelength {} {}"
+    SPLINE = LibradtranInputInfo(
+        3,
+        "spline {} {} {}"
     )
     SZA = LibradtranInputInfo(
         1,
         "sza {}"
     )
-    SPLINE = LibradtranInputInfo(
-        3,
-        "spline {} {} {}"
+    TIME = LibradtranInputInfo(
+        6,
+        "time {} {} {} {} {} {}"
+    )
+    WAVELENGTH = LibradtranInputInfo(
+        2,
+        "wavelength {} {}"
     )
 
 
