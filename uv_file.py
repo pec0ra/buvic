@@ -114,7 +114,7 @@ class RawUVFileHeader:
     place: str
     position: Tuple[float, float]
     temp: float
-    pr: int
+    pr: int  # TODO
     dark: float
 
     def __init__(self, header_line: str):
@@ -129,20 +129,19 @@ class RawUVFileHeader:
 
         res = re.match(self.HEADER_REGEX, header_line)
         if res is None:
-            raise ValueError("Unable to parse header in file.\nHeader: '" + header_line + "'")
-        header = res.groupdict()
+            raise ValueError("Unable to parse header.\nHeader: '" + header_line + "'")
 
         self.raw_header_line = header_line
-        self.type = header.get('type')
-        self.integration_time = float(header.get('integration_time'))
-        self.dead_time = float(header.get('dead_time'))
-        self.cycles = int(header.get('cycles'))
-        self.date = date(int(header.get('year')), int(header.get('month')), int(header.get('day')))
-        self.place = header.get('place')
-        self.position = (float(header.get('latitude')), float(header.get('longitude')))
-        self.temp = float(header.get('temp'))
-        self.pr = int(header.get('pr'))  # TODO: Check that this is really an int
-        self.dark = float(header.get('dark'))
+        self.type = res.group('type')
+        self.integration_time = float(res.group('integration_time'))
+        self.dead_time = float(res.group('dead_time'))
+        self.cycles = int(res.group('cycles'))
+        self.date = date(int(res.group('year')), int(res.group('month')), int(res.group('day')))
+        self.place = res.group('place')
+        self.position = (float(res.group('latitude')), float(res.group('longitude')))
+        self.temp = float(res.group('temp'))
+        self.pr = int(res.group('pr'))  # TODO: Check that this is really an int
+        self.dark = float(res.group('dark'))
 
     @property
     def day_of_year(self) -> int:
@@ -154,6 +153,15 @@ class RawUVFileHeader:
 
 @dataclass
 class RawUVValue:
+    VALUE_REGEX = re.compile(
+        "^\s*"  # Matches the beginning of the line
+        "(?P<time>\S+)\s+"  # Time can be any combination of non blank chars
+        "(?P<wavelength>\S+)\s+"  # Wavelength can be any combination of non blank chars
+        "(?P<step>\d+)\s+"  # Step can be any combination of digits
+        "(?P<events>\S+)\s*"  # Events can be any combination of non blank chars
+        "$"  # Matches the end of the line
+    )
+
     time: float
     wavelength: float
     step: int
@@ -166,18 +174,19 @@ class RawUVValue:
         :param value_line: the line to parse
         """
 
-        # Split the line by everything that is not a space (\S+ matches any group of non blank chars)
-        re_res = re.findall("\\S+", value_line),
-        line_values = re_res[0]
+        res = re.match(self.VALUE_REGEX, value_line)
+        if res is None:
+            raise ValueError("Unable to parse value line.\nLine: '" + value_line + "'")
 
-        self.time = float(line_values[0])
-        self.wavelength = float(line_values[1]) / 10  # TODO: check if we need angstrom or nm
-        self.step = int(line_values[2])
-        self.events = float(line_values[3])
-        if float(line_values[3]) == 0:
+        self.time = float(res.group("time"))
+        self.wavelength = float(res.group("wavelength")) / 10  # TODO: check if we need angstrom or nm
+        self.step = int(res.group("step"))
+        events = float(res.group("events"))
+        self.events = events
+        if events == 0:
             self.std = 0
         else:
-            self.std = np.divide(1, np.sqrt(float(line_values[3])))
+            self.std = np.divide(1, np.sqrt(events))
 
 
 @dataclass
@@ -209,6 +218,8 @@ class RawUVFileEntry:
         photon_rate0 = photon_rate
         for i in range(25):
             photon_rate = np.multiply(photon_rate0, np.exp(np.multiply(photon_rate, self.header.dead_time)))
+
+        # TODO: Apply sensitivity
 
         # Set negative values to 0
         return np.maximum(0, photon_rate)
