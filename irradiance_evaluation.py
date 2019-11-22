@@ -144,13 +144,16 @@ class IrradianceEvaluation:
         libradtran.add_input(LibradtranInput.LATITUDE, ["N", uv_file_header.position.latitude])
 
         # Negative longitudes are West and Positive ones are East
-        hemisphere = "W" if uv_file_header.position.longitude < 0 else "E"
+        hemisphere = "E" if uv_file_header.position.longitude < 0 else "W"
         libradtran.add_input(LibradtranInput.LONGITUDE, [hemisphere, abs(uv_file_header.position.longitude)])
 
         # We set LibRadtran to interpolate to exactly the values we have from the UV file
         step = uv_file_entry.wavelengths[1] - uv_file_entry.wavelengths[0]
         libradtran.add_input(LibradtranInput.SPLINE,
                              [uv_file_entry.wavelengths[0], uv_file_entry.wavelengths[-1], step])
+
+        # TODO: read ozone value from BFile
+        libradtran.add_input(LibradtranInput.OZONE, [200])
 
         libradtran.add_input(LibradtranInput.TIME, [
             uv_file_header.date.year + 2000,
