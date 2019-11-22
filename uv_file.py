@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import re
+from collections import namedtuple
 from dataclasses import dataclass
 from datetime import date
-from typing import Tuple, List, TextIO
+from typing import List, TextIO
 from warnings import warn
 
-from numpy import divide, multiply, maximum, mean, exp, sqrt
+from numpy import divide, sqrt
 
 from brewer_infos import get_brewer_info, BrewerInfo
-from calibration_file import Calibration
 
 
 class UVFileReader(object):
@@ -49,7 +49,7 @@ class UVFileReader(object):
         while header_line.strip() != '\x1A' and header_line.strip() != '':
 
             # Parse the header
-            header = RawUVFileHeader(header_line)
+            header = UVFileHeader(header_line)
 
             # Parse the values
             values = []
@@ -98,7 +98,7 @@ class UVFileReader(object):
 
 
 @dataclass
-class RawUVFileHeader:
+class UVFileHeader:
     HEADER_REGEX = re.compile(
         "^"  # Matches the beginning of the line
         "(?P<type>[a-z]{2})\s+"  # The type is composed of two lower case letters (e.g. ux).
@@ -123,7 +123,7 @@ class RawUVFileHeader:
     cycles: int
     date: date
     place: str
-    position: Tuple[float, float]
+    position: Position
     temperature: float
     pressure: int
     dark: float
@@ -149,7 +149,7 @@ class RawUVFileHeader:
         self.cycles = int(res.group('cycles'))
         self.date = date(int(res.group('year')), int(res.group('month')), int(res.group('day')))
         self.place = res.group('place')
-        self.position = (float(res.group('latitude')), float(res.group('longitude')))
+        self.position = Position(float(res.group('latitude')), float(res.group('longitude')))
         self.temperature = float(res.group('temperature'))  # TODO: Temperature might need a conversion
         self.pressure = int(res.group('pressure'))  # TODO: Check that this is really always an int
         self.dark = float(res.group('dark'))
@@ -207,42 +207,8 @@ class RawUVValue:
 @dataclass
 class UVFileEntry:
     brewer_info: BrewerInfo
-    header: RawUVFileHeader
+    header: UVFileHeader
     raw_values: List[RawUVValue]
-
-    def to_calibrated_spectrum(self, calibration: Calibration) -> List[float]:
-        """
-        Convert raw (count) measures to a calibrated spectrum
-        :return: the calibrated spectrum
-        """
-
-        # Remove dark signal
-        raw_values = [v.events for v in self.raw_values]
-        corrected_values = [v - self.header.dark for v in raw_values]
-
-        if not self.brewer_info.dual:
-            # Remove straylight
-            below_292 = list(filter(lambda x: x.wavelength < 292, self.raw_values))
-            if len(below_292) > 0:
-                straylight_correction = mean([v.events for v in below_292])
-                corrected_values = [v - straylight_correction for v in corrected_values]
-
-        # Convert to photon/sec
-        photon_rate = [v * 4 / (self.header.cycles * self.header.integration_time) for v in corrected_values]
-
-        # Correct for linearity
-        photon_rate0 = photon_rate
-        for i in range(25):
-            photon_rate = multiply(photon_rate0, exp(multiply(photon_rate, self.header.dead_time)))
-
-        # Set negative values to 0
-        photon_rate = maximum(0, photon_rate)
-
-        # Apply sensitivity
-        values = calibration.interpolated_values(self.wavelengths)
-        photon_rate = divide(photon_rate, values)
-
-        return photon_rate
 
     @property
     def wavelengths(self) -> List[float]:
@@ -251,3 +217,6 @@ class UVFileEntry:
     @property
     def events(self) -> List[float]:
         return [v.events for v in self.raw_values]
+
+
+Position = namedtuple('Position', ['latitude', 'longitude'])
