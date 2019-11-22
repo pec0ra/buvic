@@ -18,7 +18,7 @@ plot_output_dir = "plots/"
 if len(sys.argv) > 4:
     plot_output_dir = sys.argv[4]
 
-ie = IrradianceEvaluation(uv_file_name, calibration_file_name, arf_file_name)
+ie = IrradianceEvaluation(uv_file_name, calibration_file_name, "../B04916.156", arf_file_name)
 results = ie.calculate()
 
 
