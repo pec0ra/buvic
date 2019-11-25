@@ -1,15 +1,17 @@
 from __future__ import annotations
 
+import csv, warnings
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import timedelta
-from multiprocessing import Pool
-from typing import List
+from threading import Lock
+from typing import List, Callable, TextIO
 
 from numpy import multiply, divide, sin, add, pi, mean, exp, maximum, linspace, trapz, cos, isnan
 from scipy.interpolate import UnivariateSpline
 
 from arf_file import read_arf_file, Direction, ARF
-from b_file import read_ozone_from_b_file, Ozone
+from b_file import read_ozone_from_b_file
 from calibration_file import read_calibration_file
 from libradtran import Libradtran, LibradtranInput, LibradtranResult
 from uv_file import UVFileReader, UVFileEntry
@@ -29,7 +31,8 @@ class IrradianceEvaluation:
             calibration_file_name: str,
             b_file_name: str,
             arf_file_name: str,
-            arf_direction: Direction = Direction.SOUTH
+            arf_direction: Direction = Direction.SOUTH,
+            progress_handler: Callable[[int, int], None] = None
     ):
         """
         Create an instance from the name of a uv file, a B file, a calibration file and an ARF file and an optional direction
@@ -41,9 +44,14 @@ class IrradianceEvaluation:
         """
         self._uv_file_name = uv_file_name
         self._calibration_file_name = calibration_file_name
-        self._b_file_name = b_file_name
         self._arf_file_name = arf_file_name
         self._arf_direction = arf_direction
+        self._ozone = read_ozone_from_b_file(b_file_name)
+
+        self._progress_handler = progress_handler
+        self._progress_lock = Lock()
+        self._current_progress: int = 0
+        self._total_progress: int = 0
 
     def calculate(self) -> List[Spectrum]:
         """
@@ -53,14 +61,15 @@ class IrradianceEvaluation:
         uv_file_reader = UVFileReader(self._uv_file_name)
         calibration = read_calibration_file(self._calibration_file_name)
         arf = read_arf_file(self._arf_file_name, self._arf_direction)
-        ozone = read_ozone_from_b_file(self._b_file_name)
 
-        libradtran_results = self._execute_libradtran_parallel(uv_file_reader.get_uv_file_entries(), ozone)
+        uv_file_entries = uv_file_reader.get_uv_file_entries()
+        self._init_progress(len(uv_file_entries) + 1)
+        libradtran_results = self._execute_libradtran_parallel(uv_file_entries)
 
         spectra = []
         i = 0
-        for uv_file_entry in uv_file_reader.get_uv_file_entries():
-            libradtran_result = libradtran_results[i]
+        for libradtran_result in libradtran_results:
+            uv_file_entry = uv_file_entries[i]
             calibrated_spectrum = self._to_calibrated_spectrum(uv_file_entry, calibration)
             cos_correction = self._cos_correction(arf, libradtran_result)
 
@@ -79,6 +88,7 @@ class IrradianceEvaluation:
                 self._get_sza(libradtran_result)
             ))
             i += 1
+        self._report_progress()
         return spectra
 
     @staticmethod
@@ -137,19 +147,17 @@ class IrradianceEvaluation:
         # This is equivalent to integrating `2 ∫arf(θ) sin(θ) dθ` with θ from 0 to π/2
         return 2 * trapz(spline(theta) * sin(theta), theta)
 
-    def _execute_libradtran_parallel(self, uv_file_entries: List[UVFileEntry], ozone: Ozone) -> List[LibradtranResult]:
+    def _execute_libradtran_parallel(self, uv_file_entries: List[UVFileEntry]) -> List[LibradtranResult]:
         """
         Create a process pool and execute LibRadtran in parallel for the given uv file entries on this pool.
         :param uv_file_entries: the UV file entries for which to execute LibRadtran
-        :param ozone: the ozone data to pass to LibRadtran as parameter
         :return: the LibRadtran results
         """
 
-        with Pool() as pool:
-            return pool.starmap(self._execute_libradtran, [(entry, ozone) for entry in uv_file_entries])
+        with ThreadPoolExecutor() as pool:
+            return pool.map(self._execute_libradtran, uv_file_entries)
 
-    @staticmethod
-    def _execute_libradtran(uv_file_entry: UVFileEntry, ozone: Ozone) -> LibradtranResult:
+    def _execute_libradtran(self, uv_file_entry: UVFileEntry) -> LibradtranResult:
         """
         Call LibRadtran with parameters extracted from a given UVFileEntry
         :param uv_file_entry: the entry to get LibRadtran's parameters from
@@ -176,7 +184,7 @@ class IrradianceEvaluation:
         libradtran.add_input(LibradtranInput.SPLINE,
                              [uv_file_entry.wavelengths[0], uv_file_entry.wavelengths[-1], step])
 
-        libradtran.add_input(LibradtranInput.OZONE, [ozone.interpolated_value(time)])
+        libradtran.add_input(LibradtranInput.OZONE, [self._ozone.interpolated_value(time)])
 
         libradtran.add_input(LibradtranInput.TIME, [
             uv_file_header.date.year + 2000,
@@ -190,7 +198,9 @@ class IrradianceEvaluation:
         libradtran.add_input(LibradtranInput.PRESSURE, [uv_file_header.pressure])
 
         libradtran.add_outputs(["sza", "edir", "edn", "eglo"])
-        return libradtran.calculate()
+        result = libradtran.calculate()
+        self._report_progress()
+        return result
 
     def _cos_correction(self, arf, libradtran_result) -> List[float]:
         """
@@ -205,8 +215,12 @@ class IrradianceEvaluation:
         fglo = libradtran_result.columns["eglo"]
         theta = libradtran_result.columns["sza"][0] * pi / 180
 
-        # Fdiff / Fglo
-        fdiff_fglo = divide(fdiff, fglo)
+        # We ignore division by zero warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            # Fdiff / Fglo
+            fdiff_fglo = divide(fdiff, fglo)
 
         # Coscor
         coscor_diff = self._calculate_coscor_diff(arf)
@@ -218,8 +232,12 @@ class IrradianceEvaluation:
         angles = multiply(pi / 180, arf.szas)
         arf_spline = UnivariateSpline(angles, arf.values)
 
-        # Fdir / Fglo
-        fdir_fglo = divide(fdir, fglo)
+        # We ignore division by zero warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            # Fdir / Fglo
+            fdir_fglo = divide(fdir, fglo)
 
         # Fdir/Fglo * ARF(θ)/cos(θ)
         c_inverse_right = multiply(fdir_fglo, divide(arf_spline(theta), cos(theta)))
@@ -275,6 +293,19 @@ class IrradianceEvaluation:
         """
         return libradtran_result.columns["sza"][0]
 
+    def _init_progress(self, total_progress):
+        self._total_progress = total_progress
+        if self._progress_handler is not None:
+            with self._progress_lock:
+                self._current_progress = 0
+                self._progress_handler(self._current_progress, self._total_progress)
+
+    def _report_progress(self):
+        if self._progress_handler is not None:
+            with self._progress_lock:
+                self._current_progress += 1
+                self._progress_handler(self._current_progress, self._total_progress)
+
 
 @dataclass
 class Spectrum:
@@ -285,3 +316,12 @@ class Spectrum:
     cos_corrected_spectrum: List[float]
     cos_correction: List[float]
     sza: float
+
+    def to_csv(self, file: TextIO):
+        writer = csv.writer(file)
+        writer.writerow(["wavelength", "Measurement raw value", "Spectrum (Non COS corrected)", "COS corrected spectrum", "COS correction factor"])
+
+        cos_correction_no_nan = self.cos_correction.copy()
+        cos_correction_no_nan[isnan(cos_correction_no_nan)] = 1
+        for i in range(len(self.wavelengths)):
+            writer.writerow([self.wavelengths[i], self.uv_raw_values[i], self.original_spectrum[i], self.cos_corrected_spectrum[i], cos_correction_no_nan[i]])

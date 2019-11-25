@@ -132,7 +132,7 @@ class UVFileHeader:
         """
         Init from a given header line
 
-        The given header line will be parsed against `HEADER_REGEX` and a `ValueError` will be thrown if the line
+        The given header line will be parsed against `HEADER_REGEX` and a `UVFileParsingError` will be thrown if the line
         doesn't have the correct format.
 
         :param header_line: the line to parse
@@ -140,7 +140,7 @@ class UVFileHeader:
 
         res = re.match(self.HEADER_REGEX, header_line)
         if res is None:
-            raise ValueError("Unable to parse header.\nHeader: '" + header_line + "'")
+            raise UVFileParsingError("Unable to parse header.\nHeader: '" + header_line + "'")
 
         self.raw_header_line = header_line
         self.type = res.group('type')
@@ -191,7 +191,7 @@ class RawUVValue:
 
         res = re.match(self.VALUE_REGEX, value_line)
         if res is None:
-            raise ValueError("Unable to parse value line.\nLine: '" + value_line + "'")
+            raise UVFileParsingError("Unable to parse value line.\nLine: '" + value_line + "'")
 
         self.time = float(res.group("time"))
         self.wavelength = float(res.group("wavelength")) / 10
@@ -220,3 +220,7 @@ class UVFileEntry:
 
 
 Position = namedtuple('Position', ['latitude', 'longitude'])
+
+
+class UVFileParsingError(ValueError):
+    pass

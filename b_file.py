@@ -25,22 +25,25 @@ def read_ozone_from_b_file(file_name: str) -> Ozone:
     """
 
     with open(file_name, newline='\r\n') as file:
-        times = []
-        values = []
-        for raw_line in file:
-            line = raw_line.replace('\r', ' ').replace('\n', '').strip()
-            res = re.match(SUMMARY_LINE_REGEX, line)
-            if res is not None:
-                td = timedelta(hours=float(res.group("hours")), minutes=float(res.group("minutes")),
-                               seconds=float(res.group("seconds")))
-                minutes_since_midnight = td.seconds / 60
-                times.append(minutes_since_midnight)
-                values.append(float(res.group("ozone")))
+        try:
+            times = []
+            values = []
+            for raw_line in file:
+                line = raw_line.replace('\r', ' ').replace('\n', '').strip()
+                res = re.match(SUMMARY_LINE_REGEX, line)
+                if res is not None:
+                    td = timedelta(hours=float(res.group("hours")), minutes=float(res.group("minutes")),
+                                   seconds=float(res.group("seconds")))
+                    minutes_since_midnight = td.seconds / 60
+                    times.append(minutes_since_midnight)
+                    values.append(float(res.group("ozone")))
 
-        return Ozone(
-            times,
-            values
-        )
+            return Ozone(
+                times,
+                values
+            )
+        except Exception as e:
+            raise BFileParsingError(str(e))
 
 
 @dataclass
@@ -51,3 +54,7 @@ class Ozone:
     def interpolated_value(self, time: float) -> List[float]:
         interpolator = interp1d(self.times, self.values, kind='nearest', fill_value='extrapolate')
         return interpolator(time)
+
+
+class BFileParsingError(ValueError):
+    pass

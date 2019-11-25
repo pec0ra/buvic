@@ -15,23 +15,26 @@ def read_arf_file(file_name: str, direction: Direction) -> ARF:
     """
 
     with open(file_name) as file:
-        szas = []
-        values = []
-        for line in file:
-            # Skip header
-            if line.strip().startswith("%"):
-                continue
-            # Each line consists of at least five values separated by spaces
-            line_values = re.split("\s+", line.strip())
-            szas.append(float(line_values[0]))
-            values.append(float(line_values[direction.value]))
-        szas.append(90)
-        values.append(0)
+        try:
+            szas = []
+            values = []
+            for line in file:
+                # Skip header
+                if line.strip().startswith("%"):
+                    continue
+                # Each line consists of at least five values separated by spaces
+                line_values = re.split("\s+", line.strip())
+                szas.append(float(line_values[0]))
+                values.append(float(line_values[direction.value]))
+            szas.append(90)
+            values.append(0)
 
-        return ARF(
-            szas,
-            values
-        )
+            return ARF(
+                szas,
+                values
+            )
+        except Exception as e:
+            raise ARFFileParsingError(str(e))
 
 
 @dataclass
@@ -45,3 +48,7 @@ class Direction(Enum):
     WEST = 2
     SOUTH = 3
     EAST = 4
+
+
+class ARFFileParsingError(ValueError):
+    pass
