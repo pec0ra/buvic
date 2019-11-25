@@ -145,8 +145,8 @@ class IrradianceEvaluation:
         :return: the LibRadtran results
         """
 
-        pool = Pool()
-        return pool.starmap(self._execute_libradtran, [(entry, ozone) for entry in uv_file_entries])
+        with Pool() as pool:
+            return pool.starmap(self._execute_libradtran, [(entry, ozone) for entry in uv_file_entries])
 
     @staticmethod
     def _execute_libradtran(uv_file_entry: UVFileEntry, ozone: Ozone) -> LibradtranResult:
