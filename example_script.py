@@ -5,7 +5,7 @@ from shutil import rmtree
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 
-from irradiance_evaluation import IrradianceEvaluation
+from uv.logic import IrradianceEvaluation
 
 rcParams.update({'figure.autolayout': True})
 rcParams['figure.figsize'] = 10, 7

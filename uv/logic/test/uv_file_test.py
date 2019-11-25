@@ -1,6 +1,6 @@
 import unittest
 
-from uv_file import UVFileHeader, RawUVValue
+from uv.logic import UVFileHeader, RawUVValue
 
 
 class UVFileReaderTestCase(unittest.TestCase):

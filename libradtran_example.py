@@ -1,4 +1,4 @@
-from libradtran import Libradtran, LibradtranInput
+from uv.logic import Libradtran, LibradtranInput
 
 libradtran = Libradtran()
 libradtran.add_input(LibradtranInput.WAVELENGTH, [290, 360])

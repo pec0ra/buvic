@@ -10,11 +10,11 @@ from typing import List, Callable, TextIO
 from numpy import multiply, divide, sin, add, pi, mean, exp, maximum, linspace, trapz, cos, isnan
 from scipy.interpolate import UnivariateSpline
 
-from arf_file import read_arf_file, Direction, ARF
-from b_file import read_ozone_from_b_file
-from calibration_file import read_calibration_file
-from libradtran import Libradtran, LibradtranInput, LibradtranResult
-from uv_file import UVFileReader, UVFileEntry
+from .arf_file import read_arf_file, Direction, ARF
+from .b_file import read_ozone_from_b_file
+from .calibration_file import read_calibration_file
+from .libradtran import Libradtran, LibradtranInput, LibradtranResult
+from .uv_file import UVFileReader, UVFileEntry
 
 
 class IrradianceEvaluation:
