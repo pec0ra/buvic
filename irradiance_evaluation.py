@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import timedelta
+from multiprocessing import Pool
 from typing import List
 
 from numpy import multiply, divide, sin, add, pi, mean, exp, maximum, linspace, trapz, cos, isnan
 from scipy.interpolate import UnivariateSpline
 
 from arf_file import read_arf_file, Direction, ARF
-from b_file import read_ozone_from_b_file
+from b_file import read_ozone_from_b_file, Ozone
 from calibration_file import read_calibration_file
 from libradtran import Libradtran, LibradtranInput, LibradtranResult
 from uv_file import UVFileReader, UVFileEntry
@@ -52,11 +53,15 @@ class IrradianceEvaluation:
         uv_file_reader = UVFileReader(self._uv_file_name)
         calibration = read_calibration_file(self._calibration_file_name)
         arf = read_arf_file(self._arf_file_name, self._arf_direction)
+        ozone = read_ozone_from_b_file(self._b_file_name)
+
+        libradtran_results = self._execute_libradtran_parallel(uv_file_reader.get_uv_file_entries(), ozone)
 
         spectra = []
+        i = 0
         for uv_file_entry in uv_file_reader.get_uv_file_entries():
+            libradtran_result = libradtran_results[i]
             calibrated_spectrum = self._to_calibrated_spectrum(uv_file_entry, calibration)
-            libradtran_result = self._execute_libradtran(uv_file_entry)
             cos_correction = self._cos_correction(arf, libradtran_result)
 
             # Set nan to 1
@@ -73,6 +78,7 @@ class IrradianceEvaluation:
                 cos_correction,
                 self._get_sza(libradtran_result)
             ))
+            i += 1
         return spectra
 
     @staticmethod
@@ -131,7 +137,19 @@ class IrradianceEvaluation:
         # This is equivalent to integrating `2 ∫arf(θ) sin(θ) dθ` with θ from 0 to π/2
         return 2 * trapz(spline(theta) * sin(theta), theta)
 
-    def _execute_libradtran(self, uv_file_entry: UVFileEntry) -> LibradtranResult:
+    def _execute_libradtran_parallel(self, uv_file_entries: List[UVFileEntry], ozone: Ozone) -> List[LibradtranResult]:
+        """
+        Create a process pool and execute LibRadtran in parallel for the given uv file entries on this pool.
+        :param uv_file_entries: the UV file entries for which to execute LibRadtran
+        :param ozone: the ozone data to pass to LibRadtran as parameter
+        :return: the LibRadtran results
+        """
+
+        pool = Pool()
+        return pool.starmap(self._execute_libradtran, [(entry, ozone) for entry in uv_file_entries])
+
+    @staticmethod
+    def _execute_libradtran(uv_file_entry: UVFileEntry, ozone: Ozone) -> LibradtranResult:
         """
         Call LibRadtran with parameters extracted from a given UVFileEntry
         :param uv_file_entry: the entry to get LibRadtran's parameters from
@@ -158,7 +176,6 @@ class IrradianceEvaluation:
         libradtran.add_input(LibradtranInput.SPLINE,
                              [uv_file_entry.wavelengths[0], uv_file_entry.wavelengths[-1], step])
 
-        ozone = read_ozone_from_b_file(self._b_file_name)
         libradtran.add_input(LibradtranInput.OZONE, [ozone.interpolated_value(time)])
 
         libradtran.add_input(LibradtranInput.TIME, [
@@ -229,9 +246,6 @@ class IrradianceEvaluation:
 
         # Fdir / Fdiff
         fdir_fdiff = divide(fdir, fdiff)
-
-        # TODO: should we set nan to 1
-        # fdir_fdiff[isnan(fdir_fdiff)] = 1
 
         # Fdir / Fdiff + 1
         c_upper = add(fdir_fdiff, 1)
