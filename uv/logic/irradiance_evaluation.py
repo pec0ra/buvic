@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-import csv, warnings
+import csv
+import warnings
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import timedelta
@@ -10,8 +11,9 @@ from typing import List, Callable, TextIO
 from numpy import multiply, divide, sin, add, pi, mean, exp, maximum, linspace, trapz, cos, isnan
 from scipy.interpolate import UnivariateSpline
 
-from .arf_file import read_arf_file, Direction, ARF
-from .b_file import read_ozone_from_b_file
+from .arf_file import read_arf_file, ARF
+from .b_file import read_ozone_from_b_file, Ozone
+from .calculation_input import CalculationInput
 from .calibration_file import read_calibration_file
 from .libradtran import Libradtran, LibradtranInput, LibradtranResult
 from .uv_file import UVFileReader, UVFileEntry
@@ -27,26 +29,19 @@ class IrradianceEvaluation:
 
     def __init__(
             self,
-            uv_file_name: str,
-            calibration_file_name: str,
-            b_file_name: str,
-            arf_file_name: str,
-            arf_direction: Direction = Direction.SOUTH,
+            calculation_input: CalculationInput,
             progress_handler: Callable[[int, int], None] = None
     ):
         """
         Create an instance from the name of a uv file, a B file, a calibration file and an ARF file and an optional direction
         for the parsing of the ARF file
-        :param uv_file_name:
-        :param calibration_file_name:
-        :param arf_file_name:
-        :param arf_direction:
+        :param calculation_input: the object containing the required file names
         """
-        self._uv_file_name = uv_file_name
-        self._calibration_file_name = calibration_file_name
-        self._arf_file_name = arf_file_name
-        self._arf_direction = arf_direction
-        self._ozone = read_ozone_from_b_file(b_file_name)
+        self._uv_file_name = calculation_input.uv_file_name
+        self._calibration_file_name = calculation_input.calibration_file_name
+        self._arf_file_name = calculation_input.arf_file_name
+        self._arf_direction = calculation_input.arf_direction
+        self._ozone = read_ozone_from_b_file(calculation_input.b_file_name)
 
         self._progress_handler = progress_handler
         self._progress_lock = Lock()
@@ -81,11 +76,13 @@ class IrradianceEvaluation:
             spectra.append(Spectrum(
                 uv_file_entry,
                 uv_file_entry.wavelengths,
+                uv_file_entry.times,
                 uv_file_entry.events,
                 calibrated_spectrum,
                 cos_corrected_spectrum,
                 cos_correction,
-                self._get_sza(libradtran_result)
+                self._get_sza(libradtran_result),
+                self._ozone
             ))
             i += 1
         self._report_progress()
@@ -311,11 +308,13 @@ class IrradianceEvaluation:
 class Spectrum:
     uv_file_entry: UVFileEntry
     wavelengths: List[float]
+    measurement_times: List[float]
     uv_raw_values: List[float]
     original_spectrum: List[float]
     cos_corrected_spectrum: List[float]
     cos_correction: List[float]
     sza: float
+    ozone: Ozone
 
     def to_csv(self, file: TextIO):
         writer = csv.writer(file)

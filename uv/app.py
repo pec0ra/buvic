@@ -1,3 +1,4 @@
+import traceback
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from typing import List
@@ -6,14 +7,11 @@ import matplotlib.pyplot as plt
 import remi.gui as gui
 from remi import App
 
-from .gui.utils import show, hide
-from .gui.widgets import VBox, Title, Level, ResultInfo, Loader, MainForm
-from .logic.arf_file import ARFFileParsingError
-from .logic.b_file import BFileParsingError
-from .logic.calibration_file import CalibrationFileParsingError
-from .logic.irradiance_evaluation import IrradianceEvaluation, Spectrum
-from .logic.uv_file import UVFileParsingError
+from uv.logic.calculation_input import CalculationInput
 from .const import PLOT_DIR, TMP_FILE_DIR
+from .gui.utils import show, hide
+from .gui.widgets import VBox, Title, Level, ResultInfo, Loader, SimpleMainForm
+from .logic.irradiance_evaluation import IrradianceEvaluation, Spectrum
 
 
 class UVApp(App):
@@ -31,7 +29,7 @@ class UVApp(App):
 
         self.title = Title(Level.H1, "Irradiance calculation")
 
-        self.main_form = MainForm(self.calculate)
+        self.main_form = SimpleMainForm(self.calculate)
 
         self.loader = Loader()
 
@@ -54,8 +52,7 @@ class UVApp(App):
         # returning the root widget
         return self.main_container
 
-    def calculate(self, uv_file: str, calibration_file: str, b_file: str, arf_file: str):
-        self.main_form.reset_errors()
+    def calculate(self, calculation_input: CalculationInput):
         self.reset_errors()
         self.loader.set_progress(0)
         self.loader.set_label("Calculating...")
@@ -63,7 +60,7 @@ class UVApp(App):
         hide(self.main_form)
         hide(self.result_container)
 
-        ie = IrradianceEvaluation(uv_file, calibration_file, b_file, arf_file,
+        ie = IrradianceEvaluation(calculation_input,
                                   progress_handler=self.progress_handler)
         self._executor.submit(self.start_calculation, ie)
 
@@ -71,28 +68,12 @@ class UVApp(App):
         try:
             result = ie.calculate()
             self.show_result(result)
-        except UVFileParsingError as e:
-            self.main_form.set_uv_file_error()
-            self.show_error(str(e))
-            raise e
-        except CalibrationFileParsingError as e:
-            self.main_form.set_calibration_file_error()
-            self.show_error(str(e))
-            raise e
-        except BFileParsingError as e:
-            self.main_form.set_b_file_error()
-            self.show_error(str(e))
-            raise e
-        except ARFFileParsingError as e:
-            self.main_form.set_arf_file_error()
-            self.show_error(str(e))
-            raise e
         except Exception as e:
+            traceback.print_tb(e.__traceback__)
             self.show_error(str(e))
             raise e
 
     def reset_errors(self):
-        self.main_form.reset_errors()
         hide(self.error_label)
         self.error_label.set_text("")
 
@@ -136,14 +117,25 @@ class UVApp(App):
         result_title = Title(Level.H3, "Section " + str(i))
         vbox.append(result_title)
 
+        header = result.uv_file_entry.header
+
+        info = ResultInfo("Measure type", header.type)
+        vbox.append(info)
+
         info = ResultInfo("SZA", result.sza)
         vbox.append(info)
 
-        header = result.uv_file_entry.header
         info = ResultInfo("Pressure", header.pressure)
         vbox.append(info)
 
         info = ResultInfo("Position", str(header.position.latitude) + ", " + str(header.position.longitude))
+        vbox.append(info)
+
+        info = ResultInfo("Dark", header.dark)
+        vbox.append(info)
+
+        time = result.measurement_times[0]
+        info = ResultInfo("Ozone", result.ozone.interpolated_value(time))
         vbox.append(info)
 
         file_name = TMP_FILE_DIR + str(uuid.uuid4()) + ".csv"
@@ -165,7 +157,6 @@ class UVApp(App):
 
         ax.semilogy(result.wavelengths, result.cos_corrected_spectrum, label="Cos corrected spectrum")
 
-        plt.title("Irradiance for SZA: " + str(result.sza))
         ax.legend()
         fig.savefig(PLOT_DIR + "spectrum_" + str(i) + ".png")
         plt.close()
@@ -174,12 +165,11 @@ class UVApp(App):
         hbox.append(pic)
 
         fig, ax = plt.subplots()
-        ax.set(xlabel="Wavelength (nm)", ylabel="c")
+        ax.set(xlabel="Wavelength (nm)", ylabel="Correction factor")
         ax.grid()
 
         ax.plot(result.wavelengths, result.cos_correction, label="Cglo")
 
-        plt.title("Correction factor for SZA: " + str(result.sza))
         ax.legend()
         fig.savefig(PLOT_DIR + "spectrum_" + str(i) + "_correction.png")
         plt.close()

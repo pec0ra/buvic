@@ -1,10 +1,13 @@
 from enum import Enum
 from typing import Any, Callable
+from datetime import date
+
+from ..logic.calculation_input import CalculationInput
 
 import remi.gui as gui
 
 from .utils import show, hide
-from ..const import TMP_FILE_DIR
+from ..const import TMP_FILE_DIR, BREWER_IDS, DATA_DIR
 
 
 class Button(gui.Button):
@@ -85,7 +88,7 @@ class ResultInfo(gui.HBox):
     def __init__(self, label: str, value: Any):
         super().__init__()
         info_label = gui.Label(label + ":\t")
-        info_label.set_style("font-weight: bold; width: 90px")
+        info_label.set_style("font-weight: bold; width: 110px")
         info_value = gui.Label(str(value))
         self.append(info_label)
         self.append(info_value)
@@ -107,7 +110,8 @@ class Loader(VBox):
         self._label.set_text(label)
 
 
-class MainForm(VBox):
+class ExpertMainForm(VBox):
+
     def __init__(self, calculate: Callable[[str, str, str, str], None]):
         super().__init__()
         self.uv_file = None
@@ -174,3 +178,65 @@ class MainForm(VBox):
         self._calibration_file_selector.set_error(False)
         self._b_file_selector.set_error(False)
         self._arf_file_selector.set_error(False)
+
+
+class SimpleMainForm(VBox):
+
+    def __init__(self, calculate: Callable[[CalculationInput], None]):
+        super().__init__()
+        self._brewer_id = BREWER_IDS[0]
+        self._date = date(2019, 6, 24)
+
+        self._calculation_input = None
+
+        file_form = gui.HBox()
+        file_form.set_style("margin-bottom: 20px")
+
+        brewer_dd = gui.DropDown()
+        for bid in BREWER_IDS:
+            item = gui.DropDownItem(bid)
+            brewer_dd.append(item)
+        brewer_dd.onchange.do(self._on_bid_change)
+        self._brewer_input = Input("Brewer id", brewer_dd)
+
+        date_selector = gui.Date(default_value="2019-06-24")
+        date_selector.onchange.do(self._on_date_change)
+        self._date_input = Input("Date", date_selector)
+
+        self._calculate_button = Button("Calculate")
+        self._calculate_button.set_enabled(False)
+        self._calculate_button.set_style("align-self: end; margin-bottom: 20px")
+        self._calculate_button.onclick.do(
+            lambda w: calculate(self._calculation_input))
+
+        file_form.append(self._brewer_input)
+        file_form.append(self._date_input)
+
+        self.append(file_form)
+        self.append(self._calculate_button)
+        self.check_files()
+
+    def _on_bid_change(self, widget, value: str):
+        self._brewer_id = value
+        self.check_files()
+
+    def _on_date_change(self, widget, value: str):
+        self._date = date.fromisoformat(value)
+        self.check_files()
+
+    def check_files(self):
+        if self._brewer_id is not None and self._date is not None:
+            self._calculation_input = CalculationInput.from_date_and_bid(DATA_DIR, self._brewer_id, self._date)
+            self._calculate_button.set_enabled(True)
+        else:
+            self._calculation_input = None
+            self._calculate_button.set_enabled(False)
+
+
+class Input(VBox):
+    def __init__(self, label: str, input_widget: gui.Widget):
+        super().__init__()
+        self.set_style("width: 280px; padding-left: 10px; padding-right: 10px")
+        l = gui.Label(label + ":")
+        self.append(l)
+        self.append(input_widget)

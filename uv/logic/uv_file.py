@@ -54,9 +54,29 @@ class UVFileReader(object):
             # Parse the values
             values = []
             next_line = self.__read_line(file)
-            while "end" not in next_line and next_line != '':
+            while "dark" not in next_line and "end" not in next_line and next_line != '':
                 values.append(RawUVValue(next_line))
                 next_line = self.__read_line(file)
+
+            dark_match = re.match("^dark\s+(?P<dark>\S+)\s+$", next_line)
+            if dark_match is not None:
+                print("Matching: " + next_line)
+                print(dark_match.group("dark"))
+                print("Old dark: " + str(header.dark))
+                header.dark = (header.dark + float(dark_match.group("dark"))) / 2
+                print("New dark: " + str(header.dark))
+                next_line = self.__read_line(file)
+                for i in range(len(values) - 1, -1, -1):
+                    old_value = values[i]
+                    new_value = RawUVValue(next_line)
+                    old_value.time = (old_value.time + new_value.time) / 2
+                    old_value.events = (old_value.events + new_value.events) / 2
+                    old_value.time = (old_value.step + new_value.step) / 2
+                    old_value.std = divide(1, sqrt(old_value.events))
+                    next_line = self.__read_line(file)
+
+                if "end" not in next_line and next_line != '':
+                    raise UVFileParsingError("Failed parsing uv section. Expected 'end' but found " + next_line)
 
             # Create the resulting entry and add it to the result
             entry = UVFileEntry(
@@ -217,6 +237,10 @@ class UVFileEntry:
     @property
     def events(self) -> List[float]:
         return [v.events for v in self.raw_values]
+
+    @property
+    def times(self) -> List[float]:
+        return [v.time for v in self.raw_values]
 
 
 Position = namedtuple('Position', ['latitude', 'longitude'])
