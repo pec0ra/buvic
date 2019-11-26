@@ -266,7 +266,7 @@ class ResultWidget(VBox):
         self._current_progress = 0
         self._current_progress_lock = Lock()
 
-    def display(self, results: List[Result], progress: Callable[[int], None] = None):
+    def display(self, results: List[Result], progress: Callable[[int, int], None] = None):
         self._results = results
         self._progress_callback = progress
         self._current_progress = 0
@@ -328,8 +328,7 @@ class ResultWidget(VBox):
         hbox.append(pic)
         vbox.append(hbox)
 
-        progress = 80 + int(self._get_next_progress() * 20 / len(self._results))
-        self._progress_callback(progress)
+        self._progress_callback(len(self._results) + self._get_next_progress(), len(self._results))
         return vbox
 
     def _get_next_progress(self) -> int:

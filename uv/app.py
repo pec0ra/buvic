@@ -75,22 +75,19 @@ class UVApp(App):
         if total_progress == 0:
             self.loader.set_progress(0)
         else:
-            value = int(current_progress * 80 / total_progress)
+            value = int(current_progress * 50 / total_progress)
             self.loader.set_progress(value)
 
     def show_result(self, results: List[Result]):
         self.loader.set_label("Generating result files...")
-        self.loader.set_progress(80)
+        self.loader.set_progress(50)
 
-        self.result_container.display(results, self.result_progress)
+        self.result_container.display(results, self.progress_handler)
 
         self.main_form.check_files()
         hide(self.loader)
         show(self.main_form)
         show(self.result_container)
-
-    def result_progress(self, value: int):
-        self.loader.set_progress(value)
 
     def show_error(self, error: str):
         self.main_form.check_files()
