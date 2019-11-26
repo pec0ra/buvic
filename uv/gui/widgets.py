@@ -115,12 +115,13 @@ class Loader(VBox):
 
 class ExpertMainForm(VBox):
 
-    def __init__(self, calculate: Callable[[str, str, str, str], None]):
+    def __init__(self, calculate: Callable[[CalculationInput], None]):
         super().__init__()
         self.uv_file = None
         self.calibration_file = None
         self.b_file = None
         self.arf_file = None
+        self.calculation_input = None
 
         file_form = gui.HBox()
         file_form.set_style("margin-bottom: 20px")
@@ -132,8 +133,9 @@ class ExpertMainForm(VBox):
         self._calculate_button = Button("Calculate")
         self._calculate_button.set_enabled(False)
         self._calculate_button.set_style("align-self: end; margin-bottom: 20px")
+
         self._calculate_button.onclick.do(
-            lambda w: calculate(self.uv_file, self.calibration_file, self.b_file, self.arf_file))
+            lambda w: calculate(self.calculation_input))
 
         file_form.append(self._uv_file_selector)
         file_form.append(self._calibration_file_selector)
@@ -161,9 +163,17 @@ class ExpertMainForm(VBox):
 
     def check_files(self):
         if self.uv_file is not None and self.calibration_file is not None and self.arf_file is not None and self.b_file is not None:
+            self.calculation_input = CalculationInput(
+                date.today(),
+                self.uv_file,
+                self.b_file,
+                self.calibration_file,
+                self.arf_file
+            )
             self._calculate_button.set_enabled(True)
         else:
             self._calculate_button.set_enabled(False)
+            self.calculation_input = None
 
     def set_uv_file_error(self):
         self._uv_file_selector.set_error(True)

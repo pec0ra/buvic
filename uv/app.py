@@ -10,13 +10,14 @@ from remi.gui import VBox
 from uv.logic.calculation_input import CalculationInput
 from .const import PLOT_DIR
 from .gui.utils import show, hide
-from .gui.widgets import Title, Level, Loader, SimpleMainForm, ResultWidget
+from .gui.widgets import Title, Level, Loader, ExpertMainForm, SimpleMainForm, ResultWidget
 from .logic.irradiance_evaluation import IrradianceEvaluation, Result
 
 
 class UVApp(App):
     _main_container: VBox
     _main_form: SimpleMainForm
+    _secondary_form: ExpertMainForm
     _loader: Loader
     _result_container: ResultWidget
     _error_label: Label
@@ -36,7 +37,19 @@ class UVApp(App):
 
         title = Title(Level.H1, "Irradiance calculation")
 
+        self._forms = VBox()
+        self._forms.set_style("width: 100%")
+
+        form_selection_checkbox = gui.CheckBoxLabel("Manual mode")
+        form_selection_checkbox.set_style("align-self: flex-start")
+        form_selection_checkbox.onchange.do(self._form_selection_change)
+        self._forms.append(form_selection_checkbox)
+
         self._main_form = SimpleMainForm(self.calculate)
+        self._secondary_form = ExpertMainForm(self.calculate)
+        hide(self._secondary_form)
+        self._forms.append(self._main_form)
+        self._forms.append(self._secondary_form)
 
         self._loader = Loader()
 
@@ -44,7 +57,7 @@ class UVApp(App):
 
         self._main_container.append(title)
         self._main_container.append(self._loader)
-        self._main_container.append(self._main_form)
+        self._main_container.append(self._forms)
         self._main_container.append(self._result_container)
 
         self._error_label = gui.Label("")
@@ -60,7 +73,7 @@ class UVApp(App):
         self._loader.set_progress(0)
         self._loader.set_label("Calculating...")
         show(self._loader)
-        hide(self._main_form)
+        hide(self._forms)
         hide(self._result_container)
 
         try:
@@ -101,20 +114,30 @@ class UVApp(App):
         self._result_container.display(results, self.progress_handler)
 
         self._main_form.check_files()
+        self._secondary_form.check_files()
         hide(self._loader)
-        show(self._main_form)
+        show(self._forms)
         show(self._result_container)
 
     def show_error(self, error: str):
         self._main_form.check_files()
+        self._secondary_form.check_files()
         hide(self._result_container)
         hide(self._loader)
-        show(self._main_form)
+        show(self._forms)
         show(self._error_label)
         if error is not None:
             self._error_label.set_text(error)
         else:
             print("Error is None")
+
+    def _form_selection_change(self, widget, value: bool):
+        if value:
+            hide(self._main_form)
+            show(self._secondary_form)
+        else:
+            show(self._main_form)
+            hide(self._secondary_form)
 
     @staticmethod
     def _check_input(calculation_input: CalculationInput):

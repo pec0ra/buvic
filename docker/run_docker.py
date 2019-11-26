@@ -12,4 +12,4 @@ if not os.path.exists(PLOT_DIR):
     os.makedirs(PLOT_DIR)
 
 # starts the web server
-start(UVApp, address='0.0.0.0', port=80, start_browser=False, update_interval=0)
+start(UVApp, address='0.0.0.0', port=80, start_browser=False)
