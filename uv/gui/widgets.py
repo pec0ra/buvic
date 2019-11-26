@@ -1,15 +1,14 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from enum import Enum
-from multiprocessing import Value
 from threading import Lock
 from typing import Any, Callable, List, Tuple
 
 import remi.gui as gui
 
 from .utils import show, hide
-from ..const import TMP_FILE_DIR, DATA_DIR, PLOT_DIR
 from ..brewer_infos import brewer_infos
+from ..const import TMP_FILE_DIR, DATA_DIR, PLOT_DIR
 from ..logic.calculation_input import CalculationInput
 from ..logic.irradiance_evaluation import Result
 
@@ -133,7 +132,8 @@ class ExpertMainForm(VBox):
         self._calculate_button = Button("Calculate")
         self._calculate_button.set_enabled(False)
         self._calculate_button.set_style("align-self: end; margin-bottom: 20px")
-        self._calculate_button.onclick.do(lambda w: calculate(self.uv_file, self.calibration_file, self.b_file, self.arf_file))
+        self._calculate_button.onclick.do(
+            lambda w: calculate(self.uv_file, self.calibration_file, self.b_file, self.arf_file))
 
         file_form.append(self._uv_file_selector)
         file_form.append(self._calibration_file_selector)
@@ -323,7 +323,6 @@ class ResultWidget(VBox):
         pic = gui.Image("/plots:" + spectrum_plot)
         hbox.append(pic)
 
-
         pic = gui.Image("/plots:" + spectrum_correction_plot)
         hbox.append(pic)
         vbox.append(hbox)
@@ -335,4 +334,3 @@ class ResultWidget(VBox):
         with self._current_progress_lock:
             self._current_progress += 1
             return self._current_progress
-

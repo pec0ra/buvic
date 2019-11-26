@@ -87,7 +87,6 @@ class UtilsTestCase(unittest.TestCase):
         self.assertEqual(t.second, 30)
 
     def test_time_to_minutes(self):
-
         minutes = time_to_minutes(time(0, 0, 0))
         self.assertEqual(minutes, 0)
 

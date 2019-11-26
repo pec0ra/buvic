@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
-from ..brewer_infos import get_brewer_info
 
 from uv.logic.utils import days_to_date
 from .arf_file import Direction
+from ..brewer_infos import get_brewer_info
 
 
 @dataclass
