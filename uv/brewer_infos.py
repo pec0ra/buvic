@@ -8,19 +8,19 @@ from warnings import warn
 class BrewerInfo:
     id: str
     dual: bool
+    uvr_file_name: str
+    arf_file_name: str
 
 
-DEFAULT_BREWER_INFO: BrewerInfo = BrewerInfo("0", False)
+DEFAULT_BREWER_INFO: BrewerInfo = BrewerInfo("0", False, "UVR17319.151", "arf_151.dat")
 
 brewer_infos = {
-    "033": BrewerInfo("033", False),
-    "070": BrewerInfo("070", False),
-    "117": BrewerInfo("117", False),
-    "151": BrewerInfo("151", False),
-    "156": BrewerInfo("156", True),
-    "163": BrewerInfo("163", True),
-    "166": BrewerInfo("166", False),
-    "186": BrewerInfo("186", True)
+    "033": BrewerInfo("033", False, "UVR17419.033", "arf_033.dat"),
+    "070": BrewerInfo("070", False, "UVR17319.070", "arf_070.dat"),
+    "117": BrewerInfo("117", False, "UVR17319.117", "arf_117.dat"),
+    "151": BrewerInfo("151", False, "UVR17419.151", "arf_151.dat"),
+    "166": BrewerInfo("166", False, "UVR17319.166", "arf_166.dat"),
+    "186": BrewerInfo("186", True, "UVR17419.186", "arf_186.dat")
 }
 
 

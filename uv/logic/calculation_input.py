@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
+from ..brewer_infos import get_brewer_info
 
 from uv.logic.utils import days_to_date
 from .arf_file import Direction
@@ -20,10 +21,11 @@ class CalculationInput:
     def from_days_and_bid(data_dir: str, brewer_id: str, days: int, year: int = 19) -> CalculationInput:
         if year > 2000:
             year -= 2000
+        brewer = get_brewer_info(brewer_id)
         uv_file_name = data_dir + "UV" + str(days) + str(year) + "." + brewer_id
         b_file_name = data_dir + "B" + str(days) + str(year) + "." + brewer_id
-        calibration_file_name = data_dir + "UVR__1290." + brewer_id
-        arf_file_name = data_dir + "arf_" + brewer_id + ".dat"
+        calibration_file_name = data_dir + brewer.uvr_file_name
+        arf_file_name = data_dir + brewer.arf_file_name
         measurement_date = days_to_date(days, year)
         return CalculationInput(measurement_date, uv_file_name, b_file_name, calibration_file_name, arf_file_name)
 

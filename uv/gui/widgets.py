@@ -8,7 +8,8 @@ from typing import Any, Callable, List, Tuple
 import remi.gui as gui
 
 from .utils import show, hide
-from ..const import TMP_FILE_DIR, BREWER_IDS, DATA_DIR, PLOT_DIR
+from ..const import TMP_FILE_DIR, DATA_DIR, PLOT_DIR
+from ..brewer_infos import brewer_infos
 from ..logic.calculation_input import CalculationInput
 from ..logic.irradiance_evaluation import Result
 
@@ -187,7 +188,7 @@ class SimpleMainForm(VBox):
 
     def __init__(self, calculate: Callable[[CalculationInput], None]):
         super().__init__()
-        self._brewer_id = BREWER_IDS[0]
+        self._brewer_id = list(brewer_infos.keys())[0]
         self._date = date(2019, 6, 24)
 
         self._calculation_input = None
@@ -196,7 +197,7 @@ class SimpleMainForm(VBox):
         file_form.set_style("margin-bottom: 20px")
 
         brewer_dd = gui.DropDown()
-        for bid in BREWER_IDS:
+        for bid in brewer_infos.keys():
             item = gui.DropDownItem(bid)
             brewer_dd.append(item)
         brewer_dd.onchange.do(self._on_bid_change)
