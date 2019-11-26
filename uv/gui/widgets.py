@@ -1,13 +1,16 @@
-from enum import Enum
-from typing import Any, Callable
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date
-
-from ..logic.calculation_input import CalculationInput
+from enum import Enum
+from multiprocessing import Value
+from threading import Lock
+from typing import Any, Callable, List, Tuple
 
 import remi.gui as gui
 
 from .utils import show, hide
-from ..const import TMP_FILE_DIR, BREWER_IDS, DATA_DIR
+from ..const import TMP_FILE_DIR, BREWER_IDS, DATA_DIR, PLOT_DIR
+from ..logic.calculation_input import CalculationInput
+from ..logic.irradiance_evaluation import Result
 
 
 class Button(gui.Button):
@@ -216,6 +219,14 @@ class SimpleMainForm(VBox):
         self.append(self._calculate_button)
         self.check_files()
 
+    @property
+    def brewer_id(self):
+        return self._brewer_id
+
+    @property
+    def date(self):
+        return self._date
+
     def _on_bid_change(self, widget, value: str):
         self._brewer_id = value
         self.check_files()
@@ -240,3 +251,88 @@ class Input(VBox):
         l = gui.Label(label + ":")
         self.append(l)
         self.append(input_widget)
+
+
+class ResultWidget(VBox):
+
+    def __init__(self):
+        super().__init__()
+        self.set_style("margin-bottom: 20px")
+        hide(self)
+        self.result_title = Title(Level.H2, "Results")
+        self._results = None
+        self._progress_callback = None
+        self._current_progress = 0
+        self._current_progress_lock = Lock()
+
+    def display(self, results: List[Result], progress: Callable[[int], None] = None):
+        self._results = results
+        self._progress_callback = progress
+        self._current_progress = 0
+
+        with ThreadPoolExecutor() as pool:
+            result_guis = pool.map(self._create_result_gui, enumerate(results))
+
+        self.empty()
+        self.append(self.result_title)
+
+        for gui in result_guis:
+            self.append(gui)
+
+    def _create_result_gui(self, entry: Tuple[int, Result]) -> VBox:
+        index, result = entry
+        vbox = VBox()
+        vbox.set_style("margin-bottom: 20px")
+
+        result_title = Title(Level.H3, "Section " + str(index))
+        vbox.append(result_title)
+
+        header = result.uv_file_entry.header
+
+        info = ResultInfo("Measure type", header.type)
+        vbox.append(info)
+
+        info = ResultInfo("SZA", result.sza)
+        vbox.append(info)
+
+        info = ResultInfo("Pressure", header.pressure)
+        vbox.append(info)
+
+        info = ResultInfo("Position", str(header.position.latitude) + ", " + str(header.position.longitude))
+        vbox.append(info)
+
+        info = ResultInfo("Dark", header.dark)
+        vbox.append(info)
+
+        time = result.spectrum.measurement_times[0]
+        info = ResultInfo("Ozone", result.ozone.interpolated_value(time))
+        vbox.append(info)
+
+        file_name = TMP_FILE_DIR + result.get_name("spectrum_", ".csv")
+        with open(file_name, "w") as csv_file:
+            result.to_csv(csv_file)
+
+        download_button = gui.FileDownloader("Download as csv", file_name, width=130)
+        download_button.set_style("margin-bottom: 10px; margin-top: 5px")
+        vbox.append(download_button)
+
+        hbox = gui.HBox()
+
+        spectrum_plot, spectrum_correction_plot = result.to_plots(PLOT_DIR)
+        pic = gui.Image("/plots:" + spectrum_plot)
+        hbox.append(pic)
+
+
+        pic = gui.Image("/plots:" + spectrum_correction_plot)
+        hbox.append(pic)
+        vbox.append(hbox)
+
+        progress = 80 + int(self._get_next_progress() * 20 / len(self._results))
+        self._progress_callback(progress)
+        return vbox
+
+    def _get_next_progress(self) -> int:
+        with self._current_progress_lock:
+            self._current_progress += 1
+            return self._current_progress
+

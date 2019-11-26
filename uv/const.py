@@ -1,6 +1,6 @@
 TMP_FILE_DIR = "tmp/"
 PLOT_DIR = "plots/"
-DATA_DIR = "../Misc/data/"
+DATA_DIR = "data/"
 
 BREWER_IDS = [
     "033",
@@ -10,3 +10,5 @@ BREWER_IDS = [
     "166",
     "186"
 ]
+
+LIBRADTRAN_COMMAND = "docker run -i siarhei/libradtran uvspec"

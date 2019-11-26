@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from enum import Enum
 from subprocess import PIPE, run
 from typing import List, Dict, Any
+from ..const import LIBRADTRAN_COMMAND
 
 
 class Libradtran:
@@ -56,7 +57,7 @@ class Libradtran:
         input_file_name = self._create_input_file()
 
         # Call LibRadtran
-        command = "docker run -i siarhei/libradtran uvspec < " + input_file_name
+        command = LIBRADTRAN_COMMAND + " < " + input_file_name
         result = run(command, stdout=PIPE, universal_newlines=True, shell=True)
         if result.returncode != 0:
             raise ChildProcessError("LibRadtran or docker returned an error. See logs or input file '" +
@@ -183,9 +184,9 @@ class LibradtranInput(Enum):
     )
 
 
-LIBRADTRAN_STATIC_START = "data_files_path data/\n" \
-                          "atmosphere_file data/atmmod/afglus.dat # Location of the extraterrestrial spectrum\n" \
-                          "source solar data/solar_flux/atlas_plus_modtran\n" \
+LIBRADTRAN_STATIC_START = "data_files_path /opt/libRadtran/data/\n" \
+                          "atmosphere_file /opt/libRadtran/data/atmmod/afglus.dat # Location of the extraterrestrial spectrum\n" \
+                          "source solar /opt/libRadtran/data/solar_flux/atlas_plus_modtran\n" \
                           "aerosol_default          # Aerosol\n" \
                           "rte_solver disort        # Radiative transfer equation solver\n" \
                           "number_of_streams  8     # Number of streams\n" \

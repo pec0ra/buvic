@@ -10,11 +10,17 @@ class BrewerInfo:
     dual: bool
 
 
-DEFAULT_BREWER_INFO: BrewerInfo = BrewerInfo("0", True)
+DEFAULT_BREWER_INFO: BrewerInfo = BrewerInfo("0", False)
 
 brewer_infos = {
+    "033": BrewerInfo("033", False),
+    "070": BrewerInfo("070", False),
+    "117": BrewerInfo("117", False),
+    "151": BrewerInfo("151", False),
     "156": BrewerInfo("156", True),
-    "163": BrewerInfo("163", True)
+    "163": BrewerInfo("163", True),
+    "166": BrewerInfo("166", False),
+    "186": BrewerInfo("186", True)
 }
 
 

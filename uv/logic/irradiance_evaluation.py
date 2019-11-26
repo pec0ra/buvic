@@ -4,13 +4,15 @@ import csv
 import warnings
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import date
 from threading import Lock
-from typing import List, Callable, TextIO
+from typing import List, Callable, TextIO, Tuple
 
+import matplotlib.pyplot as plt
 from numpy import multiply, divide, sin, add, pi, mean, exp, maximum, linspace, trapz, cos, isnan
 from scipy.interpolate import UnivariateSpline
 
+from uv.logic.utils import minutes_to_time
 from .arf_file import read_arf_file, ARF
 from .b_file import read_ozone_from_b_file, Ozone
 from .calculation_input import CalculationInput
@@ -37,6 +39,7 @@ class IrradianceEvaluation:
         for the parsing of the ARF file
         :param calculation_input: the object containing the required file names
         """
+        self._measurement_date = calculation_input.measurement_date
         self._uv_file_name = calculation_input.uv_file_name
         self._calibration_file_name = calculation_input.calibration_file_name
         self._arf_file_name = calculation_input.arf_file_name
@@ -48,7 +51,7 @@ class IrradianceEvaluation:
         self._current_progress: int = 0
         self._total_progress: int = 0
 
-    def calculate(self) -> List[Spectrum]:
+    def calculate(self) -> List[Result]:
         """
         Parse the files into spectra
         :return: a list of spectrum
@@ -61,7 +64,7 @@ class IrradianceEvaluation:
         self._init_progress(len(uv_file_entries) + 1)
         libradtran_results = self._execute_libradtran_parallel(uv_file_entries)
 
-        spectra = []
+        results = []
         i = 0
         for libradtran_result in libradtran_results:
             uv_file_entry = uv_file_entries[i]
@@ -73,20 +76,25 @@ class IrradianceEvaluation:
             cos_correction_no_nan[isnan(cos_correction_no_nan)] = 1
             cos_corrected_spectrum = multiply(calibrated_spectrum, cos_correction_no_nan)
 
-            spectra.append(Spectrum(
-                uv_file_entry,
+            spectrum = Spectrum(
                 uv_file_entry.wavelengths,
                 uv_file_entry.times,
                 uv_file_entry.events,
                 calibrated_spectrum,
                 cos_corrected_spectrum,
-                cos_correction,
+                cos_correction
+            )
+            results.append(Result(
+                i,
+                self._measurement_date,
                 self._get_sza(libradtran_result),
-                self._ozone
+                self._ozone,
+                spectrum,
+                uv_file_entry
             ))
             i += 1
         self._report_progress()
-        return spectra
+        return results
 
     @staticmethod
     def _to_calibrated_spectrum(uv_file_entry, calibration) -> List[float]:
@@ -163,10 +171,8 @@ class IrradianceEvaluation:
         uv_file_header = uv_file_entry.header
 
         # Calculate time from the UV file's time. In those files, the time is specified as "Minutes since start of day"
-        time = uv_file_entry.raw_values[0].time
-        td = timedelta(minutes=time)
-        hours, remainder = divmod(td.seconds, 3600)
-        minutes, seconds = divmod(remainder, 60)
+        minutes = uv_file_entry.raw_values[0].time
+        time = minutes_to_time(minutes)
 
         libradtran = Libradtran()
         libradtran.add_input(LibradtranInput.WAVELENGTH, [uv_file_entry.wavelengths[0], uv_file_entry.wavelengths[-1]])
@@ -181,15 +187,15 @@ class IrradianceEvaluation:
         libradtran.add_input(LibradtranInput.SPLINE,
                              [uv_file_entry.wavelengths[0], uv_file_entry.wavelengths[-1], step])
 
-        libradtran.add_input(LibradtranInput.OZONE, [self._ozone.interpolated_value(time)])
+        libradtran.add_input(LibradtranInput.OZONE, [self._ozone.interpolated_value(minutes)])
 
         libradtran.add_input(LibradtranInput.TIME, [
             uv_file_header.date.year + 2000,
             uv_file_header.date.month,
             uv_file_header.date.day,
-            hours,
-            minutes,
-            seconds
+            time.hour,
+            time.minute,
+            time.second
         ])
 
         libradtran.add_input(LibradtranInput.PRESSURE, [uv_file_header.pressure])
@@ -306,21 +312,67 @@ class IrradianceEvaluation:
 
 @dataclass
 class Spectrum:
-    uv_file_entry: UVFileEntry
     wavelengths: List[float]
     measurement_times: List[float]
     uv_raw_values: List[float]
     original_spectrum: List[float]
     cos_corrected_spectrum: List[float]
     cos_correction: List[float]
+
+
+@dataclass
+class Result:
+    index: int
+    measurement_date: date
     sza: float
     ozone: Ozone
+    spectrum: Spectrum
+    uv_file_entry: UVFileEntry
 
-    def to_csv(self, file: TextIO):
+    def to_csv(self, file: TextIO) -> None:
         writer = csv.writer(file)
-        writer.writerow(["wavelength", "Measurement raw value", "Spectrum (Non COS corrected)", "COS corrected spectrum", "COS correction factor"])
+        writer.writerow(
+            ["wavelength", "Measurement raw value", "Spectrum (Non COS corrected)", "COS corrected spectrum",
+             "COS correction factor"])
 
-        cos_correction_no_nan = self.cos_correction.copy()
+        cos_correction_no_nan = self.spectrum.cos_correction.copy()
         cos_correction_no_nan[isnan(cos_correction_no_nan)] = 1
-        for i in range(len(self.wavelengths)):
-            writer.writerow([self.wavelengths[i], self.uv_raw_values[i], self.original_spectrum[i], self.cos_corrected_spectrum[i], cos_correction_no_nan[i]])
+        for i in range(len(self.spectrum.wavelengths)):
+            writer.writerow([
+                self.spectrum.wavelengths[i],
+                self.spectrum.uv_raw_values[i],
+                self.spectrum.original_spectrum[i],
+                self.spectrum.cos_corrected_spectrum[i],
+                cos_correction_no_nan[i]
+            ])
+
+    def to_plots(self, saving_dir: str) -> Tuple[str, str]:
+        fig, ax = plt.subplots()
+        ax.set(xlabel="Wavelength (nm)", ylabel="Irradiance (Wm-2 nm-1)")
+        ax.grid()
+
+        ax.semilogy(self.spectrum.wavelengths, self.spectrum.original_spectrum, label="Spectrum")
+
+        ax.semilogy(self.spectrum.wavelengths, self.spectrum.cos_corrected_spectrum, label="Cos corrected spectrum")
+
+        ax.legend()
+        file_path = self.get_name("spectrum_", ".png")
+        fig.savefig(saving_dir + file_path)
+        plt.close()
+
+        fig, ax = plt.subplots()
+        ax.set(xlabel="Wavelength (nm)", ylabel="Correction factor")
+        ax.grid()
+
+        ax.plot(self.spectrum.wavelengths, self.spectrum.cos_correction, label="Correction factor")
+
+        ax.legend()
+        file_path_correction = self.get_name("spectrum_", "_correction.png")
+        fig.savefig(saving_dir + file_path_correction)
+        plt.close()
+
+        return file_path, file_path_correction
+
+    def get_name(self, prefix: str, suffix: str):
+        bid = self.uv_file_entry.brewer_info.id
+        return prefix + bid + "_" + self.measurement_date.isoformat().replace('-', '') + "_" + str(self.index) + suffix

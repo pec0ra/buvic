@@ -1,5 +1,6 @@
 import os
 import sys
+from datetime import date
 from shutil import rmtree
 
 import matplotlib.pyplot as plt
@@ -20,6 +21,7 @@ if len(sys.argv) == 3:
     calculation_input = CalculationInput.from_days_and_bid(DATA_DIR, brewer_id, days)
 else:
     calculation_input = CalculationInput(
+        date.today(),
         sys.argv[1],
         sys.argv[2],
         sys.argv[3],
@@ -44,9 +46,10 @@ for result in results:
     ax.set(xlabel="Wavelength (nm)", ylabel="Irradiance (Wm-2 nm-1)")
     ax.grid()
 
-    ax.semilogy(result.wavelengths, result.original_spectrum, label="Spectrum")
+    spectrum = result.spectrum
+    ax.semilogy(spectrum.wavelengths, spectrum.original_spectrum, label="Spectrum")
 
-    ax.semilogy(result.wavelengths, result.cos_corrected_spectrum, label="Cos corrected spectrum")
+    ax.semilogy(spectrum.wavelengths, spectrum.cos_corrected_spectrum, label="Cos corrected spectrum")
 
     plt.title("Irradiance for SZA: " + str(result.sza))
     ax.legend()
@@ -56,7 +59,7 @@ for result in results:
     ax.set(xlabel="Wavelength (nm)", ylabel="c")
     ax.grid()
 
-    ax.plot(result.wavelengths, result.cos_correction, label="Cglo")
+    ax.plot(spectrum.wavelengths, spectrum.cos_correction, label="Cglo")
 
     plt.title("Correction factor for SZA: " + str(result.sza))
     ax.legend()
@@ -72,9 +75,9 @@ fig, ax = plt.subplots()
 ax.set(xlabel="SZA", ylabel="Irradiance (Wm-2 nm-1)")
 ax.grid()
 
-wl_300 = [r.cos_corrected_spectrum[r.wavelengths.index(300)] for r in sorted_results]
-wl_320 = [r.cos_corrected_spectrum[r.wavelengths.index(320)] for r in sorted_results]
-wl_340 = [r.cos_corrected_spectrum[r.wavelengths.index(340)] for r in sorted_results]
+wl_300 = [r.spectrum.cos_corrected_spectrum[r.spectrum.wavelengths.index(300)] for r in sorted_results]
+wl_320 = [r.spectrum.cos_corrected_spectrum[r.spectrum.wavelengths.index(320)] for r in sorted_results]
+wl_340 = [r.spectrum.cos_corrected_spectrum[r.spectrum.wavelengths.index(340)] for r in sorted_results]
 
 ax.plot(szas, wl_300, label="WL = 300nm")
 ax.plot(szas, wl_320, label="WL = 320nm")
@@ -90,9 +93,9 @@ fig, ax = plt.subplots()
 ax.set(xlabel="SZA", ylabel="Correction factor")
 ax.grid()
 
-wl_300 = [r.cos_correction[r.wavelengths.index(300)] for r in sorted_results]
-wl_320 = [r.cos_correction[r.wavelengths.index(320)] for r in sorted_results]
-wl_340 = [r.cos_correction[r.wavelengths.index(340)] for r in sorted_results]
+wl_300 = [r.spectrum.cos_correction[r.spectrum.wavelengths.index(300)] for r in sorted_results]
+wl_320 = [r.spectrum.cos_correction[r.spectrum.wavelengths.index(320)] for r in sorted_results]
+wl_340 = [r.spectrum.cos_correction[r.spectrum.wavelengths.index(340)] for r in sorted_results]
 
 ax.plot(szas, wl_300, label="WL = 300nm")
 ax.plot(szas, wl_320, label="WL = 320nm")
