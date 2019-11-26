@@ -6,18 +6,17 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import date
 from threading import Lock
-from typing import List, Callable, TextIO, Tuple
+from typing import List, Callable, TextIO
 
-import matplotlib.pyplot as plt
 from numpy import multiply, divide, sin, add, pi, mean, exp, maximum, linspace, trapz, cos, isnan
 from scipy.interpolate import UnivariateSpline
 
-from uv.logic.utils import minutes_to_time
 from .arf_file import read_arf_file, ARF
 from .b_file import read_ozone_from_b_file, Ozone
 from .calculation_input import CalculationInput
 from .calibration_file import read_calibration_file
 from .libradtran import Libradtran, LibradtranInput, LibradtranResult
+from .utils import minutes_to_time
 from .uv_file import UVFileReader, UVFileEntry
 
 
@@ -345,33 +344,6 @@ class Result:
                 self.spectrum.cos_corrected_spectrum[i],
                 cos_correction_no_nan[i]
             ])
-
-    def to_plots(self, saving_dir: str) -> Tuple[str, str]:
-        fig, ax = plt.subplots()
-        ax.set(xlabel="Wavelength (nm)", ylabel="Irradiance (Wm-2 nm-1)")
-        ax.grid()
-
-        ax.semilogy(self.spectrum.wavelengths, self.spectrum.original_spectrum, label="Spectrum")
-
-        ax.semilogy(self.spectrum.wavelengths, self.spectrum.cos_corrected_spectrum, label="Cos corrected spectrum")
-
-        ax.legend()
-        file_path = self.get_name("spectrum_", ".png")
-        fig.savefig(saving_dir + file_path)
-        plt.close()
-
-        fig, ax = plt.subplots()
-        ax.set(xlabel="Wavelength (nm)", ylabel="Correction factor")
-        ax.grid()
-
-        ax.plot(self.spectrum.wavelengths, self.spectrum.cos_correction, label="Correction factor")
-
-        ax.legend()
-        file_path_correction = self.get_name("spectrum_", "_correction.png")
-        fig.savefig(saving_dir + file_path_correction)
-        plt.close()
-
-        return file_path, file_path_correction
 
     def get_name(self, prefix: str, suffix: str):
         bid = self.uv_file_entry.brewer_info.id

@@ -11,6 +11,7 @@ from ..brewer_infos import brewer_infos
 from ..const import TMP_FILE_DIR, DATA_DIR, PLOT_DIR
 from ..logic.calculation_input import CalculationInput
 from ..logic.irradiance_evaluation import Result
+from ..logic.utils import create_spectrum_plots, create_sza_plot
 
 
 class Button(gui.Button):
@@ -41,7 +42,8 @@ class Title(gui.Label):
         elif level == Level.H2:
             self.set_style("font-size: 18pt; margin-top: 10px; margin-bottom: 30px")
         elif level == Level.H3:
-            self.set_style("font-size: 15pt; margin-top: 10px; margin-bottom: 20px")
+            self.set_style(
+                "font-size: 15pt; margin-top: 10px; margin-bottom: 20px; color: rgb(4, 90, 188); font-weight: bold")
         else:
             self.set_style("font-size: 10pt; margin-top: 5px; margin-bottom: 10px")
 
@@ -123,6 +125,8 @@ class ExpertMainForm(VBox):
         self.arf_file = None
         self.calculation_input = None
 
+        self.set_style("align-items: flex-end")
+
         file_form = gui.HBox()
         file_form.set_style("margin-bottom: 20px")
         self._uv_file_selector = FileSelector("UV File:", handler=self.handle_uv_file)
@@ -132,7 +136,7 @@ class ExpertMainForm(VBox):
 
         self._calculate_button = Button("Calculate")
         self._calculate_button.set_enabled(False)
-        self._calculate_button.set_style("align-self: end; margin-bottom: 20px")
+        self._calculate_button.set_style("margin-bottom: 20px")
 
         self._calculate_button.onclick.do(
             lambda w: calculate(self.calculation_input))
@@ -291,8 +295,12 @@ class ResultWidget(VBox):
         self.empty()
         self.append(self.result_title)
 
-        for gui in result_guis:
-            self.append(gui)
+        sza_correction_plot = create_sza_plot(PLOT_DIR, results)
+        pic = ImagePlot(sza_correction_plot)
+        self.append(pic)
+
+        for result_gui in result_guis:
+            self.append(result_gui)
 
     def _create_result_gui(self, entry: Tuple[int, Result]) -> VBox:
         index, result = entry
@@ -328,18 +336,16 @@ class ResultWidget(VBox):
             result.to_csv(csv_file)
 
         download_button = gui.FileDownloader("Download as csv", file_name, width=130)
-        download_button.set_style("margin-bottom: 10px; margin-top: 5px")
+        download_button.set_style("margin-bottom: 10px; margin-top: 5px; color: rgb(4, 90, 188)")
         vbox.append(download_button)
 
         hbox = gui.HBox()
 
-        spectrum_plot, spectrum_correction_plot = result.to_plots(PLOT_DIR)
-        pic = gui.Image("/plots:" + spectrum_plot)
-        pic.set_style("width: 50%")
+        spectrum_plot, spectrum_correction_plot = create_spectrum_plots(PLOT_DIR, result)
+        pic = ImagePlot(spectrum_plot)
         hbox.append(pic)
 
-        pic = gui.Image("/plots:" + spectrum_correction_plot)
-        pic.set_style("width: 50%")
+        pic = ImagePlot(spectrum_correction_plot)
         hbox.append(pic)
         vbox.append(hbox)
 
@@ -350,3 +356,9 @@ class ResultWidget(VBox):
         with self._current_progress_lock:
             self._current_progress += 1
             return self._current_progress
+
+
+class ImagePlot(gui.Image):
+    def __init__(self, filename: str):
+        super().__init__("/plots:" + filename)
+        self.set_style("width: 50%")

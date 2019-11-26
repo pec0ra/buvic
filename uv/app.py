@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import List
 
 import remi.gui as gui
+from matplotlib import rcParams
 from remi import App, Label
 from remi.gui import VBox
 
@@ -25,6 +26,9 @@ class UVApp(App):
     def __init__(self, *args):
         super(UVApp, self).__init__(*args, static_file_path={'plots': PLOT_DIR})
 
+        rcParams.update({'figure.autolayout': True})
+        rcParams['figure.figsize'] = 9, 6
+
         self._executor = ThreadPoolExecutor(1)
         self.uv_file = None
         self.calibration_file = None
@@ -41,7 +45,7 @@ class UVApp(App):
         self._forms.set_style("width: 100%")
 
         form_selection_checkbox = gui.CheckBoxLabel("Manual mode")
-        form_selection_checkbox.set_style("align-self: flex-start")
+        form_selection_checkbox.set_style("align-self: flex-start; margin-bottom: 20px")
         form_selection_checkbox.onchange.do(self._form_selection_change)
         self._forms.append(form_selection_checkbox)
 
