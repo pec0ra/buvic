@@ -15,10 +15,13 @@ rcParams.update({'figure.autolayout': True})
 rcParams['figure.figsize'] = 10, 7
 
 plot_output_dir = "plots/"
-if len(sys.argv) == 3:
-    days = sys.argv[1]
+if len(sys.argv) <= 4:
+    days = int(sys.argv[1])
     brewer_id = sys.argv[2]
     calculation_input = CalculationInput.from_days_and_bid(DATA_DIR, brewer_id, days)
+
+    if len(sys.argv) > 3:
+        plot_output_dir = sys.argv[3]
 else:
     calculation_input = CalculationInput(
         date.today(),
