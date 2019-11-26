@@ -188,6 +188,7 @@ class SimpleMainForm(VBox):
 
     def __init__(self, calculate: Callable[[CalculationInput], None]):
         super().__init__()
+        self.set_style("align-items: flex-end")
         self._brewer_id = list(brewer_infos.keys())[0]
         self._date = date(2019, 6, 24)
 
@@ -209,7 +210,7 @@ class SimpleMainForm(VBox):
 
         self._calculate_button = Button("Calculate")
         self._calculate_button.set_enabled(False)
-        self._calculate_button.set_style("align-self: end; margin-bottom: 20px")
+        self._calculate_button.set_style("margin-bottom: 20px")
         self._calculate_button.onclick.do(
             lambda w: calculate(self._calculation_input))
 
@@ -233,7 +234,10 @@ class SimpleMainForm(VBox):
         self.check_files()
 
     def _on_date_change(self, widget, value: str):
-        self._date = date.fromisoformat(value)
+        if value is not '' and value is not None:
+            self._date = date.fromisoformat(value)
+        else:
+            self._date = None
         self.check_files()
 
     def check_files(self):
@@ -321,9 +325,11 @@ class ResultWidget(VBox):
 
         spectrum_plot, spectrum_correction_plot = result.to_plots(PLOT_DIR)
         pic = gui.Image("/plots:" + spectrum_plot)
+        pic.set_style("width: 50%")
         hbox.append(pic)
 
         pic = gui.Image("/plots:" + spectrum_correction_plot)
+        pic.set_style("width: 50%")
         hbox.append(pic)
         vbox.append(hbox)
 

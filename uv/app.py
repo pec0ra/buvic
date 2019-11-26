@@ -1,9 +1,11 @@
+import os
 import traceback
 from concurrent.futures import ThreadPoolExecutor
 from typing import List
 
 import remi.gui as gui
-from remi import App
+from remi import App, Label
+from remi.gui import VBox
 
 from uv.logic.calculation_input import CalculationInput
 from .const import PLOT_DIR
@@ -13,8 +15,15 @@ from .logic.irradiance_evaluation import IrradianceEvaluation, Result
 
 
 class UVApp(App):
+    _main_container: VBox
+    _main_form: SimpleMainForm
+    _loader: Loader
+    _result_container: ResultWidget
+    _error_label: Label
+
     def __init__(self, *args):
         super(UVApp, self).__init__(*args, static_file_path={'plots': PLOT_DIR})
+
         self._executor = ThreadPoolExecutor(1)
         self.uv_file = None
         self.calibration_file = None
@@ -22,41 +31,48 @@ class UVApp(App):
         self.b_file = None
 
     def main(self):
-        self.main_container = gui.VBox(width="80%")
-        self.main_container.set_style("margin: 30px auto; padding: 20px")
+        self._main_container = gui.VBox(width="80%")
+        self._main_container.set_style("margin: 30px auto; padding: 20px")
 
-        self.title = Title(Level.H1, "Irradiance calculation")
+        title = Title(Level.H1, "Irradiance calculation")
 
-        self.main_form = SimpleMainForm(self.calculate)
+        self._main_form = SimpleMainForm(self.calculate)
 
-        self.loader = Loader()
+        self._loader = Loader()
 
-        self.result_container = ResultWidget()
+        self._result_container = ResultWidget()
 
-        self.main_container.append(self.title)
-        self.main_container.append(self.loader)
-        self.main_container.append(self.main_form)
-        self.main_container.append(self.result_container)
+        self._main_container.append(title)
+        self._main_container.append(self._loader)
+        self._main_container.append(self._main_form)
+        self._main_container.append(self._result_container)
 
-        self.error_label = gui.Label("")
-        self.error_label.set_style("color: #E00; font-size: 12pt; font-weight: bold")
-        hide(self.error_label)
-        self.main_container.append(self.error_label)
+        self._error_label = gui.Label("")
+        self._error_label.set_style("color: #E00; font-size: 12pt; font-weight: bold")
+        hide(self._error_label)
+        self._main_container.append(self._error_label)
 
         # returning the root widget
-        return self.main_container
+        return self._main_container
 
     def calculate(self, calculation_input: CalculationInput):
         self.reset_errors()
-        self.loader.set_progress(0)
-        self.loader.set_label("Calculating...")
-        show(self.loader)
-        hide(self.main_form)
-        hide(self.result_container)
+        self._loader.set_progress(0)
+        self._loader.set_label("Calculating...")
+        show(self._loader)
+        hide(self._main_form)
+        hide(self._result_container)
 
-        ie = IrradianceEvaluation(calculation_input,
-                                  progress_handler=self.progress_handler)
-        self._executor.submit(self.start_calculation, ie)
+        try:
+
+            self._check_input(calculation_input)
+
+            ie = IrradianceEvaluation(calculation_input,
+                                      progress_handler=self.progress_handler)
+            self._executor.submit(self.start_calculation, ie)
+        except Exception as e:
+            traceback.print_tb(e.__traceback__)
+            self.show_error(str(e))
 
     def start_calculation(self, ie: IrradianceEvaluation):
         try:
@@ -68,34 +84,59 @@ class UVApp(App):
             raise e
 
     def reset_errors(self):
-        hide(self.error_label)
-        self.error_label.set_text("")
+        hide(self._error_label)
+        self._error_label.set_text("")
 
     def progress_handler(self, current_progress: int, total_progress: int):
         if total_progress == 0:
-            self.loader.set_progress(0)
+            self._loader.set_progress(0)
         else:
             value = int(current_progress * 50 / total_progress)
-            self.loader.set_progress(value)
+            self._loader.set_progress(value)
 
     def show_result(self, results: List[Result]):
-        self.loader.set_label("Generating result files...")
-        self.loader.set_progress(50)
+        self._loader.set_label("Generating result files...")
+        self._loader.set_progress(50)
 
-        self.result_container.display(results, self.progress_handler)
+        self._result_container.display(results, self.progress_handler)
 
-        self.main_form.check_files()
-        hide(self.loader)
-        show(self.main_form)
-        show(self.result_container)
+        self._main_form.check_files()
+        hide(self._loader)
+        show(self._main_form)
+        show(self._result_container)
 
     def show_error(self, error: str):
-        self.main_form.check_files()
-        hide(self.result_container)
-        hide(self.loader)
-        show(self.main_form)
-        show(self.error_label)
+        self._main_form.check_files()
+        hide(self._result_container)
+        hide(self._loader)
+        show(self._main_form)
+        show(self._error_label)
         if error is not None:
-            self.error_label.set_text(error)
+            self._error_label.set_text(error)
         else:
             print("Error is None")
+
+    @staticmethod
+    def _check_input(calculation_input: CalculationInput):
+        if calculation_input is None:
+            raise ValueError("Unexpected error: form data could not be read correctly. Please try again")
+        if calculation_input.measurement_date is None:
+            raise ValueError("Unexpected error: Measurement date has not been correctly set")
+
+        if calculation_input.uv_file_name is None:
+            raise ValueError("Unexpected error: UV File name could not be set correctly")
+        if calculation_input.calibration_file_name is None:
+            raise ValueError("Unexpected error: UVR File name could not be set correctly")
+        if calculation_input.b_file_name is None:
+            raise ValueError("Unexpected error: B File name could not be set correctly")
+        if calculation_input.arf_file_name is None:
+            raise ValueError("Unexpected error: ARF File name could not be set correctly")
+
+        if not os.path.exists(calculation_input.uv_file_name):
+            raise ValueError("UV File name could not be find for the given brewer id and date")
+        if not os.path.exists(calculation_input.calibration_file_name):
+            raise ValueError("UVR File name could not be find for the given brewer id")
+        if not os.path.exists(calculation_input.b_file_name):
+            raise ValueError("B File name could not be find for the given brewer id and date")
+        if not os.path.exists(calculation_input.arf_file_name):
+            raise ValueError("ARF File name could not be find for the given brewer id")
