@@ -26,6 +26,7 @@ RUN mkdir -p /opt/ \
 ENV PATH /opt/libRadtran/bin:$PATH
 
 COPY requirements.txt ./
+COPY lib ./lib
 
 RUN pip3 install -r requirements.txt
 
