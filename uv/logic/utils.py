@@ -28,7 +28,7 @@ def time_to_minutes(t: time) -> float:
     return td.seconds / 60
 
 
-def create_spectrum_plots(saving_dir: str, result) -> Tuple[str, str]:
+def create_spectrum_plots(saving_dir: str, result, file_type: str = "png") -> Tuple[str, str]:
     fig, ax = plt.subplots()
     ax.set(xlabel="Wavelength (nm)", ylabel="Irradiance (Wm-2 nm-1)")
     ax.grid()
@@ -38,7 +38,7 @@ def create_spectrum_plots(saving_dir: str, result) -> Tuple[str, str]:
     ax.semilogy(result.spectrum.wavelengths, result.spectrum.cos_corrected_spectrum, label="Cos corrected spectrum")
 
     ax.legend()
-    file_path = result.get_name("spectrum_", ".png")
+    file_path = result.get_name("spectrum_", "." + file_type)
     fig.savefig(saving_dir + file_path)
     plt.close()
 
@@ -49,7 +49,7 @@ def create_spectrum_plots(saving_dir: str, result) -> Tuple[str, str]:
     ax.plot(result.spectrum.wavelengths, result.spectrum.cos_correction, label="Correction factor")
 
     ax.legend()
-    file_path_correction = result.get_name("spectrum_", "_correction.png")
+    file_path_correction = result.get_name("spectrum_", "_correction." + file_type)
     fig.savefig(saving_dir + file_path_correction)
     plt.close()
 
