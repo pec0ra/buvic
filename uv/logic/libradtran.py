@@ -8,7 +8,7 @@ from enum import Enum
 from subprocess import PIPE, run
 from typing import List, Dict, Any
 
-from ..const import LIBRADTRAN_COMMAND
+from ..const import LIBRADTRAN_COMMAND, TMP_FILE_DIR
 
 
 class Libradtran:
@@ -77,7 +77,7 @@ class Libradtran:
         """
 
         # Generate a unique file name
-        file_name = "input_" + str(uuid.uuid4()) + ".in"
+        file_name = TMP_FILE_DIR + "input_" + str(uuid.uuid4()) + ".in"
 
         with open(file_name, "w") as input_file:
             # Write static content to the file

@@ -1,5 +1,5 @@
 TMP_FILE_DIR = "tmp/"
-PLOT_DIR = "plots/"
+OUTPUT_DIR = "out/"
 DATA_DIR = "data/"
 
 LIBRADTRAN_COMMAND = "docker run -i siarhei/libradtran uvspec"

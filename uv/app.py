@@ -10,7 +10,7 @@ from remi.gui import VBox
 
 from uv.logic.calculation_input import CalculationInput
 from uv.logic.result import Result
-from .const import PLOT_DIR
+from .const import OUTPUT_DIR
 from .gui.utils import show, hide
 from .gui.widgets import Title, Level, Loader, PathMainForm, SimpleMainForm, ResultWidget, ExtraParamForm
 from .logic.irradiance_calculation import IrradianceCalculation
@@ -27,7 +27,7 @@ class UVApp(App):
     _error_label: Label
 
     def __init__(self, *args):
-        super(UVApp, self).__init__(*args, static_file_path={'plots': PLOT_DIR})
+        super(UVApp, self).__init__(*args, static_file_path={'plots': OUTPUT_DIR})
 
         rcParams.update({'figure.autolayout': True})
         rcParams['figure.figsize'] = 9, 6

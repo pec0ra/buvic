@@ -7,7 +7,7 @@ from matplotlib import rcParams
 from uv.const import DEFAULT_ALBEDO_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE
 from uv.logic.calculation_input import CalculationInput
 from uv.logic.irradiance_calculation import IrradianceCalculation
-from uv.logic.utils import create_sza_plot, create_spectrum_plots
+from uv.logic.utils import create_sza_plot, create_spectrum_plots, create_csv
 
 rcParams.update({'figure.autolayout': True})
 rcParams['figure.figsize'] = 10, 7
@@ -15,7 +15,7 @@ rcParams['figure.figsize'] = 10, 7
 pp = PrettyPrinter(indent=2)
 
 DEFAULT_DATA_DIR = "data/"
-DEFAULT_PLOT_OUTPUT = "plots/"
+DEFAULT_OUTPUT = "out/"
 
 parser = ArgumentParser(description="Calculate irradiance spectra")
 group = parser.add_mutually_exclusive_group(required=True)
@@ -28,7 +28,7 @@ group.add_argument("--paths", "-p", nargs=4, metavar=("UV_FILE", "B_FILE", "UVR_
                         "data. ARF_FILE: The file containing the arf data")
 
 parser.add_argument("--input_dir", "-i", help="The directory get the files from")
-parser.add_argument("--plot_output", "-o", help="The directory to save the plots in", default=DEFAULT_PLOT_OUTPUT)
+parser.add_argument("--output_dir", "-o", help="The directory to save the results in", default=DEFAULT_OUTPUT)
 parser.add_argument("--albedo", "-a", type=float, help="The albedo value to use for the calculations",
                     default=DEFAULT_ALBEDO_VALUE)
 parser.add_argument("--aerosol", "-e", type=float, nargs=2, metavar=("ALPHA", "BETA"),
@@ -41,7 +41,7 @@ pp.pprint(vars(args))
 days_and_brewer_id = args.days_and_brewer_id
 albedo = args.albedo
 aerosol = args.aerosol
-plot_output_dir = args.plot_output
+output_dir = args.output_dir
 input_dir = args.input_dir
 if days_and_brewer_id:
     if input_dir is None:
@@ -72,10 +72,11 @@ else:
 ie = IrradianceCalculation(calculation_input)
 results = ie.calculate()
 
-if not os.path.exists(plot_output_dir):
-    os.makedirs(plot_output_dir)
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
 
 for result in results:
-    create_spectrum_plots(plot_output_dir, result, "svg")
+    create_csv(output_dir, result)
+    create_spectrum_plots(output_dir, result, "svg")
 
-create_sza_plot(plot_output_dir, results, "svg")
+create_sza_plot(output_dir, results, "svg")

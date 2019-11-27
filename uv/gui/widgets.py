@@ -10,9 +10,9 @@ import remi.gui as gui
 from uv.logic.result import Result
 from .utils import show, hide
 from ..brewer_infos import brewer_infos
-from ..const import TMP_FILE_DIR, DATA_DIR, PLOT_DIR, DEFAULT_BETA_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_ALBEDO_VALUE
+from ..const import TMP_FILE_DIR, DATA_DIR, OUTPUT_DIR, DEFAULT_BETA_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_ALBEDO_VALUE
 from ..logic.calculation_input import CalculationInput
-from ..logic.utils import create_spectrum_plots, create_sza_plot
+from ..logic.utils import create_spectrum_plots, create_sza_plot, create_csv
 
 
 class Button(gui.Button):
@@ -378,7 +378,7 @@ class ResultWidget(VBox):
         self.empty()
         self.append(self.result_title)
 
-        sza_correction_plot = create_sza_plot(PLOT_DIR, results)
+        sza_correction_plot = create_sza_plot(OUTPUT_DIR, results)
         pic = ImagePlot(sza_correction_plot)
         self.append(pic)
 
@@ -419,17 +419,15 @@ class ResultWidget(VBox):
         info = ResultInfo("Ozone", result.ozone.interpolated_value(time))
         vbox.append(info)
 
-        file_name = TMP_FILE_DIR + result.get_name("spectrum_", ".csv")
-        with open(file_name, "w") as csv_file:
-            result.to_csv(csv_file)
+        file_name = create_csv(OUTPUT_DIR, result)
 
-        download_button = gui.FileDownloader("Download as csv", file_name, width=130)
+        download_button = gui.FileDownloader("Download as csv", OUTPUT_DIR + file_name, width=130)
         download_button.set_style("margin-bottom: 10px; margin-top: 5px; color: rgb(4, 90, 188)")
         vbox.append(download_button)
 
         hbox = gui.HBox()
 
-        spectrum_plot, spectrum_correction_plot = create_spectrum_plots(PLOT_DIR, result)
+        spectrum_plot, spectrum_correction_plot = create_spectrum_plots(OUTPUT_DIR, result)
         pic = ImagePlot(spectrum_plot)
         hbox.append(pic)
 

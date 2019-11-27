@@ -51,6 +51,13 @@ def time_to_minutes(t: time) -> float:
     return td.seconds / 60
 
 
+def create_csv(saving_dir: str, result: Result) -> str:
+    file_name = result.get_name("spectrum_", ".csv")
+    with open(saving_dir + file_name, "w") as csv_file:
+        result.to_csv(csv_file)
+    return file_name
+
+
 def create_spectrum_plots(saving_dir: str, result: Result, file_type: str = "png") -> Tuple[str, str]:
     """
     Plots the correction factor and the uv spectrum against wavelengths.
