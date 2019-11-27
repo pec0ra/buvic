@@ -195,7 +195,8 @@ class IrradianceEvaluation:
         libradtran.add_input(LibradtranInput.PRESSURE, [uv_file_header.pressure])
 
         libradtran.add_input(LibradtranInput.ALBEDO, [self._calculation_input.albedo])
-        libradtran.add_input(LibradtranInput.AEROSOL, [self._calculation_input.aerosol[0], self._calculation_input.aerosol[1]])
+        libradtran.add_input(LibradtranInput.AEROSOL,
+                             [self._calculation_input.aerosol[0], self._calculation_input.aerosol[1]])
 
         libradtran.add_outputs(["sza", "edir", "edn", "eglo"])
         result = libradtran.calculate()

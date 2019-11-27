@@ -375,24 +375,24 @@ class ImagePlot(gui.Image):
 class ExtraParamForm(gui.HBox):
     _handler: Callable[[float, Tuple[float, float]], None] = None
 
-    _albedo: float = 0
-    _alpha: float = 1.3
-    _beta: float = 0.01
+    _albedo: float = DEFAULT_ALBEDO_VALUE
+    _alpha: float = DEFAULT_ALPHA_VALUE
+    _beta: float = DEFAULT_BETA_VALUE
 
     def __init__(self):
         super().__init__()
         self.set_style("margin-bottom: 15px")
-        albedo_spin = gui.SpinBox(0, 0, 1, 0.01)
+        albedo_spin = gui.SpinBox(DEFAULT_ALBEDO_VALUE, 0, 1, 0.01)
         albedo_spin.onchange.do(self._on_albedo_change)
         albedo_input = Input("Albedo", albedo_spin)
         self.append(albedo_input)
 
         aerosol = gui.HBox()
         aerosol.set_style("justify-content: stretch; width: 100%")
-        alpha_spin = gui.SpinBox(1.3, 0, 2, 0.01)
+        alpha_spin = gui.SpinBox(DEFAULT_ALPHA_VALUE, 0, 2, 0.01)
         alpha_spin.set_style("width: 120px; height: 25px")
         alpha_spin.onchange.do(self._on_alpha_change)
-        beta_spin = gui.SpinBox(0.01, 0, 1.5, 0.01)
+        beta_spin = gui.SpinBox(DEFAULT_BETA_VALUE, 0, 1.5, 0.01)
         beta_spin.set_style("width: 120px; height: 25px")
         beta_spin.onchange.do(self._on_beta_change)
         alpha_label = gui.Label("α:")
