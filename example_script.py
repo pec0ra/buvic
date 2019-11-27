@@ -5,6 +5,7 @@ from shutil import rmtree
 
 from matplotlib import rcParams
 
+from uv.const import DEFAULT_ALBEDO_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE
 from uv.logic.irradiance_evaluation import IrradianceEvaluation
 from uv.logic.calculation_input import CalculationInput
 from uv.logic.utils import create_sza_plot, create_spectrum_plots
@@ -18,12 +19,20 @@ plot_output_dir = "plots/"
 if len(sys.argv) <= 4:
     days = int(sys.argv[1])
     brewer_id = sys.argv[2]
-    calculation_input = CalculationInput.from_days_and_bid(DATA_DIR, brewer_id, days)
+    calculation_input = CalculationInput.from_days_and_bid(
+        DEFAULT_ALBEDO_VALUE,
+        (DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE),
+        DATA_DIR,
+        brewer_id,
+        days
+    )
 
     if len(sys.argv) > 3:
         plot_output_dir = sys.argv[3]
 else:
     calculation_input = CalculationInput(
+        DEFAULT_ALBEDO_VALUE,
+        (DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE),
         date.today(),
         sys.argv[1],
         sys.argv[2],

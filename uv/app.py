@@ -11,12 +11,13 @@ from remi.gui import VBox
 from uv.logic.calculation_input import CalculationInput
 from .const import PLOT_DIR
 from .gui.utils import show, hide
-from .gui.widgets import Title, Level, Loader, ExpertMainForm, SimpleMainForm, ResultWidget
+from .gui.widgets import Title, Level, Loader, ExpertMainForm, SimpleMainForm, ResultWidget, ExtraParamForm
 from .logic.irradiance_evaluation import IrradianceEvaluation, Result
 
 
 class UVApp(App):
     _main_container: VBox
+    _extra_param_form: ExtraParamForm
     _main_form: SimpleMainForm
     _secondary_form: ExpertMainForm
     _loader: Loader
@@ -49,11 +50,16 @@ class UVApp(App):
         form_selection_checkbox.onchange.do(self._form_selection_change)
         self._forms.append(form_selection_checkbox)
 
+        self._extra_param_form = ExtraParamForm()
+        self._forms.append(self._extra_param_form)
+
         self._main_form = SimpleMainForm(self.calculate)
         self._secondary_form = ExpertMainForm(self.calculate)
         hide(self._secondary_form)
         self._forms.append(self._main_form)
         self._forms.append(self._secondary_form)
+
+        self._extra_param_form.register_handler(self._main_form.handle_extra_params)
 
         self._loader = Loader()
 
@@ -139,9 +145,11 @@ class UVApp(App):
         if value:
             hide(self._main_form)
             show(self._secondary_form)
+            self._extra_param_form.register_handler(self._secondary_form.handle_extra_params)
         else:
             show(self._main_form)
             hide(self._secondary_form)
+            self._extra_param_form.register_handler(self._main_form.handle_extra_params)
 
     @staticmethod
     def _check_input(calculation_input: CalculationInput):

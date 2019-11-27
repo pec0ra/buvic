@@ -4,7 +4,6 @@ import csv
 import warnings
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from datetime import date
 from threading import Lock
 from typing import List, Callable, TextIO
 
@@ -38,12 +37,8 @@ class IrradianceEvaluation:
         for the parsing of the ARF file
         :param calculation_input: the object containing the required file names
         """
-        self._measurement_date = calculation_input.measurement_date
-        self._uv_file_name = calculation_input.uv_file_name
-        self._calibration_file_name = calculation_input.calibration_file_name
-        self._arf_file_name = calculation_input.arf_file_name
-        self._arf_direction = calculation_input.arf_direction
-        self._ozone = read_ozone_from_b_file(calculation_input.b_file_name)
+        self._calculation_input = calculation_input
+        self._ozone = read_ozone_from_b_file(self._calculation_input.b_file_name)
 
         self._progress_handler = progress_handler
         self._progress_lock = Lock()
@@ -55,9 +50,9 @@ class IrradianceEvaluation:
         Parse the files into spectra
         :return: a list of spectrum
         """
-        uv_file_reader = UVFileReader(self._uv_file_name)
-        calibration = read_calibration_file(self._calibration_file_name)
-        arf = read_arf_file(self._arf_file_name, self._arf_direction)
+        uv_file_reader = UVFileReader(self._calculation_input.uv_file_name)
+        calibration = read_calibration_file(self._calculation_input.calibration_file_name)
+        arf = read_arf_file(self._calculation_input.arf_file_name, self._calculation_input.arf_direction)
 
         uv_file_entries = uv_file_reader.get_uv_file_entries()
         self._init_progress(len(uv_file_entries) + 1)
@@ -85,7 +80,7 @@ class IrradianceEvaluation:
             )
             results.append(Result(
                 i,
-                self._measurement_date,
+                self._calculation_input,
                 self._get_sza(libradtran_result),
                 self._ozone,
                 spectrum,
@@ -198,6 +193,9 @@ class IrradianceEvaluation:
         ])
 
         libradtran.add_input(LibradtranInput.PRESSURE, [uv_file_header.pressure])
+
+        libradtran.add_input(LibradtranInput.ALBEDO, [self._calculation_input.albedo])
+        libradtran.add_input(LibradtranInput.AEROSOL, [self._calculation_input.aerosol[0], self._calculation_input.aerosol[1]])
 
         libradtran.add_outputs(["sza", "edir", "edn", "eglo"])
         result = libradtran.calculate()
@@ -322,7 +320,7 @@ class Spectrum:
 @dataclass
 class Result:
     index: int
-    measurement_date: date
+    calculation_input: CalculationInput
     sza: float
     ozone: Ozone
     spectrum: Spectrum
@@ -347,4 +345,5 @@ class Result:
 
     def get_name(self, prefix: str, suffix: str):
         bid = self.uv_file_entry.brewer_info.id
-        return prefix + bid + "_" + self.measurement_date.isoformat().replace('-', '') + "_" + str(self.index) + suffix
+        return prefix + bid + "_" + self.calculation_input.measurement_date.isoformat().replace('-', '') + "_" + str(
+            self.index) + "_" + self.calculation_input.to_hash() + suffix

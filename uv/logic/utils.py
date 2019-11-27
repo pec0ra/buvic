@@ -73,8 +73,8 @@ def create_sza_plot(saving_dir: str, results: List[Any], file_type: str = "png")
     plt.title("Correction factor")
     ax.legend()
     bid = results[0].uv_file_entry.brewer_info.id
-    sza_plot_name_correction = "correction_" + bid + "_" + results[0].measurement_date.isoformat().replace('-',
-                                                                                                           '') + "." + file_type
+    sza_plot_name_correction = "correction_" + bid + "_" + results[0].calculation_input.measurement_date.isoformat().replace('-',
+                                                                                                           '') + "_" + results[0].calculation_input.to_hash() + "." + file_type
     fig.savefig(saving_dir + sza_plot_name_correction)
 
     return sza_plot_name_correction
