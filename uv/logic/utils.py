@@ -1,10 +1,18 @@
 from datetime import timedelta, date, time
-from typing import Tuple, List, Any
+from typing import Tuple, List
 
 import matplotlib.pyplot as plt
 
+from .result import Result
+
 
 def days_to_date(days: int, year: int) -> date:
+    """
+    Converts a number of days since new year and a year to a date object
+    :param days: the number of days since new year
+    :param year: the year
+    :return: the date
+    """
     if days < 1 or days > 366:
         raise ValueError("Days must be between 1 and 365")
     if year < 2000:
@@ -13,10 +21,20 @@ def days_to_date(days: int, year: int) -> date:
 
 
 def date_to_days(d: date) -> int:
+    """
+    Converts a date object to the number of days since new year (January 1st is 1)
+    :param d: the date to convert
+    :return: the number of days
+    """
     return d.timetuple().tm_yday
 
 
 def minutes_to_time(minutes: float) -> time:
+    """
+    Converts a number of minutes since midnight to a time object
+    :param minutes: the number of minutes since midnight
+    :return: the time object
+    """
     td = timedelta(minutes=minutes)
     hours, remainder = divmod(td.seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
@@ -24,11 +42,31 @@ def minutes_to_time(minutes: float) -> time:
 
 
 def time_to_minutes(t: time) -> float:
+    """
+    Converts a time object to minutes since midnight
+    :param t: the time to convert
+    :return: the number of minutes since midnight
+    """
     td = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
     return td.seconds / 60
 
 
-def create_spectrum_plots(saving_dir: str, result, file_type: str = "png") -> Tuple[str, str]:
+def create_spectrum_plots(saving_dir: str, result: Result, file_type: str = "png") -> Tuple[str, str]:
+    """
+    Plots the correction factor and the uv spectrum against wavelengths.
+
+    This creates two plot:
+        1. the UV spectrum (both cos corrected and non cos corrected) against wavelengths
+        2. the correction factor against the wavelengths
+
+    This gets the required data from the given result and saves the plots in the given directory with the given
+    format
+
+    :param saving_dir: the directory to save the plots in
+    :param result: the result to get the data from
+    :param file_type: the extension of the plots to save (e.g. 'png', 'svg', 'pdf')
+    :return: the file names of the created plots
+    """
     fig, ax = plt.subplots()
     ax.set(xlabel="Wavelength (nm)", ylabel="Irradiance (Wm-2 nm-1)")
     ax.grid()
@@ -40,7 +78,7 @@ def create_spectrum_plots(saving_dir: str, result, file_type: str = "png") -> Tu
     ax.legend()
     file_path = result.get_name("spectrum_", "." + file_type)
     fig.savefig(saving_dir + file_path)
-    plt.close()
+    plt.close(fig)
 
     fig, ax = plt.subplots()
     ax.set(xlabel="Wavelength (nm)", ylabel="Correction factor")
@@ -51,13 +89,23 @@ def create_spectrum_plots(saving_dir: str, result, file_type: str = "png") -> Tu
     ax.legend()
     file_path_correction = result.get_name("spectrum_", "_correction." + file_type)
     fig.savefig(saving_dir + file_path_correction)
-    plt.close()
+    plt.close(fig)
 
     return file_path, file_path_correction
 
 
-def create_sza_plot(saving_dir: str, results: List[Any], file_type: str = "png") -> str:
-    # sorted_results = sorted(results, key=lambda x: x.sza)[:-1]
+def create_sza_plot(saving_dir: str, results: List[Result], file_type: str = "png") -> str:
+    """
+    Plots the correction factor against solar zenith angles.
+
+    This gets the required data from the given result list and saves the plot in the given directory with the given
+    format
+
+    :param saving_dir: the directory to save the plot in
+    :param results: the list of results to get the data from
+    :param file_type: the extension of the plot to save (e.g. 'png', 'svg', 'pdf')
+    :return: the file name of the created plot
+    """
     wavelengths = [295, 310, 325]
 
     sorted_results = sorted(results, key=lambda x: x.sza)
@@ -74,8 +122,8 @@ def create_sza_plot(saving_dir: str, results: List[Any], file_type: str = "png")
     ax.legend()
     bid = results[0].uv_file_entry.brewer_info.id
     sza_plot_name_correction = "correction_" + bid + "_" + results[
-        0].calculation_input.measurement_date.isoformat().replace('-',
-                                                                  '') + "_" + results[
+        0].uv_file_entry.header.date.isoformat().replace('-',
+                                                         '') + "_" + results[
                                    0].calculation_input.to_hash() + "." + file_type
     fig.savefig(saving_dir + sza_plot_name_correction)
 

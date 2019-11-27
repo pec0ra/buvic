@@ -1,13 +1,12 @@
 import os
 from argparse import ArgumentParser
-from datetime import date
 from pprint import PrettyPrinter
 
 from matplotlib import rcParams
 
 from uv.const import DEFAULT_ALBEDO_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE
 from uv.logic.calculation_input import CalculationInput
-from uv.logic.irradiance_evaluation import IrradianceEvaluation
+from uv.logic.irradiance_calculation import IrradianceCalculation
 from uv.logic.utils import create_sza_plot, create_spectrum_plots
 
 rcParams.update({'figure.autolayout': True})
@@ -64,14 +63,13 @@ else:
     calculation_input = CalculationInput(
         albedo,
         aerosol,
-        date.today(),
         input_dir + paths[0],
         input_dir + paths[1],
         input_dir + paths[2],
         input_dir + paths[3]
     )
 
-ie = IrradianceEvaluation(calculation_input)
+ie = IrradianceCalculation(calculation_input)
 results = ie.calculate()
 
 if not os.path.exists(plot_output_dir):

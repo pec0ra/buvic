@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import csv
 import warnings
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
 from threading import Lock
-from typing import List, Callable, TextIO
+from typing import List, Callable
 
 from numpy import multiply, divide, sin, add, pi, mean, exp, maximum, linspace, trapz, cos, isnan
 from scipy.interpolate import UnivariateSpline
@@ -15,11 +13,12 @@ from .b_file import read_ozone_from_b_file, Ozone
 from .calculation_input import CalculationInput
 from .calibration_file import read_calibration_file
 from .libradtran import Libradtran, LibradtranInput, LibradtranResult
+from .result import Result, Spectrum
 from .utils import minutes_to_time
 from .uv_file import UVFileReader, UVFileEntry
 
 
-class IrradianceEvaluation:
+class IrradianceCalculation:
     """
     A utility to calculate and correct irradiance.
 
@@ -27,19 +26,25 @@ class IrradianceEvaluation:
     a calibration file and an arf file to apply the required corrections.
     """
 
+    _calculation_input: CalculationInput
+    _ozone: Ozone
+    _progress_handler: Callable[[int, int], None] or None
+    _progress_lock: Lock
+    _current_progress: int
+    _total_progress: int
+
     def __init__(
             self,
             calculation_input: CalculationInput,
             progress_handler: Callable[[int, int], None] = None
     ):
         """
-        Create an instance from the name of a uv file, a B file, a calibration file and an ARF file and an optional direction
-        for the parsing of the ARF file
-        :param calculation_input: the object containing the required file names
+        Create an instance from a given CalculationInput
+
+        :param calculation_input: the object containing the file names and data required for the calculations
+        :param progress_handler: a method to call every time the calculation makes progress
         """
         self._calculation_input = calculation_input
-        self._ozone = read_ozone_from_b_file(self._calculation_input.b_file_name)
-
         self._progress_handler = progress_handler
         self._progress_lock = Lock()
         self._current_progress: int = 0
@@ -51,6 +56,7 @@ class IrradianceEvaluation:
         :return: a list of spectrum
         """
         uv_file_reader = UVFileReader(self._calculation_input.uv_file_name)
+        self._ozone = read_ozone_from_b_file(self._calculation_input.b_file_name)
         calibration = read_calibration_file(self._calculation_input.calibration_file_name)
         arf = read_arf_file(self._calculation_input.arf_file_name, self._calculation_input.arf_direction)
 
@@ -184,7 +190,7 @@ class IrradianceEvaluation:
         libradtran.add_input(LibradtranInput.OZONE, [self._ozone.interpolated_value(minutes)])
 
         libradtran.add_input(LibradtranInput.TIME, [
-            uv_file_header.date.year + 2000,
+            uv_file_header.date.year,
             uv_file_header.date.month,
             uv_file_header.date.day,
             time.hour,
@@ -306,45 +312,3 @@ class IrradianceEvaluation:
             with self._progress_lock:
                 self._current_progress += 1
                 self._progress_handler(self._current_progress, self._total_progress)
-
-
-@dataclass
-class Spectrum:
-    wavelengths: List[float]
-    measurement_times: List[float]
-    uv_raw_values: List[float]
-    original_spectrum: List[float]
-    cos_corrected_spectrum: List[float]
-    cos_correction: List[float]
-
-
-@dataclass
-class Result:
-    index: int
-    calculation_input: CalculationInput
-    sza: float
-    ozone: Ozone
-    spectrum: Spectrum
-    uv_file_entry: UVFileEntry
-
-    def to_csv(self, file: TextIO) -> None:
-        writer = csv.writer(file)
-        writer.writerow(
-            ["wavelength", "Measurement raw value", "Spectrum (Non COS corrected)", "COS corrected spectrum",
-             "COS correction factor"])
-
-        cos_correction_no_nan = self.spectrum.cos_correction.copy()
-        cos_correction_no_nan[isnan(cos_correction_no_nan)] = 1
-        for i in range(len(self.spectrum.wavelengths)):
-            writer.writerow([
-                self.spectrum.wavelengths[i],
-                self.spectrum.uv_raw_values[i],
-                self.spectrum.original_spectrum[i],
-                self.spectrum.cos_corrected_spectrum[i],
-                cos_correction_no_nan[i]
-            ])
-
-    def get_name(self, prefix: str, suffix: str):
-        bid = self.uv_file_entry.brewer_info.id
-        return prefix + bid + "_" + self.calculation_input.measurement_date.isoformat().replace('-', '') + "_" + str(
-            self.index) + "_" + self.calculation_input.to_hash() + suffix

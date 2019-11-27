@@ -10,6 +10,6 @@ libradtran.add_output("lambda")
 libradtran.add_output("edir")
 libradtran.add_output("eglo")
 libradtran.add_output("sza")
-libradtran_result = libradtran.calculate()
+libradtran_result = libradtran._calculate()
 
 print(libradtran_result.columns["sza"])

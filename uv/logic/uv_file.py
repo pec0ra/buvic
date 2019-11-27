@@ -167,7 +167,7 @@ class UVFileHeader:
         self.integration_time = float(res.group('integration_time'))
         self.dead_time = float(res.group('dead_time'))
         self.cycles = int(res.group('cycles'))
-        self.date = date(int(res.group('year')), int(res.group('month')), int(res.group('day')))
+        self.date = date(int(2000 + int(res.group('year'))), int(res.group('month')), int(res.group('day')))
         self.place = res.group('place')
         self.position = Position(float(res.group('latitude')), float(res.group('longitude')))
         self.temperature = float(res.group('temperature'))  # TODO: Temperature might need a conversion

@@ -9,17 +9,19 @@ from remi import App, Label
 from remi.gui import VBox
 
 from uv.logic.calculation_input import CalculationInput
+from uv.logic.result import Result
 from .const import PLOT_DIR
 from .gui.utils import show, hide
-from .gui.widgets import Title, Level, Loader, ExpertMainForm, SimpleMainForm, ResultWidget, ExtraParamForm
-from .logic.irradiance_evaluation import IrradianceEvaluation, Result
+from .gui.widgets import Title, Level, Loader, PathMainForm, SimpleMainForm, ResultWidget, ExtraParamForm
+from .logic.irradiance_calculation import IrradianceCalculation
 
 
 class UVApp(App):
     _main_container: VBox
+    _forms: VBox
     _extra_param_form: ExtraParamForm
     _main_form: SimpleMainForm
-    _secondary_form: ExpertMainForm
+    _secondary_form: PathMainForm
     _loader: Loader
     _result_container: ResultWidget
     _error_label: Label
@@ -47,19 +49,19 @@ class UVApp(App):
 
         form_selection_checkbox = gui.CheckBoxLabel("Manual mode")
         form_selection_checkbox.set_style("align-self: flex-start; margin-bottom: 20px")
-        form_selection_checkbox.onchange.do(self._form_selection_change)
+        form_selection_checkbox.onchange.do(self._on_form_selection_change)
         self._forms.append(form_selection_checkbox)
 
         self._extra_param_form = ExtraParamForm()
         self._forms.append(self._extra_param_form)
 
-        self._main_form = SimpleMainForm(self.calculate)
-        self._secondary_form = ExpertMainForm(self.calculate)
+        self._main_form = SimpleMainForm(self._calculate)
+        self._secondary_form = PathMainForm(self._calculate)
         hide(self._secondary_form)
         self._forms.append(self._main_form)
         self._forms.append(self._secondary_form)
 
-        self._extra_param_form.register_handler(self._main_form.handle_extra_params)
+        self._extra_param_form.register_handler(self._main_form.extra_param_change_callback)
 
         self._loader = Loader()
 
@@ -78,8 +80,13 @@ class UVApp(App):
         # returning the root widget
         return self._main_container
 
-    def calculate(self, calculation_input: CalculationInput):
-        self.reset_errors()
+    def _calculate(self, calculation_input: CalculationInput) -> None:
+        """
+        Start the calculation in a background thread for a given input
+        :param calculation_input: the input to calculate
+        """
+
+        self._reset_errors()
         self._loader.set_progress(0)
         self._loader.set_label("Calculating...")
         show(self._loader)
@@ -87,51 +94,50 @@ class UVApp(App):
         hide(self._result_container)
 
         try:
-
             self._check_input(calculation_input)
 
-            ie = IrradianceEvaluation(calculation_input,
-                                      progress_handler=self.progress_handler)
-            self._executor.submit(self.start_calculation, ie)
+            ie = IrradianceCalculation(calculation_input,
+                                       progress_handler=self._progress_handler)
+            self._executor.submit(self._start_calculation, ie)
         except Exception as e:
             traceback.print_tb(e.__traceback__)
-            self.show_error(str(e))
+            self._show_error(str(e))
 
-    def start_calculation(self, ie: IrradianceEvaluation):
+    def _start_calculation(self, ie: IrradianceCalculation):
         try:
             result = ie.calculate()
-            self.show_result(result)
+            self._show_result(result)
         except Exception as e:
             traceback.print_tb(e.__traceback__)
-            self.show_error(str(e))
+            self._show_error(str(e))
             raise e
 
-    def reset_errors(self):
+    def _reset_errors(self):
         hide(self._error_label)
         self._error_label.set_text("")
 
-    def progress_handler(self, current_progress: int, total_progress: int):
+    def _progress_handler(self, current_progress: int, total_progress: int):
         if total_progress == 0:
             self._loader.set_progress(0)
         else:
             value = int(current_progress * 50 / total_progress)
             self._loader.set_progress(value)
 
-    def show_result(self, results: List[Result]):
+    def _show_result(self, results: List[Result]):
         self._loader.set_label("Generating result files...")
         self._loader.set_progress(50)
 
-        self._result_container.display(results, self.progress_handler)
+        self._result_container.display(results, self._progress_handler)
 
-        self._main_form.check_files()
-        self._secondary_form.check_files()
+        self._main_form.check_fields()
+        self._secondary_form.check_fields()
         hide(self._loader)
         show(self._forms)
         show(self._result_container)
 
-    def show_error(self, error: str):
-        self._main_form.check_files()
-        self._secondary_form.check_files()
+    def _show_error(self, error: str):
+        self._main_form.check_fields()
+        self._secondary_form.check_fields()
         hide(self._result_container)
         hide(self._loader)
         show(self._forms)
@@ -141,22 +147,33 @@ class UVApp(App):
         else:
             print("Error is None")
 
-    def _form_selection_change(self, widget, value: bool):
+    def _on_form_selection_change(self, widget: gui.Widget, value: bool) -> None:
+        """
+        Called when the `Manual mode` checkbox is toggled
+        """
+        del widget  # remove unused parameter
         if value:
             hide(self._main_form)
             show(self._secondary_form)
-            self._extra_param_form.register_handler(self._secondary_form.handle_extra_params)
+            self._extra_param_form.register_handler(self._secondary_form.extra_param_change_callback)
         else:
             show(self._main_form)
             hide(self._secondary_form)
-            self._extra_param_form.register_handler(self._main_form.handle_extra_params)
+            self._extra_param_form.register_handler(self._main_form.extra_param_change_callback)
 
     @staticmethod
-    def _check_input(calculation_input: CalculationInput):
+    def _check_input(calculation_input: CalculationInput) -> None:
+        """
+        Check a given calculation input for consistency and throw a `ValueError` if any problem is found.
+        :param calculation_input: the calculation input to check
+        """
+
         if calculation_input is None:
             raise ValueError("Unexpected error: form data could not be read correctly. Please try again")
-        if calculation_input.measurement_date is None:
-            raise ValueError("Unexpected error: Measurement date has not been correctly set")
+        if calculation_input.albedo is None:
+            raise ValueError("Unexpected error: Albedo has not been correctly set")
+        if calculation_input.aerosol is None:
+            raise ValueError("Unexpected error: Aerosol has not been correctly set")
 
         if calculation_input.uv_file_name is None:
             raise ValueError("Unexpected error: UV File name could not be set correctly")

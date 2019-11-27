@@ -4,16 +4,17 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Tuple
 
-from uv.logic.utils import days_to_date
 from .arf_file import Direction
 from ..brewer_infos import get_brewer_info
 
 
 @dataclass(unsafe_hash=True)
 class CalculationInput:
+    """
+    An input for the `IrradianceCalculation`
+    """
     albedo: float
     aerosol: Tuple[float, float]
-    measurement_date: date
     uv_file_name: str
     b_file_name: str
     calibration_file_name: str
@@ -36,11 +37,9 @@ class CalculationInput:
         b_file_name = data_dir + "B" + str(days) + str(year) + "." + brewer_id
         calibration_file_name = data_dir + brewer.uvr_file_name
         arf_file_name = data_dir + brewer.arf_file_name
-        measurement_date = days_to_date(days, year)
         return CalculationInput(
             albedo,
             aerosol,
-            measurement_date,
             uv_file_name,
             b_file_name,
             calibration_file_name,
