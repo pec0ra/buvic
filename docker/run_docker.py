@@ -1,4 +1,5 @@
 import os
+import sys
 
 from remi import start
 
@@ -11,5 +12,9 @@ if not os.path.exists(TMP_FILE_DIR):
 if not os.path.exists(PLOT_DIR):
     os.makedirs(PLOT_DIR)
 
+port = 80
+if len(sys.argv) > 1:
+    port = int(sys.argv[1])
+
 # starts the web server
-start(UVApp, address='0.0.0.0', port=80, start_browser=False)
+start(UVApp, address='0.0.0.0', port=port, start_browser=False)

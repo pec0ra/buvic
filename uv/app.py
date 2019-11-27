@@ -37,7 +37,7 @@ class UVApp(App):
 
     def main(self):
         self._main_container = gui.VBox(width="80%")
-        self._main_container.set_style("margin: 30px auto; padding: 20px")
+        self._main_container.set_style("margin: 30px auto; padding: 40px")
 
         title = Title(Level.H1, "Irradiance calculation")
 

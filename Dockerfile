@@ -35,4 +35,4 @@ COPY uv ./uv
 COPY docker/const.py ./uv/
 COPY data ./data
 
-CMD ["python3.7", "run_docker.py"]
+CMD python3.7 run_docker.py $PORT
