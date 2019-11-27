@@ -3,7 +3,8 @@ FROM ubuntu:19.04
 RUN apt-get update
 RUN apt-get install -y \
         python3.7 \
-        python3-pip
+        python3-pip \
+        git
 
 RUN apt-get update && apt-get install -y \
     curl \
@@ -26,7 +27,6 @@ RUN mkdir -p /opt/ \
 ENV PATH /opt/libRadtran/bin:$PATH
 
 COPY requirements.txt ./
-COPY lib ./lib
 
 RUN pip3 install -r requirements.txt
 
