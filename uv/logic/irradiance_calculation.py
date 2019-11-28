@@ -45,8 +45,15 @@ class IrradianceCalculation:
 
     def calculate(self) -> List[Job[Tuple[int, UVFileEntry], Result]]:
         """
-        Parse the files into spectra
-        :return: the result length and an iterable of Result
+        Parse the files into spectra.
+
+        This method doesn't do the calculation directly but creates a list of calculation `Job` that can be scheduled on
+        a thread pool or process pool.
+        Each of the job of the list will do the calculation for one of the section of the UV File.
+
+        See `JobUtils` for the handling of the created jobs
+
+        :return: a list of calculation job.
         """
         uv_file_reader = UVFileReader(self._calculation_input.uv_file_name)
         uv_file_entries = uv_file_reader.get_uv_file_entries()
@@ -63,7 +70,14 @@ class IrradianceCalculation:
 
         return job_list
 
-    def _calculate_entry(self, index: int, uv_file_entry: UVFileEntry):
+    def _calculate_entry(self, index: int, uv_file_entry: UVFileEntry) -> Result:
+        """
+        Do the calculation for a file entry (section)
+        :param index: the index of the section
+        :param uv_file_entry: the file entry for which to calculate
+        :return: the result of the calculation
+        """
+
         libradtran_result = self._execute_libradtran(uv_file_entry)
         calibrated_spectrum = self._to_calibrated_spectrum(uv_file_entry, self._calibration)
         cos_correction = self._cos_correction(self._arf, libradtran_result)
