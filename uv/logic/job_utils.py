@@ -78,6 +78,10 @@ class JobUtils:
             self._progress_handler(0.5)
 
     def calculate_for_all(self, input_dir: str, albedo: float, aerosol: Tuple[float, float]) -> None:
+
+        if not os.path.exists(self._output_dir):
+            os.makedirs(self._output_dir)
+
         input_list = []
         for file_name in os.listdir(input_dir):
             res = re.match(r'UV(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d+)', file_name)
