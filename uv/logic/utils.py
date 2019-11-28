@@ -95,7 +95,7 @@ def create_spectrum_plots(saving_dir: str, result: Result, file_type: str = "png
     ax.legend()
     file_path_correction = get_corrected_spectrum_plot_name(result, file_type)
     fig.savefig(saving_dir + file_path_correction)
-    plt.close()
+    plt.close('all')
 
     return file_path, file_path_correction
 
@@ -129,6 +129,7 @@ def create_sza_plot(saving_dir: str, results: List[Result], file_type: str = "pn
     first_result = results[0]
     sza_plot_name_correction = get_sza_correction_plot_name(first_result, file_type)
     fig.savefig(saving_dir + sza_plot_name_correction)
+    plt.close('all')
 
     return sza_plot_name_correction
 

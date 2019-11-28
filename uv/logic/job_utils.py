@@ -148,6 +148,7 @@ class CalculationUtils:
             calculation_jobs = self._create_jobs(calculation_input)
             job_list.extend(calculation_jobs)
 
+        print("Starting calculation of ", len(job_list), " file sections in ", len(input_list), " files")
         # Init progress bar
         if self._init_progress is not None:
             self._init_progress(len(job_list))
@@ -168,46 +169,49 @@ class CalculationUtils:
         but only in different processes.
 
         :param jobs: The job to execute
-        :return: the result of the jobs.
+        :return: the results of the jobs.
         """
 
         result_list: List[Result] = []
         future_result = []
 
-        # Create the thread pool and submit the jobs
-        thread_pool = ThreadPoolExecutor()
-        for job in jobs:
-            future_result.append(thread_pool.submit(job.call))
+        # Create the thread pool and the process pool
+        with ThreadPoolExecutor() as thread_pool, ProcessPoolExecutor() as process_pool:
 
-        future_output = []
-        process_pool = ProcessPoolExecutor()
+            # Submit the jobs to the thread pool
+            for job in jobs:
+                future_result.append(thread_pool.submit(job.call))
 
-        for future in future_result:
-            # Wait for each job to finish and produce a result
-            result = future.result()
+            future_output = []
 
-            # Notify the progress bar
-            self._make_progress()
+            for future in future_result:
+                # Wait for each job to finish and produce a result
+                result = future.result()
 
-            # Schedule the creation of plots and csv
-            future_output.append(
-                process_pool.submit(self._create_output, result, self._output_dir, self._only_csv, self._file_type))
+                # Notify the progress bar
+                self._make_progress()
 
-            # Add the result to the return list
-            result_list.append(result)
+                # Schedule the creation of plots and csv
+                future_output.append(
+                    process_pool.submit(self._create_output, result, self._output_dir, self._only_csv, self._file_type))
 
-        LOG.debug("Finished irradiance calculation for '%s'", result_list[0].calculation_input.uv_file_name)
+                # Add the result to the return list
+                result_list.append(result)
 
-        for future in future_output:
-            # Wait for each plots/csv creation to finish
-            future.result()
+            # At this point, we have finished waiting for all future_results (irradiance calculation)
+            LOG.debug("Finished irradiance calculation for '%s'", result_list[0].calculation_input.uv_file_name)
 
-            # Notify the progress bar
-            self._make_progress()
+            for future in future_output:
+                # Wait for each plots/csv creation to finish
+                future.result()
 
-        LOG.debug("Finished creating output for '%s'", result_list[0].calculation_input.uv_file_name)
+                # Notify the progress bar
+                self._make_progress()
 
-        return result_list
+            # At this point, we have finished waiting for all future_outputs (plot/csv creations)
+            LOG.debug("Finished creating output for '%s'", result_list[0].calculation_input.uv_file_name)
+
+            return result_list
 
     @staticmethod
     def _create_jobs(calculation_input: CalculationInput) -> List[Job[int, Result]]:
@@ -268,4 +272,8 @@ class Job(Generic[INPUT, RETURN]):
     _args: INPUT
 
     def call(self) -> RETURN:
+        """
+        Execute the job
+        :return: the job's return value
+        """
         return self._fn(self._args)

@@ -31,14 +31,11 @@ class UVApp(App):
     def __init__(self, *args):
         super(UVApp, self).__init__(*args, static_file_path={'plots': OUTPUT_DIR})
 
+        # Some tweaking for matplotlib
         rcParams.update({'figure.autolayout': True})
         rcParams['figure.figsize'] = 9, 6
 
         self._executor = ThreadPoolExecutor(1)
-        self.uv_file = None
-        self.calibration_file = None
-        self.arf_file = None
-        self.b_file = None
 
     def main(self):
         self._main_container = gui.VBox(width="80%")
@@ -94,8 +91,7 @@ class UVApp(App):
         hide(self._forms)
         hide(self._result_container)
 
-        background_pool = ThreadPoolExecutor(max_workers=1)
-        background_pool.submit(self._start_calculation, calculation_input)
+        self._executor.submit(self._start_calculation, calculation_input)
 
     def _start_calculation(self, calculation_input: CalculationInput):
         try:
