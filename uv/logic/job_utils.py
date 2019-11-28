@@ -94,8 +94,8 @@ class JobUtils:
         for job in jobs:
             future_result.append(thread_pool.submit(job.call))
 
-        process_pool = ProcessPoolExecutor()
         future_output = []
+        process_pool = ProcessPoolExecutor()
 
         for future in future_result:
             # Wait for each job to finish and produce a result
@@ -106,7 +106,7 @@ class JobUtils:
 
             # Schedule the creation of plots and csv
             future_output.append(
-                process_pool.submit(self._create_output, result))
+                process_pool.submit(self._create_output, result, self._output_dir, self._only_csv, self._file_type))
 
             # Add the result to the return list
             result_list.append(result)
@@ -120,16 +120,17 @@ class JobUtils:
 
         return result_list
 
-    def _create_output(self, result: Result) -> None:
+    @staticmethod
+    def _create_output(result: Result, output_dir: str, only_csv: bool, file_type: str) -> None:
         """
         Create the plots and csv for a given result.
         The created plots and csv will be saved as files.
         :param result: the result for which to create the output
         """
 
-        create_csv(self._output_dir, result)
-        if not self._only_csv:
-            create_spectrum_plots(self._output_dir, result, self._file_type)
+        create_csv(output_dir, result)
+        if not only_csv:
+            create_spectrum_plots(output_dir, result, file_type)
 
     def _make_progress(self) -> None:
         """

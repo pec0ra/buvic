@@ -11,7 +11,7 @@ from ..brewer_infos import brewer_infos
 from ..const import TMP_FILE_DIR, DATA_DIR, OUTPUT_DIR, DEFAULT_BETA_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_ALBEDO_VALUE
 from ..logic.calculation_input import CalculationInput
 from ..logic.utils import create_csv, get_sza_correction_plot_name, get_spectrum_plot_name, \
-    get_corrected_spectrum_plot_name
+    get_corrected_spectrum_plot_name, minutes_to_time
 
 
 class Button(gui.Button):
@@ -399,6 +399,10 @@ class ResultWidget(VBox):
         header = result.uv_file_entry.header
 
         info = ResultInfo("Measure type", header.type)
+        vbox.append(info)
+
+        t = minutes_to_time(result.uv_file_entry.times[0])
+        info = ResultInfo("Measure time", t.isoformat())
         vbox.append(info)
 
         info = ResultInfo("SZA", result.sza)
