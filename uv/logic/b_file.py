@@ -3,9 +3,12 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from datetime import timedelta
+from logging import getLogger
 from typing import List
 
 from scipy.interpolate import interp1d
+
+LOG = getLogger(__name__)
 
 SUMMARY_LINE_REGEX = re.compile(
     "summary "
@@ -24,6 +27,8 @@ def read_ozone_from_b_file(file_name: str) -> Ozone:
     :return: the ozone values
     """
 
+    LOG.debug("Parsing file: %s", file_name)
+
     with open(file_name, newline='\r\n') as file:
         try:
             times = []
@@ -37,6 +42,8 @@ def read_ozone_from_b_file(file_name: str) -> Ozone:
                     minutes_since_midnight = td.seconds / 60
                     times.append(minutes_since_midnight)
                     values.append(float(res.group("ozone")))
+
+            LOG.debug("Finished parsing file: %s", file_name)
 
             return Ozone(
                 times,

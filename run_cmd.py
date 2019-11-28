@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import multiprocessing
-import os
+import os, logging
 from argparse import ArgumentParser
 from pprint import PrettyPrinter
 
@@ -11,6 +11,9 @@ from matplotlib import rcParams
 from uv.const import DEFAULT_ALBEDO_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE, TMP_FILE_DIR
 from uv.logic.calculation_input import CalculationInput
 from uv.logic.job_utils import JobUtils
+from uv.logutils import init_logging
+
+init_logging(logging.WARN)
 
 rcParams.update({'figure.autolayout': True})
 rcParams['figure.figsize'] = 10, 7

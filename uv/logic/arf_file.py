@@ -3,7 +3,10 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from enum import Enum
+from logging import getLogger
 from typing import List
+
+LOG = getLogger(__name__)
 
 
 def read_arf_file(file_name: str, direction: Direction) -> ARF:
@@ -13,6 +16,8 @@ def read_arf_file(file_name: str, direction: Direction) -> ARF:
     :param direction: the direction to get the value for
     :return: the `ARF` object
     """
+
+    LOG.debug("Parsing file: %s", file_name)
 
     with open(file_name) as file:
         try:
@@ -28,6 +33,8 @@ def read_arf_file(file_name: str, direction: Direction) -> ARF:
                 values.append(float(line_values[direction.value]))
             szas.append(90)
             values.append(0)
+
+            LOG.debug("Finished parsing file: %s", file_name)
 
             return ARF(
                 szas,

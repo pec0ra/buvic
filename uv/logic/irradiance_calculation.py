@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import warnings
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+from logging import getLogger
 from typing import List, Tuple, Iterable, Generic, TypeVar, Callable
 
 from numpy import multiply, divide, sin, add, pi, mean, exp, maximum, linspace, trapz, cos, isnan
@@ -17,6 +17,8 @@ from .libradtran import Libradtran, LibradtranInput, LibradtranResult
 from .result import Result, Spectrum
 from .utils import minutes_to_time
 from .uv_file import UVFileReader, UVFileEntry
+
+LOG = getLogger(__name__)
 
 
 class IrradianceCalculation:
@@ -55,6 +57,11 @@ class IrradianceCalculation:
 
         :return: a list of calculation job.
         """
+
+        LOG.debug("Calculating irradiance for '%s', '%s', '%s' and '%s'", self._calculation_input.uv_file_name,
+                  self._calculation_input.b_file_name, self._calculation_input.calibration_file_name,
+                  self._calculation_input.arf_file_name)
+
         uv_file_reader = UVFileReader(self._calculation_input.uv_file_name)
         uv_file_entries = uv_file_reader.get_uv_file_entries()
 
@@ -78,31 +85,41 @@ class IrradianceCalculation:
         :return: the result of the calculation
         """
 
-        libradtran_result = self._execute_libradtran(uv_file_entry)
-        calibrated_spectrum = self._to_calibrated_spectrum(uv_file_entry, self._calibration)
-        cos_correction = self._cos_correction(self._arf, libradtran_result)
+        try:
+            LOG.debug("Starting calculation for section %d of '%s'", index, self._calculation_input.uv_file_name)
 
-        # Set nan to 1
-        cos_correction_no_nan = cos_correction.copy()
-        cos_correction_no_nan[isnan(cos_correction_no_nan)] = 1
-        cos_corrected_spectrum = multiply(calibrated_spectrum, cos_correction_no_nan)
+            libradtran_result = self._execute_libradtran(uv_file_entry)
+            calibrated_spectrum = self._to_calibrated_spectrum(uv_file_entry, self._calibration)
+            cos_correction = self._cos_correction(self._arf, libradtran_result)
 
-        spectrum = Spectrum(
-            uv_file_entry.wavelengths,
-            uv_file_entry.times,
-            uv_file_entry.events,
-            calibrated_spectrum,
-            cos_corrected_spectrum,
-            cos_correction
-        )
-        return Result(
-            index,
-            self._calculation_input,
-            self._get_sza(libradtran_result),
-            self._ozone,
-            spectrum,
-            uv_file_entry
-        )
+            # Set nan to 1
+            cos_correction_no_nan = cos_correction.copy()
+            cos_correction_no_nan[isnan(cos_correction_no_nan)] = 1
+            cos_corrected_spectrum = multiply(calibrated_spectrum, cos_correction_no_nan)
+
+            spectrum = Spectrum(
+                uv_file_entry.wavelengths,
+                uv_file_entry.times,
+                uv_file_entry.events,
+                calibrated_spectrum,
+                cos_corrected_spectrum,
+                cos_correction
+            )
+
+            LOG.debug("Finished calculation for section %d of %s", index, self._calculation_input.uv_file_name)
+
+            return Result(
+                index,
+                self._calculation_input,
+                self._get_sza(libradtran_result),
+                self._ozone,
+                spectrum,
+                uv_file_entry
+            )
+
+        except Exception as e:
+            LOG.error("An error occurred while doing the calculation", exc_info=True)
+            raise e
 
     @staticmethod
     def _to_calibrated_spectrum(uv_file_entry, calibration) -> List[float]:
@@ -159,16 +176,6 @@ class IrradianceCalculation:
         # Integrate `1/π ∬arf(θ) sin(θ) dθdφ` with θ from 0 to π/2 and φ from 0 to 2π
         # This is equivalent to integrating `2 ∫arf(θ) sin(θ) dθ` with θ from 0 to π/2
         return 2 * trapz(spline(theta) * sin(theta), theta)
-
-    def _execute_libradtran_parallel(self, uv_file_entries: List[UVFileEntry]) -> List[LibradtranResult]:
-        """
-        Create a process pool and execute LibRadtran in parallel for the given uv file entries on this pool.
-        :param uv_file_entries: the UV file entries for which to execute LibRadtran
-        :return: the LibRadtran results
-        """
-
-        with ThreadPoolExecutor() as pool:
-            return pool.map(self._execute_libradtran, uv_file_entries)
 
     def _execute_libradtran(self, uv_file_entry: UVFileEntry) -> LibradtranResult:
         """
@@ -308,14 +315,14 @@ class IrradianceCalculation:
         return libradtran_result.columns["sza"][0]
 
 
-I = TypeVar('I', bound=Iterable)
-R = TypeVar('R')
+INPUT = TypeVar('INPUT', bound=Iterable)
+RETURN = TypeVar('RETURN')
 
 
 @dataclass
-class Job(Generic[I, R]):
-    _fn: Callable[[I], R]
-    _args: I
+class Job(Generic[INPUT, RETURN]):
+    _fn: Callable[[INPUT], RETURN]
+    _args: INPUT
 
-    def call(self) -> R:
+    def call(self) -> RETURN:
         return self._fn(*self._args)

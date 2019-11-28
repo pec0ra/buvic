@@ -4,12 +4,15 @@ import re
 from collections import namedtuple
 from dataclasses import dataclass
 from datetime import date
+from logging import getLogger
 from typing import List, TextIO
 from warnings import warn
 
 from numpy import divide, sqrt
 
 from uv.brewer_infos import get_brewer_info, BrewerInfo
+
+LOG = getLogger(__name__)
 
 
 class UVFileReader(object):
@@ -42,6 +45,8 @@ class UVFileReader(object):
         :return the list of `UVFileEntry`
         """
 
+        LOG.debug("Parsing file: %s", self._file_name)
+
         entries = []
         header_line = self.__read_line(file)
 
@@ -50,6 +55,8 @@ class UVFileReader(object):
 
             # Parse the header
             header = UVFileHeader(header_line)
+
+            LOG.debug("Parsed header: %s", header.raw_header_line)
 
             # Parse the values
             values = []
@@ -84,6 +91,7 @@ class UVFileReader(object):
 
             header_line = self.__read_line(file)
 
+        LOG.debug("Parsed %s entries from file '%s'", len(entries), self._file_name)
         return entries
 
     def get_uv_file_entries(self) -> List[UVFileEntry]:

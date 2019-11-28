@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from logging import getLogger
 from typing import List
 
 from numpy import interp
+
+LOG = getLogger(__name__)
 
 
 def read_calibration_file(file_name: str) -> Calibration:
@@ -13,6 +16,8 @@ def read_calibration_file(file_name: str) -> Calibration:
     :param file_name: the name of the file to parse
     :return: the `Calibration` object
     """
+
+    LOG.debug("Parsing file: %s", file_name)
 
     with open(file_name) as file:
         wavelengths = []
@@ -24,6 +29,8 @@ def read_calibration_file(file_name: str) -> Calibration:
                 raise CalibrationFileParsingError("Failure to read calibration file line correctly.\nLine: " + line)
             wavelengths.append(float(line_values[0]) / 10)
             values.append(float(line_values[1]))
+
+        LOG.debug("Finished parsing file: %s", file_name)
 
         return Calibration(
             wavelengths,

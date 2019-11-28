@@ -2,6 +2,7 @@ import os
 import re
 from concurrent.futures.process import ProcessPoolExecutor
 from concurrent.futures.thread import ThreadPoolExecutor
+from logging import getLogger
 from typing import Tuple, Callable, List, Any
 
 from uv.logic.result import Result
@@ -9,6 +10,8 @@ from .calculation_input import CalculationInput
 from .irradiance_calculation import IrradianceCalculation, Job
 from .utils import create_csv, create_spectrum_plots, create_sza_plot
 from ..brewer_infos import get_brewer_info
+
+LOG = getLogger(__name__)
 
 
 class JobUtils:
@@ -48,6 +51,9 @@ class JobUtils:
         :param calculation_input: the input for the calculation
         :return: the results of the calculation
         """
+        LOG.info("Starting calculation for '%s', '%s', '%s' and '%s'", calculation_input.uv_file_name,
+                 calculation_input.b_file_name, calculation_input.calibration_file_name,
+                 calculation_input.arf_file_name)
 
         # Create output directory if needed
         if not os.path.exists(self._output_dir):
@@ -56,6 +62,8 @@ class JobUtils:
         # Call `IrradianceCalculation` to create the Jobs
         ie = IrradianceCalculation(calculation_input)
         calculation_jobs = ie.calculate()
+
+        LOG.debug("Scheduling %d jobs for file '%s'", len(calculation_jobs), calculation_input.uv_file_name)
 
         # Initialize the progress bar
         if self._init_progress is not None:
@@ -68,6 +76,9 @@ class JobUtils:
         if not self._only_csv:
             create_sza_plot(self._output_dir, result_list, self._file_type)
 
+        LOG.info("Finished calculations for '%s', '%s', '%s' and '%s'", calculation_input.uv_file_name,
+                 calculation_input.b_file_name, calculation_input.calibration_file_name,
+                 calculation_input.arf_file_name)
         return result_list
 
     def _execute_jobs(self, jobs: List[Job[Any, Result]]) -> List[Result]:
@@ -86,7 +97,7 @@ class JobUtils:
         :return: the result of the jobs.
         """
 
-        result_list = []
+        result_list: List[Result] = []
         future_result = []
 
         # Create the thread pool and submit the jobs
@@ -111,12 +122,16 @@ class JobUtils:
             # Add the result to the return list
             result_list.append(result)
 
+        LOG.debug("Finished irradiance calculation for '%s'", result_list[0].calculation_input.uv_file_name)
+
         for future in future_output:
             # Wait for each plots/csv creation to finish
             future.result()
 
             # Notify the progress bar
             self._make_progress()
+
+        LOG.debug("Finished creating output for '%s'", result_list[0].calculation_input.uv_file_name)
 
         return result_list
 
@@ -127,6 +142,9 @@ class JobUtils:
         The created plots and csv will be saved as files.
         :param result: the result for which to create the output
         """
+
+        LOG.debug("Starting creating output for section %d of '%s'", result.index,
+                  result.calculation_input.uv_file_name)
 
         create_csv(output_dir, result)
         if not only_csv:
