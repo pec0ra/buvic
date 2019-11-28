@@ -6,7 +6,6 @@ from typing import TextIO, List
 
 from numpy import isnan
 
-from .b_file import Ozone
 from .calculation_input import CalculationInput
 from .uv_file import UVFileEntry
 
@@ -16,9 +15,7 @@ class Result:
     index: int
     calculation_input: CalculationInput
     sza: float
-    ozone: Ozone
     spectrum: Spectrum
-    uv_file_entry: UVFileEntry
 
     def to_csv(self, file: TextIO) -> None:
         """
@@ -52,6 +49,10 @@ class Result:
         bid = self.uv_file_entry.brewer_info.id
         return prefix + bid + "_" + self.uv_file_entry.header.date.isoformat().replace('-', '') + "_" + str(
             self.index) + "_" + self.calculation_input.to_hash() + suffix
+
+    @property
+    def uv_file_entry(self) -> UVFileEntry:
+        return self.calculation_input.uv_file_entries[self.index]
 
 
 @dataclass

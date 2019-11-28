@@ -418,7 +418,7 @@ class ResultWidget(VBox):
         vbox.append(info)
 
         time = result.spectrum.measurement_times[0]
-        info = ResultInfo("Ozone", result.ozone.interpolated_value(time))
+        info = ResultInfo("Ozone", result.calculation_input.ozone.interpolated_value(time))
         vbox.append(info)
 
         file_name = create_csv(OUTPUT_DIR, result)

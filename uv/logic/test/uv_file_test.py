@@ -15,7 +15,6 @@ class UVFileReaderTestCase(unittest.TestCase):
         self.assertEqual(h.date.day, 20)
         self.assertEqual(h.date.month, 2)
         self.assertEqual(h.date.year, 2017)
-        self.assertEqual(h.day_of_year, 51)
         self.assertEqual(h.place, "Arenosillo")
         self.assertEqual(h.position.latitude, 37.1)
         self.assertEqual(h.position.longitude, 6.73)

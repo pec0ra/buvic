@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import functools
 from dataclasses import dataclass
 from datetime import date
 from typing import Tuple
 
-from .arf_file import Direction
+from uv.logic.b_file import read_ozone_from_b_file
+from uv.logic.calibration_file import read_calibration_file
+from uv.logic.uv_file import UVFileReader
+from .arf_file import Direction, read_arf_file
 from ..brewer_infos import get_brewer_info
 
 
@@ -70,6 +74,27 @@ class CalculationInput:
     ) -> CalculationInput:
         days = d.timetuple().tm_yday
         return CalculationInput.from_days_and_bid(albedo, aerosol, data_dir, brewer_id, days, d.year)
+
+    @property
+    @functools.lru_cache()
+    def uv_file_entries(self):
+        uv_file_reader = UVFileReader(self.uv_file_name)
+        return uv_file_reader.get_uv_file_entries()
+
+    @property
+    @functools.lru_cache()
+    def ozone(self):
+        return read_ozone_from_b_file(self.b_file_name)
+
+    @property
+    @functools.lru_cache()
+    def calibration(self):
+        return read_calibration_file(self.calibration_file_name)
+
+    @property
+    @functools.lru_cache()
+    def arf(self):
+        return read_arf_file(self.arf_file_name, self.arf_direction)
 
     def to_hash(self) -> str:
         return hex(hash(self))[-6:]

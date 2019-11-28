@@ -1,22 +1,25 @@
+from __future__ import annotations
+
 import os
 import re
 from concurrent.futures.process import ProcessPoolExecutor
 from concurrent.futures.thread import ThreadPoolExecutor
+from dataclasses import dataclass
 from logging import getLogger
-from typing import Tuple, Callable, List, Any
+from typing import Tuple, Callable, List, Any, TypeVar, Generic
 
 from uv.logic.result import Result
 from .calculation_input import CalculationInput
-from .irradiance_calculation import IrradianceCalculation, Job
+from .irradiance_calculation import IrradianceCalculation
 from .utils import create_csv, create_spectrum_plots, create_sza_plot
 from ..brewer_infos import get_brewer_info
 
 LOG = getLogger(__name__)
 
 
-class JobUtils:
+class CalculationUtils:
     """
-    A utility to handle and schedule the `Job`s produced by `IrradianceCalculation`.
+    A utility to create and schedule calculation jobs.
     """
 
     def __init__(
@@ -59,9 +62,8 @@ class JobUtils:
         if not os.path.exists(self._output_dir):
             os.makedirs(self._output_dir)
 
-        # Call `IrradianceCalculation` to create the Jobs
-        ie = IrradianceCalculation(calculation_input)
-        calculation_jobs = ie.calculate()
+        # Create `IrradianceCalculation` Jobs
+        calculation_jobs = self._create_jobs(calculation_input)
 
         LOG.debug("Scheduling %d jobs for file '%s'", len(calculation_jobs), calculation_input.uv_file_name)
 
@@ -80,84 +82,6 @@ class JobUtils:
                  calculation_input.b_file_name, calculation_input.calibration_file_name,
                  calculation_input.arf_file_name)
         return result_list
-
-    def _execute_jobs(self, jobs: List[Job[Any, Result]]) -> List[Result]:
-        """
-        Execute given jobs and create output plots and csv for them.
-
-        For each one of the given jobs, two things are done:
-            1. The job is scheduled on a thread pool to asynchronously produce a Result
-            2. For the result of step 1, the generation of plots and csv is scheduled on a process pool
-
-        We use a ThreadPoolExecutor to schedule the jobs since it is lighter and faster than a ProcessPoolExecutor.
-        For the generation of plots, we have to use a ProcessPoolExecutor since matplotlib can't run in parallel threads
-        but only in different processes.
-
-        :param jobs: The job to execute
-        :return: the result of the jobs.
-        """
-
-        result_list: List[Result] = []
-        future_result = []
-
-        # Create the thread pool and submit the jobs
-        thread_pool = ThreadPoolExecutor()
-        for job in jobs:
-            future_result.append(thread_pool.submit(job.call))
-
-        future_output = []
-        process_pool = ProcessPoolExecutor()
-
-        for future in future_result:
-            # Wait for each job to finish and produce a result
-            result = future.result()
-
-            # Notify the progress bar
-            self._make_progress()
-
-            # Schedule the creation of plots and csv
-            future_output.append(
-                process_pool.submit(self._create_output, result, self._output_dir, self._only_csv, self._file_type))
-
-            # Add the result to the return list
-            result_list.append(result)
-
-        LOG.debug("Finished irradiance calculation for '%s'", result_list[0].calculation_input.uv_file_name)
-
-        for future in future_output:
-            # Wait for each plots/csv creation to finish
-            future.result()
-
-            # Notify the progress bar
-            self._make_progress()
-
-        LOG.debug("Finished creating output for '%s'", result_list[0].calculation_input.uv_file_name)
-
-        return result_list
-
-    @staticmethod
-    def _create_output(result: Result, output_dir: str, only_csv: bool, file_type: str) -> None:
-        """
-        Create the plots and csv for a given result.
-        The created plots and csv will be saved as files.
-        :param result: the result for which to create the output
-        """
-
-        LOG.debug("Starting creating output for section %d of '%s'", result.index,
-                  result.calculation_input.uv_file_name)
-
-        create_csv(output_dir, result)
-        if not only_csv:
-            create_spectrum_plots(output_dir, result, file_type)
-
-    def _make_progress(self) -> None:
-        """
-        Notify the progressbar of progress.
-
-        Since we perform two steps for each of the jobs, we increment the progress by 0.5 for each step.
-        """
-        if self._progress_handler is not None:
-            self._progress_handler(0.5)
 
     def calculate_for_all(self, input_dir: str, albedo: float, aerosol: Tuple[float, float]) -> None:
         """
@@ -218,9 +142,8 @@ class JobUtils:
 
         job_list = []
         for calculation_input in input_list:
-            # Call IrradianceCalculation to create the jobs
-            ie = IrradianceCalculation(calculation_input)
-            calculation_jobs = ie.calculate()
+            # Create `IrradianceCalculation` Jobs
+            calculation_jobs = self._create_jobs(calculation_input)
             job_list.extend(calculation_jobs)
 
         # Init progress bar
@@ -229,3 +152,118 @@ class JobUtils:
 
         # Execute the jobs
         self._execute_jobs(job_list)
+
+    def _execute_jobs(self, jobs: List[Job[Any, Result]]) -> List[Result]:
+        """
+        Execute given jobs and create output plots and csv for them.
+
+        For each one of the given jobs, two things are done:
+            1. The job is scheduled on a thread pool to asynchronously produce a Result
+            2. For the result of step 1, the generation of plots and csv is scheduled on a process pool
+
+        We use a ThreadPoolExecutor to schedule the jobs since it is lighter and faster than a ProcessPoolExecutor.
+        For the generation of plots, we have to use a ProcessPoolExecutor since matplotlib can't run in parallel threads
+        but only in different processes.
+
+        :param jobs: The job to execute
+        :return: the result of the jobs.
+        """
+
+        result_list: List[Result] = []
+        future_result = []
+
+        # Create the thread pool and submit the jobs
+        thread_pool = ThreadPoolExecutor()
+        for job in jobs:
+            future_result.append(thread_pool.submit(job.call))
+
+        future_output = []
+        process_pool = ProcessPoolExecutor()
+
+        for future in future_result:
+            # Wait for each job to finish and produce a result
+            result = future.result()
+
+            # Notify the progress bar
+            self._make_progress()
+
+            # Schedule the creation of plots and csv
+            future_output.append(
+                process_pool.submit(self._create_output, result, self._output_dir, self._only_csv, self._file_type))
+
+            # Add the result to the return list
+            result_list.append(result)
+
+        LOG.debug("Finished irradiance calculation for '%s'", result_list[0].calculation_input.uv_file_name)
+
+        for future in future_output:
+            # Wait for each plots/csv creation to finish
+            future.result()
+
+            # Notify the progress bar
+            self._make_progress()
+
+        LOG.debug("Finished creating output for '%s'", result_list[0].calculation_input.uv_file_name)
+
+        return result_list
+
+    @staticmethod
+    def _create_jobs(calculation_input: CalculationInput) -> List[Job[int, Result]]:
+        """
+        Create a list of irradiance calculation `Job` that can be scheduled on a thread pool or process pool.
+        Each of the job of the list will do the calculation for one of the section of the UV File.
+
+        :param calculation_input: the calculation input for which to create the jobs
+        :return: a list of calculation job.
+        """
+
+        LOG.debug("Calculating irradiance for '%s', '%s', '%s' and '%s'", calculation_input.uv_file_name,
+                  calculation_input.b_file_name, calculation_input.calibration_file_name,
+                  calculation_input.arf_file_name)
+
+        ie = IrradianceCalculation(calculation_input)
+
+        job_list = []
+        for entry_index in range(len(calculation_input.uv_file_entries)):
+            job_list.append(
+                Job(ie.calculate, entry_index)
+            )
+
+        return job_list
+
+    @staticmethod
+    def _create_output(result: Result, output_dir: str, only_csv: bool, file_type: str) -> None:
+        """
+        Create the plots and csv for a given result.
+        The created plots and csv will be saved as files.
+        :param result: the result for which to create the output
+        """
+
+        LOG.debug("Starting creating output for section %d of '%s'", result.index,
+                  result.calculation_input.uv_file_name)
+
+        create_csv(output_dir, result)
+        if not only_csv:
+            create_spectrum_plots(output_dir, result, file_type)
+
+    def _make_progress(self) -> None:
+        """
+        Notify the progressbar of progress.
+
+        Since we perform two steps for each of the jobs, we increment the progress by 0.5 for each step.
+        """
+        if self._progress_handler is not None:
+            self._progress_handler(0.5)
+
+
+INPUT = TypeVar('INPUT')
+RETURN = TypeVar('RETURN')
+
+
+@dataclass
+class Job(Generic[INPUT, RETURN]):
+    _fn: Callable[[INPUT], RETURN]
+    _args: INPUT
+
+    def call(self) -> RETURN:
+        return self._fn(self._args)

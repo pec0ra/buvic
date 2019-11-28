@@ -10,7 +10,7 @@ from matplotlib import rcParams
 
 from uv.const import DEFAULT_ALBEDO_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE, TMP_FILE_DIR
 from uv.logic.calculation_input import CalculationInput
-from uv.logic.job_utils import JobUtils
+from uv.logic.job_utils import CalculationUtils
 from uv.logutils import init_logging
 
 init_logging(logging.WARN)
@@ -83,7 +83,7 @@ def show_progress(value: float):
             progress.update(progress.value + value)
 
 
-cmd = JobUtils(output_dir, only_csv, init_progress=init_progress, progress_handler=show_progress)
+cmd = CalculationUtils(output_dir, only_csv, init_progress=init_progress, progress_handler=show_progress)
 if days_and_brewer_id is not None:
     if input_dir is None:
         input_dir = DEFAULT_DATA_DIR

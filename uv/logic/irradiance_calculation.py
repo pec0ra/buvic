@@ -1,22 +1,18 @@
 from __future__ import annotations
 
 import warnings
-from dataclasses import dataclass
 from logging import getLogger
-from typing import List, Tuple, Iterable, Generic, TypeVar, Callable
+from typing import List
 
 from numpy import multiply, divide, sin, add, pi, mean, exp, maximum, linspace, trapz, cos, isnan
 from scipy.interpolate import UnivariateSpline
 
-from uv.logic.calibration_file import Calibration
-from .arf_file import read_arf_file, ARF
-from .b_file import read_ozone_from_b_file, Ozone
+from .arf_file import ARF
 from .calculation_input import CalculationInput
-from .calibration_file import read_calibration_file
 from .libradtran import Libradtran, LibradtranInput, LibradtranResult
 from .result import Result, Spectrum
 from .utils import minutes_to_time
-from .uv_file import UVFileReader, UVFileEntry
+from .uv_file import UVFileEntry
 
 LOG = getLogger(__name__)
 
@@ -30,9 +26,6 @@ class IrradianceCalculation:
     """
 
     _calculation_input: CalculationInput
-    _ozone: Ozone
-    _calibration: Calibration
-    _arf: ARF
 
     def __init__(
             self,
@@ -45,52 +38,21 @@ class IrradianceCalculation:
         """
         self._calculation_input = calculation_input
 
-    def calculate(self) -> List[Job[Tuple[int, UVFileEntry], Result]]:
-        """
-        Parse the files into spectra.
-
-        This method doesn't do the calculation directly but creates a list of calculation `Job` that can be scheduled on
-        a thread pool or process pool.
-        Each of the job of the list will do the calculation for one of the section of the UV File.
-
-        See `JobUtils` for the handling of the created jobs
-
-        :return: a list of calculation job.
-        """
-
-        LOG.debug("Calculating irradiance for '%s', '%s', '%s' and '%s'", self._calculation_input.uv_file_name,
-                  self._calculation_input.b_file_name, self._calculation_input.calibration_file_name,
-                  self._calculation_input.arf_file_name)
-
-        uv_file_reader = UVFileReader(self._calculation_input.uv_file_name)
-        uv_file_entries = uv_file_reader.get_uv_file_entries()
-
-        self._ozone = read_ozone_from_b_file(self._calculation_input.b_file_name)
-        self._calibration = read_calibration_file(self._calculation_input.calibration_file_name)
-        self._arf = read_arf_file(self._calculation_input.arf_file_name, self._calculation_input.arf_direction)
-
-        job_list = []
-        for entry in enumerate(uv_file_entries):
-            job_list.append(
-                Job(self._calculate_entry, entry)
-            )
-
-        return job_list
-
-    def _calculate_entry(self, index: int, uv_file_entry: UVFileEntry) -> Result:
+    def calculate(self, index: int) -> Result:
         """
         Do the calculation for a file entry (section)
         :param index: the index of the section
-        :param uv_file_entry: the file entry for which to calculate
         :return: the result of the calculation
         """
 
         try:
             LOG.debug("Starting calculation for section %d of '%s'", index, self._calculation_input.uv_file_name)
 
+            uv_file_entry = self._calculation_input.uv_file_entries[index]
+
             libradtran_result = self._execute_libradtran(uv_file_entry)
-            calibrated_spectrum = self._to_calibrated_spectrum(uv_file_entry, self._calibration)
-            cos_correction = self._cos_correction(self._arf, libradtran_result)
+            calibrated_spectrum = self._to_calibrated_spectrum(uv_file_entry, self._calculation_input.calibration)
+            cos_correction = self._cos_correction(self._calculation_input.arf, libradtran_result)
 
             # Set nan to 1
             cos_correction_no_nan = cos_correction.copy()
@@ -112,9 +74,7 @@ class IrradianceCalculation:
                 index,
                 self._calculation_input,
                 self._get_sza(libradtran_result),
-                self._ozone,
-                spectrum,
-                uv_file_entry
+                spectrum
             )
 
         except Exception as e:
@@ -193,7 +153,7 @@ class IrradianceCalculation:
         libradtran.add_input(LibradtranInput.WAVELENGTH, [uv_file_entry.wavelengths[0], uv_file_entry.wavelengths[-1]])
         libradtran.add_input(LibradtranInput.LATITUDE, ["N", uv_file_header.position.latitude])
 
-        # Negative longitudes are West and Positive ones are East
+        # Negative longitudes are East and Positive ones are West
         hemisphere = "E" if uv_file_header.position.longitude < 0 else "W"
         libradtran.add_input(LibradtranInput.LONGITUDE, [hemisphere, abs(uv_file_header.position.longitude)])
 
@@ -202,7 +162,7 @@ class IrradianceCalculation:
         libradtran.add_input(LibradtranInput.SPLINE,
                              [uv_file_entry.wavelengths[0], uv_file_entry.wavelengths[-1], step])
 
-        libradtran.add_input(LibradtranInput.OZONE, [self._ozone.interpolated_value(minutes)])
+        libradtran.add_input(LibradtranInput.OZONE, [self._calculation_input.ozone.interpolated_value(minutes)])
 
         libradtran.add_input(LibradtranInput.TIME, [
             uv_file_header.date.year,
@@ -214,7 +174,6 @@ class IrradianceCalculation:
         ])
 
         libradtran.add_input(LibradtranInput.PRESSURE, [uv_file_header.pressure])
-
         libradtran.add_input(LibradtranInput.ALBEDO, [self._calculation_input.albedo])
         libradtran.add_input(LibradtranInput.AEROSOL,
                              [self._calculation_input.aerosol[0], self._calculation_input.aerosol[1]])
@@ -223,7 +182,7 @@ class IrradianceCalculation:
         result = libradtran.calculate()
         return result
 
-    def _cos_correction(self, arf, libradtran_result) -> List[float]:
+    def _cos_correction(self, arf: ARF, libradtran_result: LibradtranResult) -> List[float]:
         """
         Calculate the cosine correction factor `c` from a LibRadtran result and ARF values
         :param arf: the ARF object containing the ARF values
@@ -268,7 +227,7 @@ class IrradianceCalculation:
         # return c
         return divide(1, c_inverse)
 
-    def _cos_correction_2(self, arf, libradtran_result) -> List[float]:
+    def _cos_correction_2(self, arf: ARF, libradtran_result: LibradtranResult) -> List[float]:
         """
         Calculate the cosine correction factor `c` from a LibRadtran result and ARF values
 
@@ -313,16 +272,3 @@ class IrradianceCalculation:
         :return: the sza
         """
         return libradtran_result.columns["sza"][0]
-
-
-INPUT = TypeVar('INPUT', bound=Iterable)
-RETURN = TypeVar('RETURN')
-
-
-@dataclass
-class Job(Generic[INPUT, RETURN]):
-    _fn: Callable[[INPUT], RETURN]
-    _args: INPUT
-
-    def call(self) -> RETURN:
-        return self._fn(*self._args)

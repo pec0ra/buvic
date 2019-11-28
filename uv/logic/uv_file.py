@@ -182,13 +182,6 @@ class UVFileHeader:
             warn("Integration time is 0.1147. This might be correct but there is a high chance that the value that you"
                  "want is 0.2294 instead.")
 
-    @property
-    def day_of_year(self) -> int:
-        """
-        The number of days since the beginning of the year
-        """
-        return self.date.timetuple().tm_yday
-
 
 @dataclass
 class RawUVValue:
