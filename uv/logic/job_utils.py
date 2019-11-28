@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import re
+import time
 from concurrent.futures.process import ProcessPoolExecutor
 from concurrent.futures.thread import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -54,6 +55,7 @@ class CalculationUtils:
         :param calculation_input: the input for the calculation
         :return: the results of the calculation
         """
+        start = time.time()
         LOG.info("Starting calculation for '%s', '%s', '%s' and '%s'", calculation_input.uv_file_name,
                  calculation_input.b_file_name, calculation_input.calibration_file_name,
                  calculation_input.arf_file_name)
@@ -78,9 +80,9 @@ class CalculationUtils:
         if not self._only_csv:
             create_sza_plot(self._output_dir, result_list, self._file_type)
 
-        LOG.info("Finished calculations for '%s', '%s', '%s' and '%s'", calculation_input.uv_file_name,
+        LOG.info("Finished calculations for '%s', '%s', '%s' and '%s' in %ds", calculation_input.uv_file_name,
                  calculation_input.b_file_name, calculation_input.calibration_file_name,
-                 calculation_input.arf_file_name)
+                 calculation_input.arf_file_name, time.time() - start)
         return result_list
 
     def calculate_for_all(self, input_dir: str, albedo: float, aerosol: Tuple[float, float]) -> None:
