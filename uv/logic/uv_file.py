@@ -60,11 +60,7 @@ class UVFileReader(object):
 
             dark_match = re.match("^dark\s+(?P<dark>\S+)\s+$", next_line)
             if dark_match is not None:
-                print("Matching: " + next_line)
-                print(dark_match.group("dark"))
-                print("Old dark: " + str(header.dark))
                 header.dark = (header.dark + float(dark_match.group("dark"))) / 2
-                print("New dark: " + str(header.dark))
                 next_line = self.__read_line(file)
                 for i in range(len(values) - 1, -1, -1):
                     old_value = values[i]

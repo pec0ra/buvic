@@ -1,3 +1,4 @@
+import multiprocessing
 import os
 import traceback
 from concurrent.futures import ThreadPoolExecutor
@@ -9,11 +10,11 @@ from remi import App, Label
 from remi.gui import VBox
 
 from uv.logic.calculation_input import CalculationInput
+from uv.logic.job_utils import JobUtils
 from uv.logic.result import Result
 from .const import OUTPUT_DIR
 from .gui.utils import show, hide
 from .gui.widgets import Title, Level, Loader, PathMainForm, SimpleMainForm, ResultWidget, ExtraParamForm
-from .logic.irradiance_calculation import IrradianceCalculation
 
 
 class UVApp(App):
@@ -25,6 +26,7 @@ class UVApp(App):
     _loader: Loader
     _result_container: ResultWidget
     _error_label: Label
+    _lock = multiprocessing.Manager().Lock()
 
     def __init__(self, *args):
         super(UVApp, self).__init__(*args, static_file_path={'plots': OUTPUT_DIR})
@@ -87,53 +89,48 @@ class UVApp(App):
         """
 
         self._reset_errors()
-        self._loader.set_progress(0)
-        self._loader.set_label("Calculating...")
+        self._loader.reset()
         show(self._loader)
         hide(self._forms)
         hide(self._result_container)
 
+        background_pool = ThreadPoolExecutor(max_workers=1)
+        background_pool.submit(self._start_calculation, calculation_input)
+
+    def _start_calculation(self, calculation_input: CalculationInput):
         try:
             self._check_input(calculation_input)
 
-            ie = IrradianceCalculation(calculation_input,
-                                       progress_handler=self._progress_handler)
-            self._executor.submit(self._start_calculation, ie)
+            job_utils = JobUtils(OUTPUT_DIR, init_progress=self._init_progress, progress_handler=self._make_progress)
+            results = job_utils.calculate_and_output(calculation_input)
+            self._show_result(results)
         except Exception as e:
-            traceback.print_tb(e.__traceback__)
-            self._show_error(str(e))
-
-    def _start_calculation(self, ie: IrradianceCalculation):
-        try:
-            result = ie.calculate()
-            self._show_result(result)
-        except Exception as e:
-            traceback.print_tb(e.__traceback__)
-            self._show_error(str(e))
-            raise e
+            self._handle_error(e)
 
     def _reset_errors(self):
         hide(self._error_label)
         self._error_label.set_text("")
 
-    def _progress_handler(self, current_progress: int, total_progress: int):
-        if total_progress == 0:
-            self._loader.set_progress(0)
-        else:
-            value = int(current_progress * 50 / total_progress)
-            self._loader.set_progress(value)
+    def _init_progress(self, total: int):
+        self._loader.init(total)
+
+    def _make_progress(self, value: float):
+        with self._lock:
+            self._loader.progress(value)
 
     def _show_result(self, results: List[Result]):
-        self._loader.set_label("Generating result files...")
-        self._loader.set_progress(50)
 
-        self._result_container.display(results, self._progress_handler)
+        self._result_container.display(results)
 
         self._main_form.check_fields()
         self._secondary_form.check_fields()
         hide(self._loader)
         show(self._forms)
         show(self._result_container)
+
+    def _handle_error(self, e: Exception):
+        traceback.print_tb(e.__traceback__)
+        self._show_error(str(e))
 
     def _show_error(self, error: str):
         self._main_form.check_fields()

@@ -1,5 +1,3 @@
-import os
-from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from enum import Enum
 from threading import Lock
@@ -12,7 +10,8 @@ from .utils import show, hide
 from ..brewer_infos import brewer_infos
 from ..const import TMP_FILE_DIR, DATA_DIR, OUTPUT_DIR, DEFAULT_BETA_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_ALBEDO_VALUE
 from ..logic.calculation_input import CalculationInput
-from ..logic.utils import create_spectrum_plots, create_sza_plot, create_csv
+from ..logic.utils import create_csv, get_sza_correction_plot_name, get_spectrum_plot_name, \
+    get_corrected_spectrum_plot_name
 
 
 class Button(gui.Button):
@@ -122,16 +121,22 @@ class Loader(VBox):
     def __init__(self):
         super().__init__()
         hide(self)
-        self._label = gui.Label("Starting...")
+        self._label = gui.Label("Calculating...")
         self._bar = gui.Progress(0, 100, width=400)
         self.append(self._label)
         self.append(self._bar)
+        self._current_value = 0
 
-    def set_progress(self, value: int):
-        self._bar.set_value(value)
+    def reset(self):
+        self._current_value = 0
+        self._bar.set_value(0)
 
-    def set_label(self, label: str):
-        self._label.set_text(label)
+    def init(self, total: int):
+        self._bar.set_max(total)
+
+    def progress(self, value: float):
+        self._current_value = self._current_value + value
+        self._bar.set_value(self._current_value)
 
 
 class MainForm(VBox):
@@ -364,38 +369,31 @@ class ResultWidget(VBox):
         self._current_progress = 0
         self._current_progress_lock = Lock()
 
-    def display(self, results: List[Result], progress: Callable[[int, int], None] = None):
+    def display(self, results: List[Result]):
         self._results = results
-        self._progress_callback = progress
-        self._current_progress = 0
-
-        # TODO: this should be done earlier in the logic package
-        # Since generating the plots and the csv will take some time, we parallelize this action
-        workers = min((os.cpu_count() or 1) * 5, 19)
-        with ThreadPoolExecutor(max_workers=workers) as pool:
-            result_guis = pool.map(self._create_result_gui, enumerate(results))
 
         self.empty()
         self.append(self.result_title)
 
-        sza_correction_plot = create_sza_plot(OUTPUT_DIR, results)
+        sza_correction_plot = get_sza_correction_plot_name(results[0])
         pic = ImagePlot(sza_correction_plot)
         self.append(pic)
 
-        for result_gui in result_guis:
+        for result in results:
+            result_gui = self._create_result_gui(result)
             self.append(result_gui)
 
-    def _create_result_gui(self, entry: Tuple[int, Result]) -> VBox:
+    @staticmethod
+    def _create_result_gui(result: Result) -> VBox:
         """
         Create a section's GUI with a title, result info as text and two plots
-        :param entry: the section's index and result
+        :param result: the result for which to create the gui
         :return: the GUI's widget
         """
-        index, result = entry
         vbox = VBox()
         vbox.set_style("margin-bottom: 20px")
 
-        result_title = Title(Level.H3, "Section " + str(index))
+        result_title = Title(Level.H3, "Section " + str(result.index))
         vbox.append(result_title)
 
         header = result.uv_file_entry.header
@@ -427,21 +425,16 @@ class ResultWidget(VBox):
 
         hbox = gui.HBox()
 
-        spectrum_plot, spectrum_correction_plot = create_spectrum_plots(OUTPUT_DIR, result)
+        spectrum_plot = get_spectrum_plot_name(result)
         pic = ImagePlot(spectrum_plot)
         hbox.append(pic)
 
+        spectrum_correction_plot = get_corrected_spectrum_plot_name(result)
         pic = ImagePlot(spectrum_correction_plot)
         hbox.append(pic)
         vbox.append(hbox)
 
-        self._progress_callback(len(self._results) + self._get_next_progress(), len(self._results))
         return vbox
-
-    def _get_next_progress(self) -> int:
-        with self._current_progress_lock:
-            self._current_progress += 1
-            return self._current_progress
 
 
 class ImagePlot(gui.Image):

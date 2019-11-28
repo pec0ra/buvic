@@ -83,9 +83,8 @@ def create_spectrum_plots(saving_dir: str, result: Result, file_type: str = "png
     ax.semilogy(result.spectrum.wavelengths, result.spectrum.cos_corrected_spectrum, label="Cos corrected spectrum")
 
     ax.legend()
-    file_path = result.get_name("spectrum_", "." + file_type)
+    file_path = get_spectrum_plot_name(result, file_type)
     fig.savefig(saving_dir + file_path)
-    plt.close(fig)
 
     fig, ax = plt.subplots()
     ax.set(xlabel="Wavelength (nm)", ylabel="Correction factor")
@@ -94,9 +93,9 @@ def create_spectrum_plots(saving_dir: str, result: Result, file_type: str = "png
     ax.plot(result.spectrum.wavelengths, result.spectrum.cos_correction, label="Correction factor")
 
     ax.legend()
-    file_path_correction = result.get_name("spectrum_", "_correction." + file_type)
+    file_path_correction = get_corrected_spectrum_plot_name(result, file_type)
     fig.savefig(saving_dir + file_path_correction)
-    plt.close(fig)
+    plt.close()
 
     return file_path, file_path_correction
 
@@ -115,7 +114,7 @@ def create_sza_plot(saving_dir: str, results: List[Result], file_type: str = "pn
     """
     wavelengths = [295, 310, 325]
 
-    sorted_results = sorted(results, key=lambda x: x.sza)
+    sorted_results = sorted([*results], key=lambda x: x.sza)
     szas = [r.sza for r in sorted_results]
     fig, ax = plt.subplots()
     ax.set(xlabel="SZA", ylabel="Correction factor")
@@ -127,11 +126,20 @@ def create_sza_plot(saving_dir: str, results: List[Result], file_type: str = "pn
 
     plt.title("Correction factor")
     ax.legend()
-    bid = results[0].uv_file_entry.brewer_info.id
-    sza_plot_name_correction = "correction_" + bid + "_" + results[
-        0].uv_file_entry.header.date.isoformat().replace('-',
-                                                         '') + "_" + results[
-                                   0].calculation_input.to_hash() + "." + file_type
+    first_result = results[0]
+    sza_plot_name_correction = get_sza_correction_plot_name(first_result, file_type)
     fig.savefig(saving_dir + sza_plot_name_correction)
 
     return sza_plot_name_correction
+
+
+def get_spectrum_plot_name(result: Result, file_type: str = "png") -> str:
+    return result.get_name("spectrum_", "." + file_type)
+
+
+def get_corrected_spectrum_plot_name(result: Result, file_type: str = "png") -> str:
+    return result.get_name("spectrum_", "_correction." + file_type)
+
+
+def get_sza_correction_plot_name(result: Result, file_type: str = "png") -> str:
+    return result.get_name("correction_", "." + file_type)

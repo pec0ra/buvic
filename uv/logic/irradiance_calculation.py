@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import warnings
 from concurrent.futures import ThreadPoolExecutor
-from threading import Lock
-from typing import List, Callable
+from dataclasses import dataclass
+from typing import List, Tuple, Iterable, Generic, TypeVar, Callable
 
 from numpy import multiply, divide, sin, add, pi, mean, exp, maximum, linspace, trapz, cos, isnan
 from scipy.interpolate import UnivariateSpline
 
+from uv.logic.calibration_file import Calibration
 from .arf_file import read_arf_file, ARF
 from .b_file import read_ozone_from_b_file, Ozone
 from .calculation_input import CalculationInput
@@ -28,73 +29,66 @@ class IrradianceCalculation:
 
     _calculation_input: CalculationInput
     _ozone: Ozone
-    _progress_handler: Callable[[int, int], None] or None
-    _progress_lock: Lock
-    _current_progress: int
-    _total_progress: int
+    _calibration: Calibration
+    _arf: ARF
 
     def __init__(
             self,
-            calculation_input: CalculationInput,
-            progress_handler: Callable[[int, int], None] = None
+            calculation_input: CalculationInput
     ):
         """
         Create an instance from a given CalculationInput
 
         :param calculation_input: the object containing the file names and data required for the calculations
-        :param progress_handler: a method to call every time the calculation makes progress
         """
         self._calculation_input = calculation_input
-        self._progress_handler = progress_handler
-        self._progress_lock = Lock()
-        self._current_progress: int = 0
-        self._total_progress: int = 0
 
-    def calculate(self) -> List[Result]:
+    def calculate(self) -> List[Job[Tuple[int, UVFileEntry], Result]]:
         """
         Parse the files into spectra
-        :return: a list of spectrum
+        :return: the result length and an iterable of Result
         """
         uv_file_reader = UVFileReader(self._calculation_input.uv_file_name)
-        self._ozone = read_ozone_from_b_file(self._calculation_input.b_file_name)
-        calibration = read_calibration_file(self._calculation_input.calibration_file_name)
-        arf = read_arf_file(self._calculation_input.arf_file_name, self._calculation_input.arf_direction)
-
         uv_file_entries = uv_file_reader.get_uv_file_entries()
-        self._init_progress(len(uv_file_entries) + 1)
-        libradtran_results = self._execute_libradtran_parallel(uv_file_entries)
 
-        results = []
-        i = 0
-        for libradtran_result in libradtran_results:
-            uv_file_entry = uv_file_entries[i]
-            calibrated_spectrum = self._to_calibrated_spectrum(uv_file_entry, calibration)
-            cos_correction = self._cos_correction(arf, libradtran_result)
+        self._ozone = read_ozone_from_b_file(self._calculation_input.b_file_name)
+        self._calibration = read_calibration_file(self._calculation_input.calibration_file_name)
+        self._arf = read_arf_file(self._calculation_input.arf_file_name, self._calculation_input.arf_direction)
 
-            # Set nan to 1
-            cos_correction_no_nan = cos_correction.copy()
-            cos_correction_no_nan[isnan(cos_correction_no_nan)] = 1
-            cos_corrected_spectrum = multiply(calibrated_spectrum, cos_correction_no_nan)
-
-            spectrum = Spectrum(
-                uv_file_entry.wavelengths,
-                uv_file_entry.times,
-                uv_file_entry.events,
-                calibrated_spectrum,
-                cos_corrected_spectrum,
-                cos_correction
+        job_list = []
+        for entry in enumerate(uv_file_entries):
+            job_list.append(
+                Job(self._calculate_entry, entry)
             )
-            results.append(Result(
-                i,
-                self._calculation_input,
-                self._get_sza(libradtran_result),
-                self._ozone,
-                spectrum,
-                uv_file_entry
-            ))
-            i += 1
-        self._report_progress()
-        return results
+
+        return job_list
+
+    def _calculate_entry(self, index: int, uv_file_entry: UVFileEntry):
+        libradtran_result = self._execute_libradtran(uv_file_entry)
+        calibrated_spectrum = self._to_calibrated_spectrum(uv_file_entry, self._calibration)
+        cos_correction = self._cos_correction(self._arf, libradtran_result)
+
+        # Set nan to 1
+        cos_correction_no_nan = cos_correction.copy()
+        cos_correction_no_nan[isnan(cos_correction_no_nan)] = 1
+        cos_corrected_spectrum = multiply(calibrated_spectrum, cos_correction_no_nan)
+
+        spectrum = Spectrum(
+            uv_file_entry.wavelengths,
+            uv_file_entry.times,
+            uv_file_entry.events,
+            calibrated_spectrum,
+            cos_corrected_spectrum,
+            cos_correction
+        )
+        return Result(
+            index,
+            self._calculation_input,
+            self._get_sza(libradtran_result),
+            self._ozone,
+            spectrum,
+            uv_file_entry
+        )
 
     @staticmethod
     def _to_calibrated_spectrum(uv_file_entry, calibration) -> List[float]:
@@ -206,7 +200,6 @@ class IrradianceCalculation:
 
         libradtran.add_outputs(["sza", "edir", "edn", "eglo"])
         result = libradtran.calculate()
-        self._report_progress()
         return result
 
     def _cos_correction(self, arf, libradtran_result) -> List[float]:
@@ -300,15 +293,15 @@ class IrradianceCalculation:
         """
         return libradtran_result.columns["sza"][0]
 
-    def _init_progress(self, total_progress):
-        self._total_progress = total_progress
-        if self._progress_handler is not None:
-            with self._progress_lock:
-                self._current_progress = 0
-                self._progress_handler(self._current_progress, self._total_progress)
 
-    def _report_progress(self):
-        if self._progress_handler is not None:
-            with self._progress_lock:
-                self._current_progress += 1
-                self._progress_handler(self._current_progress, self._total_progress)
+I = TypeVar('I', bound=Iterable)
+R = TypeVar('R')
+
+
+@dataclass
+class Job(Generic[I, R]):
+    _fn: Callable[[I], R]
+    _args: I
+
+    def call(self) -> R:
+        return self._fn(*self._args)
