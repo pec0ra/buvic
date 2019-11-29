@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import functools
+from cached_property import cached_property, threaded_cached_property
 from dataclasses import dataclass
 from datetime import date
 from typing import Tuple
@@ -75,24 +76,20 @@ class CalculationInput:
         days = d.timetuple().tm_yday
         return CalculationInput.from_days_and_bid(albedo, aerosol, data_dir, brewer_id, days, d.year)
 
-    @property
-    @functools.lru_cache()
+    @threaded_cached_property
     def uv_file_entries(self):
         uv_file_reader = UVFileReader(self.uv_file_name)
         return uv_file_reader.get_uv_file_entries()
 
-    @property
-    @functools.lru_cache()
+    @threaded_cached_property
     def ozone(self):
         return read_ozone_from_b_file(self.b_file_name)
 
-    @property
-    @functools.lru_cache()
+    @threaded_cached_property
     def calibration(self):
         return read_calibration_file(self.calibration_file_name)
 
-    @property
-    @functools.lru_cache()
+    @threaded_cached_property
     def arf(self):
         return read_arf_file(self.arf_file_name, self.arf_direction)
 

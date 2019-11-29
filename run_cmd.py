@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import logging
 import multiprocessing
-import os, logging
+import os
 from argparse import ArgumentParser
 from pprint import PrettyPrinter
 
@@ -13,7 +14,7 @@ from uv.logic.calculation_input import CalculationInput
 from uv.logic.job_utils import CalculationUtils
 from uv.logutils import init_logging
 
-init_logging(logging.WARN)
+init_logging(logging.INFO)
 
 rcParams.update({'figure.autolayout': True})
 rcParams['figure.figsize'] = 10, 7
@@ -33,7 +34,9 @@ group.add_argument("--paths", "-p", nargs=4, metavar=("UV_FILE", "B_FILE", "UVR_
                         "file containing the ozone measurements. UVR_FILE: The UVR file containing calibration "
                         "data. ARF_FILE: The file containing the arf data")
 
-group.add_argument("--all", metavar="PATH", help="Finds and converts all UV files in the given PATH")
+group.add_argument("--all", action="store_true", help="Finds and converts all UV files in the input directory")
+
+group.add_argument("--watch", "-w", action="store_true", help="Watches the input directory for file changes and automatically converts changed UV files")
 
 parser.add_argument("--input-dir", "-i", help="The directory get the files from")
 parser.add_argument("--output-dir", "-o", help="The directory to save the results in", default=DEFAULT_OUTPUT)
@@ -50,6 +53,7 @@ pp.pprint(vars(args))
 days_and_brewer_id = args.days_and_brewer_id
 paths = args.paths
 do_all = args.all
+watch = args.watch
 albedo = args.albedo
 aerosol = args.aerosol
 output_dir = args.output_dir
@@ -83,10 +87,12 @@ def show_progress(value: float):
             progress.update(progress.value + value)
 
 
-cmd = CalculationUtils(output_dir, only_csv, init_progress=init_progress, progress_handler=show_progress)
+cmd = CalculationUtils(input_dir, output_dir, only_csv, init_progress=init_progress, progress_handler=show_progress, albedo=albedo, aerosol=aerosol)
+
 if days_and_brewer_id is not None:
     if input_dir is None:
         input_dir = DEFAULT_DATA_DIR
+
     days = int(days_and_brewer_id[0])
     brewer_id = days_and_brewer_id[1]
     calculation_input = CalculationInput.from_days_and_bid(
@@ -103,6 +109,7 @@ if days_and_brewer_id is not None:
 elif paths is not None:
     if input_dir is None:
         input_dir = ""
+
     calculation_input = CalculationInput(
         albedo,
         aerosol,
@@ -114,8 +121,14 @@ elif paths is not None:
 
     cmd.calculate_and_output(calculation_input)
 
-elif do_all is not None:
+elif do_all:
     if input_dir is None:
         input_dir = DEFAULT_DATA_DIR
 
-    cmd.calculate_for_all(input_dir, albedo, aerosol)
+    cmd.calculate_for_all()
+
+elif watch:
+    if input_dir is None:
+        input_dir = DEFAULT_DATA_DIR
+
+    cmd.watch()

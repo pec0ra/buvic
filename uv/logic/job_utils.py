@@ -1,14 +1,18 @@
 from __future__ import annotations
 
-import os
 import re
 import time
 from concurrent.futures.process import ProcessPoolExecutor
 from concurrent.futures.thread import ThreadPoolExecutor
 from dataclasses import dataclass
 from logging import getLogger
+from os import path, makedirs, listdir
 from typing import Tuple, Callable, List, Any, TypeVar, Generic
 
+from watchdog.observers import Observer
+
+from uv.const import DEFAULT_ALBEDO_VALUE, DEFAULT_BETA_VALUE, DEFAULT_ALPHA_VALUE
+from uv.logic.calculation_event_handler import CalculationEventHandler
 from uv.logic.result import Result
 from .calculation_input import CalculationInput
 from .irradiance_calculation import IrradianceCalculation
@@ -25,14 +29,18 @@ class CalculationUtils:
 
     def __init__(
             self,
+            input_dir: str,
             output_dir: str,
             only_csv: bool = False,
             init_progress: Callable[[int], None] = None,
             progress_handler: Callable[[float], None] = None,
-            file_type: str = "png"
+            file_type: str = "png",
+            albedo: float = DEFAULT_ALBEDO_VALUE,
+            aerosol: Tuple[float, float] = (DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE)
     ):
         """
         Create an instance of JobUtils with the given parameters
+        :param input_dir: the directory to get the files from
         :param output_dir: the directory to save the plots and csv in
         :param only_csv: whether to only create csv files (no plots)
         :param init_progress: will be called at the beginning of the calculation with the total number of calculations
@@ -40,13 +48,18 @@ class CalculationUtils:
         :param progress_handler: will be called every time progress is made with the amount of progress given as
                                  parameter
         :param file_type: the file extension of the plots
+        :param albedo: the albedo to set for the calculations
+        :param aerosol: the aerosol values to set for the calculations
         """
 
+        self._input_dir = input_dir
         self._output_dir = output_dir
         self._only_csv = only_csv
         self._init_progress = init_progress
         self._progress_handler = progress_handler
         self._file_type = file_type
+        self._albedo = albedo
+        self._aerosol = aerosol
 
     def calculate_and_output(self, calculation_input: CalculationInput) -> List[Result]:
         """
@@ -61,8 +74,8 @@ class CalculationUtils:
                  calculation_input.arf_file_name)
 
         # Create output directory if needed
-        if not os.path.exists(self._output_dir):
-            os.makedirs(self._output_dir)
+        if not path.exists(self._output_dir):
+            makedirs(self._output_dir)
 
         # Create `IrradianceCalculation` Jobs
         calculation_jobs = self._create_jobs(calculation_input)
@@ -85,25 +98,21 @@ class CalculationUtils:
                  calculation_input.arf_file_name, time.time() - start)
         return result_list
 
-    def calculate_for_all(self, input_dir: str, albedo: float, aerosol: Tuple[float, float]) -> None:
+    def calculate_for_all(self) -> None:
         """
-        Create plots and csv for all UV Files in a given directory.
+        Create plots and csv for all UV Files in a the input directory.
 
-        This will loop across all files of `input_dir` and find all UV files. For each UV file, it will look if
+        This will loop through all files of `input_dir` and find all UV files. For each UV file, it will look if
         corresponding B file, UVR file and ARF file exist.
         If they exist, it will call IrradianceCalculation to create a result and it will then create plots and csv from
         this result
-
-        :param input_dir: the directory in which to search the files
-        :param albedo: the albedo to set for the calculations
-        :param aerosol: the aerosol values to set for the calculations
         """
 
-        if not os.path.exists(self._output_dir):
-            os.makedirs(self._output_dir)
+        if not path.exists(self._output_dir):
+            makedirs(self._output_dir)
 
         input_list = []
-        for file_name in os.listdir(input_dir):
+        for file_name in listdir(self._input_dir):
             # UV file names are like `UV12319.070`
             res = re.match(r'UV(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d+)', file_name)
 
@@ -113,34 +122,9 @@ class CalculationUtils:
                 year = res.group("year")
                 brewer_id = res.group("brewer_id")
 
-                uv_file = file_name
-                b_file = "B" + days + year + "." + brewer_id
-                info = get_brewer_info(brewer_id)
-                calibration_file = info.uvr_file_name
-                arf_file = info.arf_file_name
-
-                if not os.path.exists(input_dir + b_file):
-                    print("Corresponding B file '" + b_file + "' not found for UV file '" + uv_file + "', skipping")
-                    continue
-
-                if not os.path.exists(input_dir + calibration_file):
-                    print(
-                        "Corresponding UVR file '" + calibration_file + "' not found for UV file '" + uv_file + "', skipping")
-                    continue
-
-                if not os.path.exists(input_dir + arf_file):
-                    print("Corresponding ARF file '" + arf_file + "' not found for UV file '" + uv_file + "', skipping")
-                    continue
-
-                # If everything is ok, create a calculation input and add it to the list
-                input_list.append(CalculationInput(
-                    albedo,
-                    aerosol,
-                    input_dir + uv_file,
-                    input_dir + b_file,
-                    input_dir + calibration_file,
-                    input_dir + arf_file
-                ))
+                calculation_input = self.input_from_files(days, year, brewer_id)
+                if calculation_input is not None:
+                    input_list.append(calculation_input)
 
         job_list = []
         for calculation_input in input_list:
@@ -155,6 +139,71 @@ class CalculationUtils:
 
         # Execute the jobs
         self._execute_jobs(job_list)
+
+    def watch(self) -> None:
+        """
+        Watch a directory for new UV or B files.
+
+        This will create a watchdog on the input directory. Every time a UV file or a B file (recognized by their names) is modified, it
+        will calculate the irradiance and generate the corresponding output (plots/csv).
+
+        This method will run until interrupted by the user
+        """
+        self._init_progress = None
+        self._progress_handler = None
+        event_handler = CalculationEventHandler(self._on_new_file)
+        observer = Observer()
+        observer.schedule(event_handler, self._input_dir)
+        observer.start()
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            observer.stop()
+        observer.join()
+
+    def _on_new_file(self, file_type: str, days: str, year: str, brewer_id: str) -> None:
+        if file_type == "UV":
+            calculation_input = self.input_from_files(days, year, brewer_id)
+            if calculation_input is not None:
+                self.calculate_and_output(calculation_input)
+        if file_type == "B":
+            calculation_input = self.input_from_files(days, year, brewer_id)
+            if calculation_input is not None:
+                self.calculate_and_output(calculation_input)
+
+    def input_from_files(self, days: str, year: str, brewer_id: str):
+        uv_file = "UV" + days + year + "." + brewer_id
+        b_file = "B" + days + year + "." + brewer_id
+        info = get_brewer_info(brewer_id)
+        calibration_file = info.uvr_file_name
+        arf_file = info.arf_file_name
+
+        if not path.exists(path.join(self._input_dir, uv_file)):
+            print("Corresponding UV file '" + uv_file + "' not found for B file '" + b_file + "', skipping")
+            return None
+
+        if not path.exists(path.join(self._input_dir, b_file)):
+            print("Corresponding B file '" + b_file + "' not found for UV file '" + uv_file + "', skipping")
+            return None
+
+        if not path.exists(path.join(self._input_dir, calibration_file)):
+            print("Corresponding UVR file '" + calibration_file + "' not found for UV file '" + uv_file + "', skipping")
+            return None
+
+        if not path.exists(path.join(self._input_dir, arf_file)):
+            print("Corresponding ARF file '" + arf_file + "' not found for UV file '" + uv_file + "', skipping")
+            return None
+
+        # If everything is ok, return a calculation input
+        return CalculationInput(
+            self._albedo,
+            self._aerosol,
+            path.join(self._input_dir, uv_file),
+            path.join(self._input_dir, b_file),
+            path.join(self._input_dir, calibration_file),
+            path.join(self._input_dir, arf_file)
+        )
 
     def _execute_jobs(self, jobs: List[Job[Any, Result]]) -> List[Result]:
         """
@@ -277,3 +326,5 @@ class Job(Generic[INPUT, RETURN]):
         :return: the job's return value
         """
         return self._fn(self._args)
+
+
