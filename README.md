@@ -1,5 +1,16 @@
 # UV irradiance calculations
 
+## Requirements
+
+All python commands required python >= 3.7 and the libraries listed in [requirements.txt](requirements.txt).
+These libraries can be installed with the pip command:
+```
+pip install -r requirements.txt
+```
+
+The Docker images require docker
+
+
 ## Docker
 
 Two docker images are available for calculations:
