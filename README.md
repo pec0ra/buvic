@@ -3,6 +3,23 @@
 
 This repository contains a set of tools to calculate the cosine corrected irradiance from raw UV measurements.
 
+## Table of content
+<!--ts-->
+   * [UV irradiance calculations](#uv-irradiance-calculations)
+      * [Requirements](#requirements)
+      * [UV Web Application](#uv-web-application)
+      * [Command line app](#command-line-app)
+         * [1. Calculate for a date and brewer id](#1-calculate-for-a-date-and-brewer-id)
+         * [2. Calculate for given files](#2-calculate-for-given-files)
+         * [3. Calculate for all files of a given directory](#3-calculate-for-all-files-of-a-given-directory)
+         * [4. Watchdog](#4-watchdog)
+      * [Docker](#docker)
+         * [1. UV Server](#1-uv-server)
+         * [2. UV Watch](#2-uv-watch)
+
+<!-- Added by: basile, at: Fr Nov 29 14:54:18 CET 2019 -->
+
+<!--te-->
 
 ## Requirements
 
