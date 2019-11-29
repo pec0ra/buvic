@@ -85,7 +85,7 @@ The options `--days-and-brewer-id`, `--paths`, `--all` and `--watch` correspond 
 
 The options `--input-dir`, `--output-dir`, `--albedo`, `--aerosol` and `--only-csv` are optional parameters and can be used with any of the 4 options cited above. If not specified, default values will be used.
 
-### Calculate for a date and brewer id
+### 1. Calculate for a date and brewer id
 
 This command search for measurements matching a date and a brewer id from a preset of files.
 The date is given as the number of days since new year (January 1st is 1)
@@ -101,8 +101,9 @@ Run the calculation for brewer `186` on June 25th with an albedo of 0.1 and angs
 ```
 python run_cmd.py -d 175 186 -a 0.1 -e 1.3 0.1 -c
 ```
+Note that if `--input-dir` is not specified, the measurement files will be taken from `data/`.
 
-### Calculate for given files
+### 2. Calculate for given files
 
 This command executes the calculation for four given measurement files:
 1. UV File: Raw uv measurements
@@ -123,6 +124,28 @@ Run the calculation for the four files with an albedo of 0.1 and angström's alp
 python run_cmd.py -p data/UV17519.070 data/B17519.070 data/UVR17319.070 data/arf_070.dat -a 0.1 -e 1.3 0.1 -c
 ```
 
+### 3. Calculate for all files of a given directory
+
+Find all pair of UV and B files in a directory and run calculations for each them.
+Calculations will be skipped if UVR and ARF files are not available.
+
+**Examples:**
+
+Run the calculations for all the files found in the `data` directory and write the output to the `output` directory:
+```
+python run_cmd.py --all data/ -o output/
+```
+Note that `--input-dir` has no effect for this command.
+
+### 4. Watchdog
+
+Monitor a directory for new files and run the calculation for every new/modified pair of UV and B files.
+Calculations will be skipped if UVR and ARF files are not available.
+
+```
+python run_cmd.py --watch --input-dir measurements/
+```
+Note that if `--input-dir` is not specified, the measurement files will be taken from `data/`.
 
 
 
