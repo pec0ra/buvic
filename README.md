@@ -196,6 +196,15 @@ The flag `-d` tells docker to run this container as a daemon (in the background)
 After running this command, you can access the web app in your browser at `http://localhost:<PORT>`
 
 
+If you want to use a custom directory as a source for measurement files and/or for output files, you can mount the container's `/data` and `/out` as volumes:
+```
+docker run -d -p <PORT>:80 <MEASUREMENT_PATH>:/data -v <OUT_PATH>:/out --user $(id -u):$(id -g) --name uv-server pec0ra/uv-server
+```
+where `<MEASUREMENT_PATH>` is the *absolute* path to your measurement and `<OUT_PATH>` is the *absolute* path to the directory you want to save the outputs in.
+
+The `--user $(id -u):$(id -g)` option tells docker to run the container as the current user.
+This prevents permissions issues at the moment of writing files to the output directory.
+You might need to skip this option on Windows.
 
 
 ### 2. UV Watch
