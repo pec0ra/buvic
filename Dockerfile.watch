@@ -43,4 +43,4 @@ COPY docker/const.py ./uv/
 COPY data ./data
 
 # Start server
-CMD python3.7 run_cmd.py -w -i /in -o /out/ -c
+CMD python3.7 run_cmd.py -w -i /in -o /out -c

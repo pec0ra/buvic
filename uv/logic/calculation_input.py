@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-import functools
-from cached_property import cached_property, threaded_cached_property
 from dataclasses import dataclass
 from datetime import date
 from typing import Tuple
+
+from os import path
+
+from cached_property import threaded_cached_property
 
 from uv.logic.b_file import read_ozone_from_b_file
 from uv.logic.calibration_file import read_calibration_file
@@ -38,10 +40,10 @@ class CalculationInput:
         if year > 2000:
             year -= 2000
         brewer = get_brewer_info(brewer_id)
-        uv_file_name = data_dir + "UV" + str(days) + str(year) + "." + brewer_id
-        b_file_name = data_dir + "B" + str(days) + str(year) + "." + brewer_id
-        calibration_file_name = data_dir + brewer.uvr_file_name
-        arf_file_name = data_dir + brewer.arf_file_name
+        uv_file_name = path.join(data_dir, "UV" + str(days) + str(year) + "." + brewer_id)
+        b_file_name = path.join(data_dir, "B" + str(days) + str(year) + "." + brewer_id)
+        calibration_file_name = path.join(data_dir, brewer.uvr_file_name)
+        arf_file_name = path.join(data_dir, brewer.arf_file_name)
         return CalculationInput(
             albedo,
             aerosol,

@@ -213,7 +213,7 @@ class CalculationUtils:
             1. The job is scheduled on a thread pool to asynchronously produce a Result
             2. For the result of step 1, the generation of plots and csv is scheduled on a process pool
 
-        We use a ThreadPoolExecutor to schedule the jobs since it is lighter and faster than a ProcessPoolExecutor.
+        We use a ThreadPoolExecutor to schedule the jobs since calling LibRadtran already creates a new process.
         For the generation of plots, we have to use a ProcessPoolExecutor since matplotlib can't run in parallel threads
         but only in different processes.
 

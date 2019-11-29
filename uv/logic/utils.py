@@ -1,6 +1,8 @@
 from datetime import timedelta, date, time
 from typing import Tuple, List
 
+from os import path
+
 import matplotlib.pyplot as plt
 
 from .result import Result
@@ -53,7 +55,7 @@ def time_to_minutes(t: time) -> float:
 
 def create_csv(saving_dir: str, result: Result) -> str:
     file_name = result.get_name("spectrum_", ".csv")
-    with open(saving_dir + file_name, "w") as csv_file:
+    with open(path.join(saving_dir, file_name), "w") as csv_file:
         result.to_csv(csv_file)
     return file_name
 
@@ -84,7 +86,7 @@ def create_spectrum_plots(saving_dir: str, result: Result, file_type: str = "png
 
     ax.legend()
     file_path = get_spectrum_plot_name(result, file_type)
-    fig.savefig(saving_dir + file_path)
+    fig.savefig(path.join(saving_dir, file_path))
 
     fig, ax = plt.subplots()
     ax.set(xlabel="Wavelength (nm)", ylabel="Correction factor")
@@ -94,7 +96,7 @@ def create_spectrum_plots(saving_dir: str, result: Result, file_type: str = "png
 
     ax.legend()
     file_path_correction = get_corrected_spectrum_plot_name(result, file_type)
-    fig.savefig(saving_dir + file_path_correction)
+    fig.savefig(path.join(saving_dir, file_path_correction))
     plt.close('all')
 
     return file_path, file_path_correction
@@ -128,7 +130,7 @@ def create_sza_plot(saving_dir: str, results: List[Result], file_type: str = "pn
     ax.legend()
     first_result = results[0]
     sza_plot_name_correction = get_sza_correction_plot_name(first_result, file_type)
-    fig.savefig(saving_dir + sza_plot_name_correction)
+    fig.savefig(path.join(saving_dir, sza_plot_name_correction))
     plt.close('all')
 
     return sza_plot_name_correction
