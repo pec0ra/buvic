@@ -14,8 +14,6 @@ from uv.logic.calculation_input import CalculationInput
 from uv.logic.job_utils import CalculationUtils
 from uv.logutils import init_logging
 
-init_logging(logging.INFO)
-
 rcParams.update({'figure.autolayout': True})
 rcParams['figure.figsize'] = 10, 7
 
@@ -90,6 +88,7 @@ def show_progress(value: float):
 cmd = CalculationUtils(input_dir, output_dir, only_csv, init_progress=init_progress, progress_handler=show_progress, albedo=albedo, aerosol=aerosol)
 
 if days_and_brewer_id is not None:
+    init_logging(logging.WARN)
     if input_dir is None:
         input_dir = DEFAULT_DATA_DIR
 
@@ -107,6 +106,7 @@ if days_and_brewer_id is not None:
     cmd.calculate_and_output(calculation_input)
 
 elif paths is not None:
+    init_logging(logging.WARN)
     if input_dir is None:
         input_dir = ""
 
@@ -122,12 +122,14 @@ elif paths is not None:
     cmd.calculate_and_output(calculation_input)
 
 elif do_all:
+    init_logging(logging.WARN)
     if input_dir is None:
         input_dir = DEFAULT_DATA_DIR
 
     cmd.calculate_for_all()
 
 elif watch:
+    init_logging(logging.INFO)
     if input_dir is None:
         input_dir = DEFAULT_DATA_DIR
 

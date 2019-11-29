@@ -12,7 +12,7 @@ from remi.gui import VBox
 from uv.logic.calculation_input import CalculationInput
 from uv.logic.job_utils import CalculationUtils
 from uv.logic.result import Result
-from .const import OUTPUT_DIR
+from .const import OUTPUT_DIR, DATA_DIR
 from .gui.utils import show, hide
 from .gui.widgets import Title, Level, Loader, PathMainForm, SimpleMainForm, ResultWidget, ExtraParamForm
 
@@ -97,7 +97,7 @@ class UVApp(App):
         try:
             self._check_input(calculation_input)
 
-            job_utils = CalculationUtils(OUTPUT_DIR, init_progress=self._init_progress, progress_handler=self._make_progress)
+            job_utils = CalculationUtils(DATA_DIR, OUTPUT_DIR, init_progress=self._init_progress, progress_handler=self._make_progress)
             results = job_utils.calculate_and_output(calculation_input)
             self._show_result(results)
         except Exception as e:

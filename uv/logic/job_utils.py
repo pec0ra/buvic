@@ -180,19 +180,19 @@ class CalculationUtils:
         arf_file = info.arf_file_name
 
         if not path.exists(path.join(self._input_dir, uv_file)):
-            print("Corresponding UV file '" + uv_file + "' not found for B file '" + b_file + "', skipping")
+            LOG.info("Corresponding UV file '" + uv_file + "' not found for B file '" + b_file + "', skipping")
             return None
 
         if not path.exists(path.join(self._input_dir, b_file)):
-            print("Corresponding B file '" + b_file + "' not found for UV file '" + uv_file + "', skipping")
+            LOG.info("Corresponding B file '" + b_file + "' not found for UV file '" + uv_file + "', skipping")
             return None
 
         if not path.exists(path.join(self._input_dir, calibration_file)):
-            print("Corresponding UVR file '" + calibration_file + "' not found for UV file '" + uv_file + "', skipping")
+            LOG.info("Corresponding UVR file '" + calibration_file + "' not found for UV file '" + uv_file + "', skipping")
             return None
 
         if not path.exists(path.join(self._input_dir, arf_file)):
-            print("Corresponding ARF file '" + arf_file + "' not found for UV file '" + uv_file + "', skipping")
+            LOG.info("Corresponding ARF file '" + arf_file + "' not found for UV file '" + uv_file + "', skipping")
             return None
 
         # If everything is ok, return a calculation input
