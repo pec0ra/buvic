@@ -13,10 +13,10 @@ from watchdog.observers import Observer
 
 from uv.const import DEFAULT_ALBEDO_VALUE, DEFAULT_BETA_VALUE, DEFAULT_ALPHA_VALUE
 from uv.logic.calculation_event_handler import CalculationEventHandler
+from uv.logic.output_utils import create_csv, create_spectrum_plots, create_sza_plot
 from uv.logic.result import Result
 from .calculation_input import CalculationInput
 from .irradiance_calculation import IrradianceCalculation
-from .utils import create_csv, create_spectrum_plots, create_sza_plot
 from ..brewer_infos import get_brewer_info
 
 LOG = getLogger(__name__)
@@ -326,5 +326,3 @@ class Job(Generic[INPUT, RETURN]):
         :return: the job's return value
         """
         return self._fn(self._args)
-
-

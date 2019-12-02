@@ -10,8 +10,8 @@ from .utils import show, hide
 from ..brewer_infos import brewer_infos
 from ..const import TMP_FILE_DIR, DATA_DIR, OUTPUT_DIR, DEFAULT_BETA_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_ALBEDO_VALUE
 from ..logic.calculation_input import CalculationInput
-from ..logic.utils import create_csv, get_sza_correction_plot_name, get_spectrum_plot_name, \
-    get_corrected_spectrum_plot_name, minutes_to_time
+from ..logic.utils import minutes_to_time
+from uv.logic.output_utils import create_csv, get_spectrum_plot_name, get_corrected_spectrum_plot_name, get_sza_correction_plot_name
 
 
 class Button(gui.Button):

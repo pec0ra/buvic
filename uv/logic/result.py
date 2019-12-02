@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import csv
 from dataclasses import dataclass
 from typing import TextIO, List
 
-from numpy import isnan
-
+from uv.logic.utils import date_to_days, minutes_to_time
 from .calculation_input import CalculationInput
 from .uv_file import UVFileEntry
 
@@ -17,28 +15,18 @@ class Result:
     sza: float
     spectrum: Spectrum
 
-    def to_csv(self, file: TextIO) -> None:
+    def to_qasume(self, file: TextIO) -> None:
         """
-        Convert this results value into csv and write it to a given file
-        :param file: the file to write the csv content to
+        Convert this results value into qasume format and write it to a given file
+        :param file: the file to write the qasume content to
         """
-        writer = csv.writer(file)
-        writer.writerow(
-            ["wavelength", "Measurement raw value", "Spectrum (Non COS corrected)", "COS corrected spectrum",
-             "COS correction factor"])
+        file.write("wavelength(nm)	spectral_irradiance(W m-2 nm-1)	time_min_UTC\n")
 
-        cos_correction_no_nan = self.spectrum.cos_correction.copy()
-        cos_correction_no_nan[isnan(cos_correction_no_nan)] = 1
         for i in range(len(self.spectrum.wavelengths)):
-            writer.writerow([
-                self.spectrum.wavelengths[i],
-                self.spectrum.uv_raw_values[i],
-                self.spectrum.original_spectrum[i],
-                self.spectrum.cos_corrected_spectrum[i],
-                cos_correction_no_nan[i]
-            ])
+            file.write(
+                f"{self.spectrum.wavelengths[i]:.1f}\t {self.spectrum.cos_corrected_spectrum[i] / 1000:.9f}\t   {self.spectrum.measurement_times[i]:.5f}\n")
 
-    def get_name(self, prefix: str, suffix: str):
+    def get_name(self, prefix: str = "", suffix: str = ""):
         """
         Create a name specific to this result.
 
@@ -47,8 +35,9 @@ class Result:
         :return: the created file name
         """
         bid = self.uv_file_entry.brewer_info.id
-        return prefix + bid + "_" + self.uv_file_entry.header.date.isoformat().replace('-', '') + "_" + str(
-            self.index) + "_" + self.calculation_input.to_hash() + suffix
+        days = date_to_days(self.uv_file_entry.header.date)
+        time = minutes_to_time(self.spectrum.measurement_times[0])
+        return f"{prefix}{days:03}{time.hour:02}{time.minute:02}G.{bid}{suffix}"
 
     @property
     def uv_file_entry(self) -> UVFileEntry:
