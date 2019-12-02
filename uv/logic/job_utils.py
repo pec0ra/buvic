@@ -33,6 +33,7 @@ class CalculationUtils:
             output_dir: str,
             only_csv: bool = False,
             init_progress: Callable[[int], None] = None,
+            finish_progress: Callable[[float], None] = None,
             progress_handler: Callable[[float], None] = None,
             file_type: str = "png",
             albedo: float = DEFAULT_ALBEDO_VALUE,
@@ -45,6 +46,7 @@ class CalculationUtils:
         :param only_csv: whether to only create csv files (no plots)
         :param init_progress: will be called at the beginning of the calculation with the total number of calculations
                               as parameter
+        :param finish_progress: will be called at the end of the calculation
         :param progress_handler: will be called every time progress is made with the amount of progress given as
                                  parameter
         :param file_type: the file extension of the plots
@@ -56,6 +58,7 @@ class CalculationUtils:
         self._output_dir = output_dir
         self._only_csv = only_csv
         self._init_progress = init_progress
+        self._finish_progress = finish_progress
         self._progress_handler = progress_handler
         self._file_type = file_type
         self._albedo = albedo
@@ -93,10 +96,59 @@ class CalculationUtils:
         if not self._only_csv:
             create_sza_plot(self._output_dir, result_list, self._file_type)
 
+        duration = time.time() - start
+        if self._finish_progress is not None:
+            self._finish_progress(duration)
         LOG.info("Finished calculations for '%s', '%s', '%s' and '%s' in %ds", calculation_input.uv_file_name,
                  calculation_input.b_file_name, calculation_input.calibration_file_name,
-                 calculation_input.arf_file_name, time.time() - start)
+                 calculation_input.arf_file_name, duration)
         return result_list
+
+    def calculate_for_inputs(self, calculation_inputs: List[CalculationInput]) -> List[Result]:
+        start = time.time()
+
+        job_list = []
+        for calculation_input in calculation_inputs:
+            # Create `IrradianceCalculation` Jobs
+            calculation_jobs = self._create_jobs(calculation_input)
+            job_list.extend(calculation_jobs)
+
+        LOG.info("Starting calculation of %d file sections in %d files", len(job_list), len(calculation_inputs))
+        # Init progress bar
+        if self._init_progress is not None:
+            self._init_progress(len(job_list))
+
+        # Execute the jobs
+        ret = self._execute_jobs(job_list)
+
+        duration = time.time() - start
+        if self._finish_progress is not None:
+            self._finish_progress(duration)
+        LOG.info("Finished calculation batch in %ds", duration)
+        return ret
+
+    def calculate_for_all_between(self, start_date: int, end_date: int, brewer_id) -> List[Result]:
+        """
+        Create plots and csv for all UV Files in a the input directory.
+
+        This will loop through all files of `input_dir` and find all UV files. For each UV file, it will look if
+        corresponding B file, UVR file and ARF file exist.
+        If they exist, it will call IrradianceCalculation to create a result and it will then create plots and csv from
+        this result
+        """
+
+        if not path.exists(self._output_dir):
+            makedirs(self._output_dir)
+
+        input_list = []
+        for days in range(start_date, end_date + 1):
+            year = 19  # TODO: year as input
+
+            calculation_input = self.input_from_files(str(days), str(year), brewer_id)
+            if calculation_input is not None:
+                input_list.append(calculation_input)
+
+        return self.calculate_for_inputs(input_list)
 
     def calculate_for_all(self) -> None:
         """
@@ -126,19 +178,7 @@ class CalculationUtils:
                 if calculation_input is not None:
                     input_list.append(calculation_input)
 
-        job_list = []
-        for calculation_input in input_list:
-            # Create `IrradianceCalculation` Jobs
-            calculation_jobs = self._create_jobs(calculation_input)
-            job_list.extend(calculation_jobs)
-
-        print("Starting calculation of ", len(job_list), " file sections in ", len(input_list), " files")
-        # Init progress bar
-        if self._init_progress is not None:
-            self._init_progress(len(job_list))
-
-        # Execute the jobs
-        self._execute_jobs(job_list)
+        self.calculate_for_inputs(input_list)
 
     def watch(self) -> None:
         """
@@ -239,6 +279,9 @@ class CalculationUtils:
 
                 # Notify the progress bar
                 self._make_progress()
+                if self._only_csv:
+                    # Notify the progress bar
+                    self._make_progress()
 
                 # Schedule the creation of plots and csv
                 future_output.append(
@@ -254,8 +297,9 @@ class CalculationUtils:
                 # Wait for each plots/csv creation to finish
                 future.result()
 
-                # Notify the progress bar
-                self._make_progress()
+                if not self._only_csv:
+                    # Notify the progress bar
+                    self._make_progress()
 
             # At this point, we have finished waiting for all future_outputs (plot/csv creations)
             LOG.debug("Finished creating output for '%s'", result_list[0].calculation_input.uv_file_name)

@@ -24,8 +24,8 @@ DEFAULT_OUTPUT = "out/"
 
 parser = ArgumentParser(description="Calculate irradiance spectra")
 group = parser.add_mutually_exclusive_group(required=True)
-group.add_argument("--days-and-brewer-id", "-d", nargs=2, metavar=("DAYS", "BREWER_ID"),
-                   help="The date, represented as the days since new year, and the id of the brewer to get the data from")
+group.add_argument("--days-and-brewer-id", "-d", nargs=3, metavar=("DAYS_START", "DAYS_END", "BREWER_ID"),
+                   help="The dates, represented as the days since new year, and the id of the brewer to get the data from")
 
 group.add_argument("--paths", "-p", nargs=4, metavar=("UV_FILE", "B_FILE", "UVR_FILE", "ARF_FILE"),
                    help="The paths to the files. UV_FILE: The file containing the raw uv measurements. B_FILE: The "
@@ -34,7 +34,8 @@ group.add_argument("--paths", "-p", nargs=4, metavar=("UV_FILE", "B_FILE", "UVR_
 
 group.add_argument("--all", action="store_true", help="Finds and converts all UV files in the input directory")
 
-group.add_argument("--watch", "-w", action="store_true", help="Watches the input directory for file changes and automatically converts changed UV files")
+group.add_argument("--watch", "-w", action="store_true",
+                   help="Watches the input directory for file changes and automatically converts changed UV files")
 
 parser.add_argument("--input-dir", "-i", help="The directory get the files from")
 parser.add_argument("--output-dir", "-o", help="The directory to save the results in", default=DEFAULT_OUTPUT)
@@ -79,31 +80,29 @@ def init_progress(total: int):
     progress.update(0)
 
 
+def finish_progress():
+    progress.finish()
+
+
 def show_progress(value: float):
     if progress is not None:
         with lock:
             progress.update(progress.value + value)
 
 
-cmd = CalculationUtils(input_dir, output_dir, only_csv, init_progress=init_progress, progress_handler=show_progress, albedo=albedo, aerosol=aerosol)
+if input_dir is None:
+    input_dir = DEFAULT_DATA_DIR
+cmd = CalculationUtils(input_dir, output_dir, only_csv, init_progress=init_progress, progress_handler=show_progress,
+                       finish_progress=finish_progress, albedo=albedo, aerosol=aerosol)
 
 if days_and_brewer_id is not None:
-    init_logging(logging.WARN)
-    if input_dir is None:
-        input_dir = DEFAULT_DATA_DIR
+    init_logging(logging.INFO)
 
-    days = int(days_and_brewer_id[0])
-    brewer_id = days_and_brewer_id[1]
-    calculation_input = CalculationInput.from_days_and_bid(
-        albedo,
-        aerosol,
-        input_dir,
-        brewer_id,
-        days
-    )
+    days_start = int(days_and_brewer_id[0])
+    days_end = int(days_and_brewer_id[1])
+    brewer_id = days_and_brewer_id[2]
 
-    progress.start(1)
-    cmd.calculate_and_output(calculation_input)
+    cmd.calculate_for_all_between(days_start, days_end, brewer_id)
 
 elif paths is not None:
     init_logging(logging.WARN)
@@ -123,14 +122,10 @@ elif paths is not None:
 
 elif do_all:
     init_logging(logging.WARN)
-    if input_dir is None:
-        input_dir = DEFAULT_DATA_DIR
 
     cmd.calculate_for_all()
 
 elif watch:
     init_logging(logging.INFO)
-    if input_dir is None:
-        input_dir = DEFAULT_DATA_DIR
 
     cmd.watch()

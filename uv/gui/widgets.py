@@ -1,7 +1,8 @@
-from datetime import date
+from datetime import date, timedelta
 from enum import Enum
+from os import path
 from threading import Lock
-from typing import Any, Callable, List, Tuple
+from typing import Any, Callable, List, Tuple, Dict
 
 import remi.gui as gui
 
@@ -10,7 +11,8 @@ from .utils import show, hide
 from ..brewer_infos import brewer_infos
 from ..const import TMP_FILE_DIR, DATA_DIR, OUTPUT_DIR, DEFAULT_BETA_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_ALBEDO_VALUE
 from ..logic.calculation_input import CalculationInput
-from ..logic.utils import minutes_to_time
+from ..logic.job_utils import CalculationUtils
+from ..logic.utils import minutes_to_time, date_to_days
 from uv.logic.output_utils import create_csv, get_spectrum_plot_name, get_corrected_spectrum_plot_name, get_sza_correction_plot_name
 
 
@@ -55,7 +57,7 @@ class Title(gui.Label):
             self.set_style("font-size: 18pt; margin-top: 10px; margin-bottom: 30px")
         elif level == Level.H3:
             self.set_style(
-                "font-size: 15pt; margin-top: 10px; margin-bottom: 20px; color: rgb(4, 90, 188); font-weight: bold")
+                "font-size: 15pt; margin-top: 10px; margin-bottom: 20px")
         else:
             self.set_style("font-size: 10pt; margin-top: 5px; margin-bottom: 10px")
 
@@ -140,11 +142,10 @@ class Loader(VBox):
 
 
 class MainForm(VBox):
-    calculation_input: CalculationInput or None = None
     albedo: float
     aerosol: Tuple[float, float]
 
-    def __init__(self, calculate: Callable[[CalculationInput], None]):
+    def __init__(self, calculate: Callable[[Callable[[CalculationUtils], List[Result]]], None]):
         """
         Initialize a main form.
 
@@ -166,9 +167,12 @@ class MainForm(VBox):
         self._calculate_button.set_style("margin-bottom: 20px")
 
         self._calculate_button.onclick.do(
-            lambda w: calculate(self.calculation_input))
+            lambda w: calculate(self.start_calculation))
 
         self.append(self._calculate_button)
+
+    def start_calculation(self, calculation_utils: CalculationUtils) -> List[Result]:
+        pass
 
     def extra_param_change_callback(self, albedo: float, aerosol: Tuple[float, float]) -> None:
         """
@@ -197,6 +201,7 @@ class MainForm(VBox):
 
 
 class PathMainForm(MainForm):
+    _calculation_input: CalculationInput or None = None
     _uv_file: str = None
     _calibration_file: str = None
     _b_file: str = None
@@ -257,7 +262,7 @@ class PathMainForm(MainForm):
                 self._b_file is not None):
 
             # If all fields are valid, we initialize a CalculationInput and enable the button
-            self.calculation_input = CalculationInput(
+            self._calculation_input = CalculationInput(
                 self.albedo,
                 self.aerosol,
                 self._uv_file,
@@ -268,20 +273,25 @@ class PathMainForm(MainForm):
             self._calculate_button.set_enabled(True)
         else:
             self._calculate_button.set_enabled(False)
-            self.calculation_input = None
+            self._calculation_input = None
+
+    def start_calculation(self, calculation_utils: CalculationUtils) -> List[Result]:
+        return calculation_utils.calculate_and_output(self._calculation_input)
 
 
 class SimpleMainForm(MainForm):
     _brewer_id: str = None
-    _date: date or None = None
+    _date_start: date or None = None
+    _date_end: date or None = None
 
-    def __init__(self, calculate: Callable[[CalculationInput], None]):
+    def __init__(self, calculate: Callable[[Callable[[CalculationUtils], List[Result]]], None]):
         super().__init__(calculate)
         self.check_fields()
 
     def _init_elements(self):
         self._brewer_id = list(brewer_infos.keys())[0]
-        self._date = date(2019, 6, 24)
+        self._date_start = date(2019, 6, 24)
+        self._date_end = date(2019, 6, 27)
 
         file_form = gui.HBox()
         file_form.set_style("margin-bottom: 20px")
@@ -293,12 +303,17 @@ class SimpleMainForm(MainForm):
         brewer_dd.onchange.do(self._on_bid_change)
         self._brewer_input = Input("Brewer id", brewer_dd)
 
-        date_selector = gui.Date(default_value="2019-06-24")
-        date_selector.onchange.do(self._on_date_change)
-        self._date_input = Input("Date", date_selector)
+        date_start_selector = gui.Date(default_value="2019-06-24")
+        date_start_selector.onchange.do(self._on_date_start_change)
+        self._date_start_input = Input("Start date", date_start_selector)
+
+        date_end_selector = gui.Date(default_value="2019-06-27")
+        date_end_selector.onchange.do(self._on_date_end_change)
+        self._date_end_input = Input("End date", date_end_selector)
 
         file_form.append(self._brewer_input)
-        file_form.append(self._date_input)
+        file_form.append(self._date_start_input)
+        file_form.append(self._date_end_input)
 
         self.append(file_form)
 
@@ -307,37 +322,44 @@ class SimpleMainForm(MainForm):
         return self._brewer_id
 
     @property
-    def date(self):
-        return self._date
+    def date_start(self):
+        return self._date_start
+
+    @property
+    def date_end(self):
+        return self._date_end
 
     def _on_bid_change(self, widget: gui.Widget, value: str):
         del widget  # remove unused parameter
         self._brewer_id = value
         self.check_fields()
 
-    def _on_date_change(self, widget: gui.Widget, value: str):
+    def _on_date_start_change(self, widget: gui.Widget, value: str):
         del widget  # remove unused parameter
         if value is not '' and value is not None:
-            self._date = date.fromisoformat(value)
+            self._date_start = date.fromisoformat(value)
         else:
-            self._date = None
+            self._date_start = None
+        self.check_fields()
+
+    def _on_date_end_change(self, widget: gui.Widget, value: str):
+        del widget  # remove unused parameter
+        if value is not '' and value is not None:
+            self._date_end = date.fromisoformat(value)
+        else:
+            self._date_end = None
         self.check_fields()
 
     def check_fields(self):
-        if self._brewer_id is not None and self._date is not None:
+        if self._brewer_id is not None and self._date_start is not None and self._date_end is not None:
 
-            # If all fields are valid, we initialize a CalculationInput and enable the button
-            self.calculation_input = CalculationInput.from_date_and_bid(
-                self.albedo,
-                self.aerosol,
-                DATA_DIR,
-                self._brewer_id,
-                self._date
-            )
+            # If all fields are valid, we enable the button
             self._calculate_button.set_enabled(True)
         else:
-            self.calculation_input = None
             self._calculate_button.set_enabled(False)
+
+    def start_calculation(self, calculation_utils: CalculationUtils) -> List[Result]:
+        return calculation_utils.calculate_for_all_between(date_to_days(self._date_start), date_to_days(self._date_end), self._brewer_id)
 
 
 class Input(VBox):
@@ -361,7 +383,7 @@ class ResultWidget(VBox):
 
     def __init__(self):
         super().__init__()
-        self.set_style("margin-bottom: 20px")
+        self.set_style("margin-bottom: 20px; width: 100%")
         hide(self)
         self.result_title = Title(Level.H2, "Results")
         self._results = None
@@ -369,22 +391,58 @@ class ResultWidget(VBox):
         self._current_progress = 0
         self._current_progress_lock = Lock()
 
-    def display(self, results: List[Result]):
+    def display(self, results: List[Result], duration: float):
         self._results = results
 
         self.empty()
         self.append(self.result_title)
 
-        sza_correction_plot = get_sza_correction_plot_name(results[0])
-        pic = ImagePlot(sza_correction_plot)
-        self.append(pic)
-
+        files: Dict[str, List[Result]] = {}
         for result in results:
-            result_gui = self._create_result_gui(result)
-            self.append(result_gui)
+            if result.calculation_input.uv_file_name not in files:
+                files[result.calculation_input.uv_file_name] = []
+
+            files[result.calculation_input.uv_file_name].append(result)
+
+        self.append(self._create_result_overview(files, duration))
+
+        for file in files:
+            file_gui = self._create_result_gui(file, files[file])
+            self.append(file_gui)
 
     @staticmethod
-    def _create_result_gui(result: Result) -> VBox:
+    def _create_result_overview(files: Dict[str, List[Result]], duration: float) -> VBox:
+        vbox = VBox()
+        vbox.set_style("margin-bottom: 20px")
+
+        duration = timedelta(seconds=duration)
+        hours, rem = divmod(duration.seconds, 3600)
+        minutes, seconds = divmod(rem, 60)
+
+        hours_str = ""
+        if hours > 0:
+            hours_str = f"{hours}h "
+
+        min_str = ""
+        if minutes > 0:
+            min_str = f"{minutes}m "
+
+        sec_str = f"{seconds}s"
+
+        info = ResultInfo("Duration", f"{hours_str}{min_str}{sec_str}")
+        vbox.append(info)
+
+        info = ResultInfo("Total files", len(files))
+        vbox.append(info)
+
+        info = ResultInfo("Total sections", sum([len(r) for r in files.values()]))
+        vbox.append(info)
+
+        return vbox
+
+
+    @staticmethod
+    def _create_result_gui(file: str, results: List[Result]) -> VBox:
         """
         Create a section's GUI with a title, result info as text and two plots
         :param result: the result for which to create the gui
@@ -393,50 +451,20 @@ class ResultWidget(VBox):
         vbox = VBox()
         vbox.set_style("margin-bottom: 20px")
 
-        result_title = Title(Level.H3, "Section " + str(result.index))
+        result_title = Title(Level.H3, f"Input file '{path.basename(file)}'")
         vbox.append(result_title)
 
-        header = result.uv_file_entry.header
-
-        info = ResultInfo("Measure type", header.type)
+        info = ResultInfo("Sections", len(results))
         vbox.append(info)
 
-        t = minutes_to_time(result.uv_file_entry.times[0])
-        info = ResultInfo("Measure time", t.isoformat())
-        vbox.append(info)
+        info_label = gui.Label("Output files:")
+        info_label.set_style("font-weight: bold")
+        vbox.append(info_label)
 
-        info = ResultInfo("SZA", result.sza)
-        vbox.append(info)
-
-        info = ResultInfo("Pressure", header.pressure)
-        vbox.append(info)
-
-        info = ResultInfo("Position", str(header.position.latitude) + ", " + str(header.position.longitude))
-        vbox.append(info)
-
-        info = ResultInfo("Dark", header.dark)
-        vbox.append(info)
-
-        time = result.spectrum.measurement_times[0]
-        info = ResultInfo("Ozone", result.calculation_input.ozone.interpolated_value(time))
-        vbox.append(info)
-
-        file_name = create_csv(OUTPUT_DIR, result)
-
-        download_button = gui.FileDownloader("Download as csv", OUTPUT_DIR + file_name, width=130)
-        download_button.set_style("margin-bottom: 10px; margin-top: 5px; color: rgb(4, 90, 188)")
-        vbox.append(download_button)
-
-        hbox = gui.HBox()
-
-        spectrum_plot = get_spectrum_plot_name(result)
-        pic = ImagePlot(spectrum_plot)
-        hbox.append(pic)
-
-        spectrum_correction_plot = get_corrected_spectrum_plot_name(result)
-        pic = ImagePlot(spectrum_correction_plot)
-        hbox.append(pic)
-        vbox.append(hbox)
+        for result in results:
+            download_button = gui.FileDownloader(result.get_name(), OUTPUT_DIR + result.get_name(), width=130)
+            download_button.set_style("margin-top: 5px; color: rgb(4, 90, 188)")
+            vbox.append(download_button)
 
         return vbox
 

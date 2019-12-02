@@ -2,7 +2,7 @@ import multiprocessing
 import os
 import traceback
 from concurrent.futures import ThreadPoolExecutor
-from typing import List
+from typing import List, Callable
 
 import remi.gui as gui
 from matplotlib import rcParams
@@ -36,6 +36,7 @@ class UVApp(App):
         rcParams['figure.figsize'] = 9, 6
 
         self._executor = ThreadPoolExecutor(1)
+        self._duration = 0
 
     def main(self):
         self._main_container = gui.VBox(width="80%")
@@ -79,7 +80,7 @@ class UVApp(App):
         # returning the root widget
         return self._main_container
 
-    def _calculate(self, calculation_input: CalculationInput) -> None:
+    def _calculate(self, calculation: Callable[[CalculationUtils], List[Result]]) -> None:
         """
         Start the calculation in a background thread for a given input
         :param calculation_input: the input to calculate
@@ -91,14 +92,16 @@ class UVApp(App):
         hide(self._forms)
         hide(self._result_container)
 
-        self._executor.submit(self._start_calculation, calculation_input)
+        self._executor.submit(self._start_calculation, calculation)
 
-    def _start_calculation(self, calculation_input: CalculationInput):
+    def _start_calculation(self, calculation: Callable[[CalculationUtils], List[Result]]):
         try:
-            self._check_input(calculation_input)
+            # TODO: do some checks
+            # self._check_input(calculation_input)
 
-            job_utils = CalculationUtils(DATA_DIR, OUTPUT_DIR, init_progress=self._init_progress, progress_handler=self._make_progress)
-            results = job_utils.calculate_and_output(calculation_input)
+            job_utils = CalculationUtils(DATA_DIR, OUTPUT_DIR, init_progress=self._init_progress, progress_handler=self._make_progress,
+                                         finish_progress=self._finish_progress, only_csv=True)
+            results = calculation(job_utils)
             self._show_result(results)
         except Exception as e:
             self._handle_error(e)
@@ -110,13 +113,15 @@ class UVApp(App):
     def _init_progress(self, total: int):
         self._loader.init(total)
 
+    def _finish_progress(self, duration: float):
+        self._duration = duration
+
     def _make_progress(self, value: float):
         with self._lock:
             self._loader.progress(value)
 
     def _show_result(self, results: List[Result]):
-
-        self._result_container.display(results)
+        self._result_container.display(results, self._duration)
 
         self._main_form.check_fields()
         self._secondary_form.check_fields()
