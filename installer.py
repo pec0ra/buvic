@@ -172,4 +172,4 @@ def run_installer():
 try:
     run_installer()
 except KeyboardInterrupt:
-    pass
+    print(Colors.ENDC)
