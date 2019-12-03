@@ -237,8 +237,7 @@ class CalculationUtils:
             return None
 
         if not path.exists(path.join(self._input_dir, b_file)):
-            LOG.info("Corresponding B file '" + b_file + "' not found for UV file '" + uv_file + "', skipping")
-            return None
+            LOG.debug("Corresponding B file '" + b_file + "' not found for UV file '" + uv_file + "', will use default ozone values")
 
         if not path.exists(path.join(self._input_dir, calibration_file)):
             LOG.info("Corresponding UVR file '" + calibration_file + "' not found for UV file '" + uv_file + "', skipping")

@@ -1,8 +1,16 @@
 #!/usr/bin/python3
+import json
 import os
 import sys
 from subprocess import call, run, PIPE
 
+PORT_KEY = "port"
+INPUT_PATH_KEY = "input_dir"
+OUTPUT_PATH_KEY = "output_dir"
+USER_KEY = "user"
+CONTAINER_NAME_KEY = "container_name"
+
+CONFIG_FILE_PATH = os.path.join(os.path.expanduser("~"), '.uv-server.conf')
 FNULL = open(os.devnull, 'w')
 
 
@@ -17,6 +25,40 @@ class Colors:
 
 def p(text, color):
     print(color + text + Colors.ENDC)
+
+
+def check_yes_no(value):
+    if value.lower() == "n" or value.lower() == "no":
+        return False
+    else:
+        return True
+
+
+def save_config(port, input_path, output_path, user, container_name):
+    config = {}
+    config[PORT_KEY] = port
+    config[INPUT_PATH_KEY] = input_path
+    config[OUTPUT_PATH_KEY] = output_path
+    config[USER_KEY] = user
+    config[CONTAINER_NAME_KEY] = container_name
+    with open(CONFIG_FILE_PATH, 'w') as config_file:
+        json.dump(config, config_file)
+    print(f"Config file saved to '{CONFIG_FILE_PATH}'. To update instance, run `./installer.py {CONFIG_FILE_PATH}`")
+
+
+def load_config():
+    if not os.path.exists(CONFIG_FILE_PATH):
+        return {}
+
+    print("* A config file was found from a previous install. Do you want to reuse its values? (Y/n)")
+    value = input()
+    if check_yes_no(value):
+        with open(CONFIG_FILE_PATH, 'r') as config_file:
+            config = json.load(config_file)
+            print("* Config loaded")
+            return config
+    else:
+        return {}
 
 
 def input_check(check_value, error_message=None, default_value=None, none_default=False):
@@ -76,13 +118,6 @@ def check_user(user):
     return uid_res.stdout.rstrip() + ":" + gid_res.stdout.rstrip()
 
 
-def check_yes_no(value):
-    if value.lower() == "n" or value.lower() == "no":
-        return False
-    else:
-        return True
-
-
 def run_installer():
     p("                                                                    ", Colors.HEADER)
     p("                   Irradiance calculator installer                  ", Colors.HEADER)
@@ -96,34 +131,65 @@ def run_installer():
         print("Exiting")
         sys.exit(1)
 
-    print("* On which port do you want the application to listen? (Default: 8080)")
-    port = input_check(int, "Port must be a number", 8080)
+    prev_config = load_config()
+
+    if PORT_KEY in prev_config:
+        port = prev_config[PORT_KEY]
+        print(f" Using port {port}")
+    else:
+        print("* On which port do you want the application to listen? (Default: 8080)")
+        port = input_check(int, "Port must be a number", 8080)
+        print()
+
+    if CONTAINER_NAME_KEY in prev_config:
+        container_name = prev_config[CONTAINER_NAME_KEY]
+        print(f" Using container name {container_name}")
+    else:
+        print("* Docker container name (the local name for the container - Default: uv-server):")
+        container_name = input_check(check_container_name, default_value="uv-server")
+        print()
+
+    if INPUT_PATH_KEY in prev_config:
+        input_path = prev_config[INPUT_PATH_KEY]
+        print(f" Using input path {input_path}")
+    else:
+        print("* Absolute path to the raw measurement files:")
+        input_path = input_check(check_path_exists)
+        print()
+
+    if OUTPUT_PATH_KEY in prev_config:
+        output_path = prev_config[OUTPUT_PATH_KEY]
+        print(f" Using output path {output_path}")
+    else:
+        print("* Absolute path for the output files:")
+        output_path = input_check(check_path_exists)
+        print()
+
+    if USER_KEY in prev_config:
+        user = prev_config[USER_KEY]
+        print(f" Using user id {user}")
+    else:
+        print("* User which will write the output files: (Default: not defined. In most cases this will default to root)")
+        user = input_check(check_user, none_default=True)
     print()
 
-    print("* Docker container name (the local name for the container - Default: uv-server):")
-    container_name = input_check(check_container_name, default_value="uv-server")
-    print()
+    if not check_command(f"docker image inspect pec0ra/uv-server >/dev/null 2>&1 || exit 1"):
+        print("* Docker image pec0ra/uv-server doesn't exist locally")
+        must_pull = True
+    else:
+        print("* Do you want to update the docker image to its latest version? (Y/n)")
+        value = input()
+        must_pull = check_yes_no(value)
 
-    print("* Absolute path to the raw measurement files:")
-    input_path = input_check(check_path_exists)
-    print()
-
-    print("* Absolute path for the output files:")
-    output_path = input_check(check_path_exists)
-    print()
-
-    print("* User which will write the output files: (Default: not defined. In most cases this will default to root)")
-    user = input_check(check_user, none_default=True)
-    print()
-
-    print("* Pulling required docker image")
-    print(Colors.LIGHTGRAY, end='', flush=True)
-    result = call(["docker", "pull", "pec0ra/uv-server"])
-    print(Colors.ENDC, end='', flush=True)
-    if result != 0:
-        p("ERROR: An error occurred while pulling image!", Colors.ERROR)
-        print("Exiting")
-        sys.exit(1)
+    if must_pull:
+        print("* Pulling required docker image")
+        print(Colors.LIGHTGRAY, end='', flush=True)
+        result = call(["docker", "pull", "pec0ra/uv-server"])
+        print(Colors.ENDC, end='', flush=True)
+        if result != 0:
+            p("ERROR: An error occurred while pulling image!", Colors.ERROR)
+            print("Exiting")
+            sys.exit(1)
 
     print()
 
@@ -167,6 +233,8 @@ def run_installer():
     p(f"         Application can be accessed at http://localhost:{str(port).ljust(5)}      ", Colors.HEADER)
     p("                                                                    ", Colors.HEADER)
     print()
+
+    save_config(port, input_path, output_path, user, container_name)
 
 
 try:

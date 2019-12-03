@@ -7,7 +7,7 @@ from typing import Tuple
 
 from cached_property import threaded_cached_property
 
-from uv.logic.b_file import read_ozone_from_b_file
+from uv.logic.b_file import read_ozone_from_b_file, Ozone
 from uv.logic.calibration_file import read_calibration_file
 from uv.logic.uv_file import UVFileReader
 from .arf_file import Direction, read_arf_file
@@ -83,7 +83,7 @@ class CalculationInput:
         return uv_file_reader.get_uv_file_entries()
 
     @threaded_cached_property
-    def ozone(self):
+    def ozone(self) -> Ozone or None:
         return read_ozone_from_b_file(self.b_file_name)
 
     @threaded_cached_property

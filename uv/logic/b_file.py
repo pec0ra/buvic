@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 from logging import getLogger
 from typing import List
+from os import path
 
 from scipy.interpolate import interp1d
 
@@ -20,12 +21,16 @@ SUMMARY_LINE_REGEX = re.compile(
 )
 
 
-def read_ozone_from_b_file(file_name: str) -> Ozone:
+def read_ozone_from_b_file(file_name: str) -> Ozone or None:
     """
     Parse a given B file to read ozone values into a `Ozone` object.
     :param file_name: the name of the file to parse
     :return: the ozone values
     """
+
+    if file_name is None or not path.exists(file_name):
+        LOG.debug("B File not found. Using default ozone value")
+        return None
 
     LOG.debug("Parsing file: %s", file_name)
 

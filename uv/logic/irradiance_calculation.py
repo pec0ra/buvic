@@ -162,7 +162,9 @@ class IrradianceCalculation:
         libradtran.add_input(LibradtranInput.SPLINE,
                              [uv_file_entry.wavelengths[0], uv_file_entry.wavelengths[-1], step])
 
-        libradtran.add_input(LibradtranInput.OZONE, [self._calculation_input.ozone.interpolated_value(minutes)])
+        ozone = self._calculation_input.ozone
+        if ozone is not None:
+            libradtran.add_input(LibradtranInput.OZONE, [ozone.interpolated_value(minutes)])
 
         libradtran.add_input(LibradtranInput.TIME, [
             uv_file_header.date.year,
