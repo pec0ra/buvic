@@ -9,6 +9,7 @@ INPUT_PATH_KEY = "input_dir"
 OUTPUT_PATH_KEY = "output_dir"
 USER_KEY = "user"
 CONTAINER_NAME_KEY = "container_name"
+PERSIST_KEY = "persist"
 
 CONFIG_FILE_PATH = os.path.join(os.path.expanduser("~"), '.uv-server.conf')
 FNULL = open(os.devnull, 'w')
@@ -27,23 +28,28 @@ def p(text, color):
     print(color + text + Colors.ENDC)
 
 
-def check_yes_no(value):
+def check_yes_no():
+    print(Colors.OKBLUE, end='')
+    value = input()
+    print(Colors.ENDC, end='')
     if value.lower() == "n" or value.lower() == "no":
         return False
     else:
         return True
 
 
-def save_config(port, input_path, output_path, user, container_name):
+def save_config(port, input_path, output_path, user, container_name, persist):
     config = {}
     config[PORT_KEY] = port
     config[INPUT_PATH_KEY] = input_path
     config[OUTPUT_PATH_KEY] = output_path
     config[USER_KEY] = user
     config[CONTAINER_NAME_KEY] = container_name
+    config[PERSIST_KEY] = persist
     with open(CONFIG_FILE_PATH, 'w') as config_file:
         json.dump(config, config_file)
-    print(f"Config file saved to '{CONFIG_FILE_PATH}'. To update instance, run `./installer.py {CONFIG_FILE_PATH}`")
+    print(f"Config file saved to '{CONFIG_FILE_PATH}'.")
+    print()
 
 
 def load_config():
@@ -51,8 +57,7 @@ def load_config():
         return {}
 
     print("* A config file was found from a previous install. Do you want to reuse its values? (Y/n)")
-    value = input()
-    if check_yes_no(value):
+    if check_yes_no():
         with open(CONFIG_FILE_PATH, 'r') as config_file:
             config = json.load(config_file)
             print("* Config loaded")
@@ -119,6 +124,7 @@ def check_user(user):
 
 
 def run_installer():
+    print()
     p("                                                                    ", Colors.HEADER)
     p("                   Irradiance calculator installer                  ", Colors.HEADER)
     p("                                                                    ", Colors.HEADER)
@@ -130,6 +136,7 @@ def run_installer():
         p("ERROR: Docker is not installed or doesn't work correctly!", Colors.ERROR)
         print("Exiting")
         sys.exit(1)
+    print()
 
     prev_config = load_config()
 
@@ -171,6 +178,14 @@ def run_installer():
     else:
         print("* User which will write the output files: (Default: not defined. In most cases this will default to root)")
         user = input_check(check_user, none_default=True)
+        print()
+
+    if PERSIST_KEY in prev_config:
+        persist = prev_config[PERSIST_KEY]
+        print(f" Start at boot: {persist}")
+    else:
+        print("* Do you want the container to start automatically at boot? (Y/n)")
+        persist = check_yes_no()
     print()
 
     if not check_command(f"docker image inspect pec0ra/uv-server >/dev/null 2>&1 || exit 1"):
@@ -178,8 +193,7 @@ def run_installer():
         must_pull = True
     else:
         print("* Do you want to update the docker image to its latest version? (Y/n)")
-        value = input()
-        must_pull = check_yes_no(value)
+        must_pull = check_yes_no()
 
     if must_pull:
         print("* Pulling required docker image")
@@ -195,11 +209,8 @@ def run_installer():
 
     print("* Checking container name availability")
     if check_command(f"docker ps -a | grep -q \" {container_name}$\""):
-        print(f"A container with the name {container_name} already exist. Do you want to remove it? (Y/n)")
-        print(Colors.OKBLUE, end='')
-        value = input()
-        print(Colors.ENDC, end='')
-        if check_yes_no(value):
+        print(f"A container with the name {container_name} already exist. Do you want to replace it? (Y/n)")
+        if check_yes_no():
             print()
             print(f"* Stopping container {container_name}")
             run(f"docker stop {container_name}", shell=True, stdout=FNULL)
@@ -207,15 +218,18 @@ def run_installer():
             print(f"* Removing container {container_name}")
             run(f"docker rm {container_name}", shell=True, stdout=FNULL)
         else:
-            print("Chose to not overwrite previous container.")
+            print("Chose to not replace previous container.")
             print("Cancelling")
             sys.exit()
     print()
 
     print("* Starting server")
-    docker_command = ["docker", "run", "-d", f"-p {port}:4444", f"-v {input_path}:/data", f"-v {output_path}:/out"]
+    docker_command = ["docker", "run", "--init", "-d", f"-p {port}:4444", f"-v {input_path}:/data", f"-v {output_path}:/out"]
     if user is not None:
         docker_command.extend(["--user", f"{user}"])
+
+    if persist:
+        docker_command.append("--restart always")
 
     docker_command.extend(["-e PORT=4444", f"--name {container_name}", "pec0ra/uv-server"])
     print(" ".join(docker_command))
@@ -234,7 +248,7 @@ def run_installer():
     p("                                                                    ", Colors.HEADER)
     print()
 
-    save_config(port, input_path, output_path, user, container_name)
+    save_config(port, input_path, output_path, user, container_name, persist)
 
 
 try:

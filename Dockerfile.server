@@ -43,4 +43,4 @@ COPY docker/const.py ./uv/
 COPY data ./data
 
 # Start server
-CMD python3.7 run_docker.py $PORT
+CMD ["/usr/bin/python3.7", "run_docker.py"]

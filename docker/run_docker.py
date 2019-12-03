@@ -15,8 +15,8 @@ if not os.path.exists(OUTPUT_DIR):
     os.makedirs(OUTPUT_DIR)
 
 port = 80
-if len(sys.argv) > 1:
-    port = int(sys.argv[1])
+if "PORT" in os.environ:
+    port = int(os.environ['PORT'])
 
 init_logging(logging.DEBUG)
 
