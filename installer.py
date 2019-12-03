@@ -207,9 +207,8 @@ def run_installer():
 
     print()
 
-    print("* Checking container name availability")
     if check_command(f"docker ps -a | grep -q \" {container_name}$\""):
-        print(f"A container with the name {container_name} already exist. Do you want to replace it? (Y/n)")
+        print(f"* A container with the name {container_name} already exist. Do you want to replace it? (Y/n)")
         if check_yes_no():
             print()
             print(f"* Stopping container {container_name}")
