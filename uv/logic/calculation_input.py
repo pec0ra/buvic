@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
-from typing import Tuple
-
 from os import path
+from typing import Tuple
 
 from cached_property import threaded_cached_property
 

@@ -4,6 +4,7 @@ import logging
 import multiprocessing
 import os
 from argparse import ArgumentParser
+from datetime import date
 from pprint import PrettyPrinter
 
 import progressbar
@@ -24,8 +25,8 @@ DEFAULT_OUTPUT = "out/"
 
 parser = ArgumentParser(description="Calculate irradiance spectra")
 group = parser.add_mutually_exclusive_group(required=True)
-group.add_argument("--days-and-brewer-id", "-d", nargs=3, metavar=("DAYS_START", "DAYS_END", "BREWER_ID"),
-                   help="The dates, represented as the days since new year, and the id of the brewer to get the data from")
+group.add_argument("--dates-and-brewer-id", "-d", nargs=3, metavar=("DATE_START", "DATE_END", "BREWER_ID"),
+                   help="The dates, in iso format (e.g. 2019-03-24, and the id of the brewer to get the data from")
 
 group.add_argument("--paths", "-p", nargs=4, metavar=("UV_FILE", "B_FILE", "UVR_FILE", "ARF_FILE"),
                    help="The paths to the files. UV_FILE: The file containing the raw uv measurements. B_FILE: The "
@@ -49,7 +50,7 @@ parser.add_argument("--only-csv", "-c", help="Don't generate plots but only csv 
 args = parser.parse_args()
 pp.pprint(vars(args))
 
-days_and_brewer_id = args.days_and_brewer_id
+dates_and_brewer_id = args.dates_and_brewer_id
 paths = args.paths
 do_all = args.all
 watch = args.watch
@@ -80,7 +81,8 @@ def init_progress(total: int):
     progress.update(0)
 
 
-def finish_progress():
+def finish_progress(duration: float):
+    del duration  # Remove unused variable
     progress.finish()
 
 
@@ -95,14 +97,14 @@ if input_dir is None:
 cmd = CalculationUtils(input_dir, output_dir, only_csv, init_progress=init_progress, progress_handler=show_progress,
                        finish_progress=finish_progress, albedo=albedo, aerosol=aerosol)
 
-if days_and_brewer_id is not None:
-    init_logging(logging.INFO)
+if dates_and_brewer_id is not None:
+    init_logging(logging.DEBUG)
 
-    days_start = int(days_and_brewer_id[0])
-    days_end = int(days_and_brewer_id[1])
-    brewer_id = days_and_brewer_id[2]
+    date_start = date.fromisoformat(dates_and_brewer_id[0])
+    date_end = date.fromisoformat(dates_and_brewer_id[1])
+    brewer_id = dates_and_brewer_id[2]
 
-    cmd.calculate_for_all_between(days_start, days_end, brewer_id)
+    cmd.calculate_for_all_between(date_start, date_end, brewer_id)
 
 elif paths is not None:
     init_logging(logging.WARN)

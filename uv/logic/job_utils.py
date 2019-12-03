@@ -5,6 +5,7 @@ import time
 from concurrent.futures.process import ProcessPoolExecutor
 from concurrent.futures.thread import ThreadPoolExecutor
 from dataclasses import dataclass
+from datetime import date
 from logging import getLogger
 from os import path, makedirs, listdir
 from typing import Tuple, Callable, List, Any, TypeVar, Generic
@@ -15,6 +16,7 @@ from uv.const import DEFAULT_ALBEDO_VALUE, DEFAULT_BETA_VALUE, DEFAULT_ALPHA_VAL
 from uv.logic.calculation_event_handler import CalculationEventHandler
 from uv.logic.output_utils import create_csv, create_spectrum_plots, create_sza_plot
 from uv.logic.result import Result
+from uv.logic.utils import date_range, date_to_days
 from .calculation_input import CalculationInput
 from .irradiance_calculation import IrradianceCalculation
 from ..brewer_infos import get_brewer_info
@@ -66,7 +68,7 @@ class CalculationUtils:
 
     def calculate_and_output(self, calculation_input: CalculationInput) -> List[Result]:
         """
-        Calculate irradiance, and create plots and csv for a given calculation input
+        Calculate irradiance and create plots and csv for a given calculation input
 
         :param calculation_input: the input for the calculation
         :return: the results of the calculation
@@ -105,7 +107,16 @@ class CalculationUtils:
         return result_list
 
     def calculate_for_inputs(self, calculation_inputs: List[CalculationInput]) -> List[Result]:
+        """
+        Calculate irradiance and create plots and csv for a given list of calculation inputs
+
+        :param calculation_inputs: the inputs for the calculation
+        :return: the results of the calculation
+        """
         start = time.time()
+
+        if len(calculation_inputs) == 0:
+            return self._handle_empty_input()
 
         job_list = []
         for calculation_input in calculation_inputs:
@@ -127,24 +138,26 @@ class CalculationUtils:
         LOG.info("Finished calculation batch in %ds", duration)
         return ret
 
-    def calculate_for_all_between(self, start_date: int, end_date: int, brewer_id) -> List[Result]:
+    def calculate_for_all_between(self, start_date: date, end_date: date, brewer_id) -> List[Result]:
         """
-        Create plots and csv for all UV Files in a the input directory.
+        Calculate irradiance and create plots and csv for all UV Files found for between a start date and an end date for a given brewer id.
 
-        This will loop through all files of `input_dir` and find all UV files. For each UV file, it will look if
-        corresponding B file, UVR file and ARF file exist.
-        If they exist, it will call IrradianceCalculation to create a result and it will then create plots and csv from
-        this result
+        :param start_date: the dates' lower bound (inclusive) for the measurements
+        :param end_date: the dates' upper bound (inclusive) for the measurements
+        :param brewer_id: the id of the brewer instrument
+        :return: the calculation results
         """
 
         if not path.exists(self._output_dir):
             makedirs(self._output_dir)
 
         input_list = []
-        for days in range(start_date, end_date + 1):
-            year = 19  # TODO: year as input
+        for d in date_range(start_date, end_date):
+            year = d.year - 2000
+            days = date_to_days(d)
 
-            calculation_input = self.input_from_files(str(days), str(year), brewer_id)
+            LOG.debug("Creating input for date %s as days %d and year %d", d.isoformat(), days, year)
+            calculation_input = self.input_from_files(f"{days:03}", f"{year:02}", brewer_id)
             if calculation_input is not None:
                 input_list.append(calculation_input)
 
@@ -152,7 +165,7 @@ class CalculationUtils:
 
     def calculate_for_all(self) -> None:
         """
-        Create plots and csv for all UV Files in a the input directory.
+        Calculate irradiance and create plots and csv for all UV Files in a the input directory.
 
         This will loop through all files of `input_dir` and find all UV files. For each UV file, it will look if
         corresponding B file, UVR file and ARF file exist.
@@ -353,6 +366,18 @@ class CalculationUtils:
         """
         if self._progress_handler is not None:
             self._progress_handler(0.5)
+
+    def _handle_empty_input(self) -> List[Result]:
+        # Init progress bar
+        if self._init_progress is not None:
+            self._init_progress(0)
+
+        if self._finish_progress is not None:
+            self._finish_progress(0)
+
+        LOG.warning("No input file found for the given parameters")
+
+        return []
 
 
 INPUT = TypeVar('INPUT')

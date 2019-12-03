@@ -9,11 +9,10 @@ import remi.gui as gui
 from uv.logic.result import Result
 from .utils import show, hide
 from ..brewer_infos import brewer_infos
-from ..const import TMP_FILE_DIR, DATA_DIR, OUTPUT_DIR, DEFAULT_BETA_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_ALBEDO_VALUE
+from ..const import TMP_FILE_DIR, OUTPUT_DIR, DEFAULT_BETA_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_ALBEDO_VALUE
 from ..logic.calculation_input import CalculationInput
 from ..logic.job_utils import CalculationUtils
-from ..logic.utils import minutes_to_time, date_to_days
-from uv.logic.output_utils import create_csv, get_spectrum_plot_name, get_corrected_spectrum_plot_name, get_sza_correction_plot_name
+from ..logic.utils import date_to_days
 
 
 class Button(gui.Button):
@@ -359,7 +358,7 @@ class SimpleMainForm(MainForm):
             self._calculate_button.set_enabled(False)
 
     def start_calculation(self, calculation_utils: CalculationUtils) -> List[Result]:
-        return calculation_utils.calculate_for_all_between(date_to_days(self._date_start), date_to_days(self._date_end), self._brewer_id)
+        return calculation_utils.calculate_for_all_between(self._date_start, self._date_end, self._brewer_id)
 
 
 class Input(VBox):
@@ -378,7 +377,7 @@ class Input(VBox):
 
 class ResultWidget(VBox):
     """
-    A result widget containing a title, plots and other infos
+    A result widget containing a title, a list of generated files and other infos
     """
 
     def __init__(self):
@@ -391,7 +390,12 @@ class ResultWidget(VBox):
         self._current_progress = 0
         self._current_progress_lock = Lock()
 
-    def display(self, results: List[Result], duration: float):
+    def display(self, results: List[Result], duration: float) -> None:
+        """
+        Replace the widgets content with new content created from the given results
+        :param results: the results to display in this widget
+        :param duration: the duration taken for the calculation
+        """
         self._results = results
 
         self.empty()
@@ -415,6 +419,7 @@ class ResultWidget(VBox):
         vbox = VBox()
         vbox.set_style("margin-bottom: 20px")
 
+        # Convert the duration into something human readable
         duration = timedelta(seconds=duration)
         hours, rem = divmod(duration.seconds, 3600)
         minutes, seconds = divmod(rem, 60)
@@ -440,12 +445,12 @@ class ResultWidget(VBox):
 
         return vbox
 
-
     @staticmethod
     def _create_result_gui(file: str, results: List[Result]) -> VBox:
         """
-        Create a section's GUI with a title, result info as text and two plots
-        :param result: the result for which to create the gui
+        Create a section's GUI with a title and a list of files
+        :param file: the file for which to create the gui
+        :param results: the results for the given file
         :return: the GUI's widget
         """
         vbox = VBox()

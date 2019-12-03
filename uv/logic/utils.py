@@ -1,4 +1,5 @@
 from datetime import timedelta, date, time
+from typing import Iterable
 
 
 def days_to_date(days: int, year: int) -> date:
@@ -44,3 +45,14 @@ def time_to_minutes(t: time) -> float:
     """
     td = timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
     return td.seconds / 60
+
+
+def date_range(start_date: date, end_date: date) -> Iterable[date]:
+    """
+    Create a range between a start date (inclusive) and end date (inclusive) to loop through day per day
+    :param start_date: the range's lower bound
+    :param end_date: the range's upper bound
+    :return:
+    """
+    for n in range(int((end_date - start_date).days) + 1):
+        yield start_date + timedelta(n)

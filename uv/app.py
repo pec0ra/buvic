@@ -70,12 +70,13 @@ class UVApp(App):
         self._main_container.append(title)
         self._main_container.append(self._loader)
         self._main_container.append(self._forms)
-        self._main_container.append(self._result_container)
 
         self._error_label = gui.Label("")
         self._error_label.set_style("color: #E00; font-size: 12pt; font-weight: bold")
         hide(self._error_label)
         self._main_container.append(self._error_label)
+        
+        self._main_container.append(self._result_container)
 
         # returning the root widget
         return self._main_container
@@ -83,7 +84,7 @@ class UVApp(App):
     def _calculate(self, calculation: Callable[[CalculationUtils], List[Result]]) -> None:
         """
         Start the calculation in a background thread for a given input
-        :param calculation_input: the input to calculate
+        :param calculation: the calculation to execute
         """
 
         self._reset_errors()
@@ -95,10 +96,13 @@ class UVApp(App):
         self._executor.submit(self._start_calculation, calculation)
 
     def _start_calculation(self, calculation: Callable[[CalculationUtils], List[Result]]):
-        try:
-            # TODO: do some checks
-            # self._check_input(calculation_input)
+        """
+        The calculation task to execute on the background thread.
 
+        This creates a `CalculationUtils` and execute the given calculation on it
+        :param calculation: the calculation to execute
+        """
+        try:
             job_utils = CalculationUtils(DATA_DIR, OUTPUT_DIR, init_progress=self._init_progress, progress_handler=self._make_progress,
                                          finish_progress=self._finish_progress, only_csv=True)
             results = calculation(job_utils)
@@ -122,6 +126,9 @@ class UVApp(App):
 
     def _show_result(self, results: List[Result]):
         self._result_container.display(results, self._duration)
+
+        if len(results) == 0:
+            self._show_error("No result produced for the given parameters")
 
         self._main_form.check_fields()
         self._secondary_form.check_fields()

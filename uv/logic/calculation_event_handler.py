@@ -39,4 +39,3 @@ class CalculationEventHandler(FileSystemEventHandler):
                 self._on_new_file(file_type, days, year, brewer_id)
             except Exception:
                 LOG.error("An error occurred while handling file", exc_info=True)
-
