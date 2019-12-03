@@ -140,18 +140,18 @@ def run_installer():
             print()
             print(f"* Removing container {container_name}")
             run(f"docker rm {container_name}", shell=True, stdout=FNULL)
-            print()
         else:
             print("Chose to not overwrite previous container.")
             print("Cancelling")
             sys.exit()
+    print()
 
     print("* Starting server")
     docker_command = ["docker", "run", "-d", f"-p {port}:4444", f"-v {input_path}:/data", f"-v {output_path}:/out"]
     if user is not None:
         docker_command.extend(["--user", f"{user}"])
 
-    docker_command.extend(["-e PORT=4444", "--name uv-server", "pec0ra/uv-server"])
+    docker_command.extend(["-e PORT=4444", f"--name {container_name}", "pec0ra/uv-server"])
     print(" ".join(docker_command))
     print(Colors.LIGHTGRAY, end='', flush=True)
     result = run(" ".join(docker_command), shell=True)
@@ -167,6 +167,7 @@ def run_installer():
     p(f"         Application can be accessed at http://localhost:{str(port).ljust(5)}      ", Colors.HEADER)
     p("                                                                    ", Colors.HEADER)
     print()
+
 
 try:
     run_installer()
