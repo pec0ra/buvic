@@ -67,7 +67,7 @@ python run_cmd.py --help
 which yields the result:
 ```
 usage: run_cmd.py [-h]
-                  (--days-and-brewer-id DAYS_START DAYS_END BREWER_ID | --paths UV_FILE B_FILE UVR_FILE ARF_FILE | --all | --watch)
+                  (--dates-and-brewer-id DATE_START DATE_END BREWER_ID | --paths UV_FILE B_FILE UVR_FILE ARF_FILE | --all | --watch)
                   [--input-dir INPUT_DIR] [--output-dir OUTPUT_DIR]
                   [--albedo ALBEDO] [--aerosol ALPHA BETA] [--only-csv]
 
@@ -75,9 +75,9 @@ Calculate irradiance spectra
 
 optional arguments:
   -h, --help            show this help message and exit
-  --days-and-brewer-id DAYS_START DAYS_END BREWER_ID, -d DAYS_START DAYS_END BREWER_ID
-                        The dates, represented as the days since new year, and
-                        the id of the brewer to get the data from
+  --dates-and-brewer-id DATE_START DATE_END BREWER_ID, -d DATE_START DATE_END BREWER_ID
+                        The dates, in iso format (e.g. 2019-03-24, and the id
+                        of the brewer to get the data from
   --paths UV_FILE B_FILE UVR_FILE ARF_FILE, -p UV_FILE B_FILE UVR_FILE ARF_FILE
                         The paths to the files. UV_FILE: The file containing
                         the raw uv measurements. B_FILE: The file containing
@@ -105,18 +105,18 @@ The options `--input-dir`, `--output-dir`, `--albedo`, `--aerosol` and `--only-c
 ### 1. Calculate dates and brewer id
 
 This command search for measurements between two dates for a brewer id from a preset of files.
-The dates are given as the number of days since new year (January 1st is 1)
+The dates are given in iso format `yyyy-mm-dd`
 
 **Examples:**
 
 Run the calculation for brewer `070` on June 24th, 25th and 26th and write the output in the `brewer117` directory:
 ```
-python run_cmd.py --days-and-brewer-id 175 177 070 --output-dir brewer177/
+python run_cmd.py --days-and-brewer-id 2019-06-24 2019-06-26 070 --output-dir brewer177/
 ```
 
 Run the calculation for brewer `186` on June 25th and 26th with an albedo of 0.1 and angström's alpha of 1.3 and beta of 0.1 as aerosol (using shortcuts flags `-d`, `-a` and `-e` instead of their full versions). The `-c` parameter (or `--only-csv`) tells that we don't want to generate plots but only csv files
 ```
-python run_cmd.py -d 176 177 186 -a 0.1 -e 1.3 0.1 -c
+python run_cmd.py -d 2019-06-25 2019-06-26 186 -a 0.1 -e 1.3 0.1 -c
 ```
 Note that if `--input-dir` is not specified, the measurement files will be taken from `data/`.
 

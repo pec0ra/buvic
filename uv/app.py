@@ -75,7 +75,7 @@ class UVApp(App):
         self._error_label.set_style("color: #E00; font-size: 12pt; font-weight: bold")
         hide(self._error_label)
         self._main_container.append(self._error_label)
-        
+
         self._main_container.append(self._result_container)
 
         # returning the root widget

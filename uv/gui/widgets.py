@@ -12,7 +12,6 @@ from ..brewer_infos import brewer_infos
 from ..const import TMP_FILE_DIR, OUTPUT_DIR, DEFAULT_BETA_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_ALBEDO_VALUE
 from ..logic.calculation_input import CalculationInput
 from ..logic.job_utils import CalculationUtils
-from ..logic.utils import date_to_days
 
 
 class Button(gui.Button):
