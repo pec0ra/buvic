@@ -4,7 +4,7 @@ import warnings
 from logging import getLogger
 from typing import List
 
-from numpy import multiply, divide, sin, add, pi, mean, exp, maximum, linspace, trapz, cos, isnan
+from numpy import multiply, divide, sin, add, pi, mean, exp, maximum, linspace, trapz, cos, isnan, ones
 from scipy.interpolate import UnivariateSpline
 
 from .arf_file import ARF
@@ -64,7 +64,7 @@ class IrradianceCalculation:
                 cos_correction = self._cos_correction(self._calculation_input.arf, libradtran_result)
             else:
                 LOG.debug("Using no cos correction")
-                cos_correction = [1] * len(libradtran_result.columns["sza"])
+                cos_correction = ones(len(libradtran_result.columns["sza"]))
 
             # Set nan to 1
             cos_correction_no_nan = cos_correction.copy()
@@ -175,7 +175,7 @@ class IrradianceCalculation:
                              [uv_file_entry.wavelengths[0], uv_file_entry.wavelengths[-1], step])
 
         ozone = self._calculation_input.ozone
-        libradtran.add_input(LibradtranInput.OZONE, [ozone.interpolated_value(minutes, self._calculation_input.default_ozone)])
+        libradtran.add_input(LibradtranInput.OZONE, [ozone.interpolated_value(minutes, self._calculation_input.parameters.default_ozone)])
 
         libradtran.add_input(LibradtranInput.TIME, [
             uv_file_header.date.year,
@@ -187,9 +187,9 @@ class IrradianceCalculation:
         ])
 
         libradtran.add_input(LibradtranInput.PRESSURE, [uv_file_header.pressure])
-        libradtran.add_input(LibradtranInput.ALBEDO, [self._calculation_input.albedo])
+        libradtran.add_input(LibradtranInput.ALBEDO, [self._calculation_input.parameters.albedo])
         libradtran.add_input(LibradtranInput.AEROSOL,
-                             [self._calculation_input.aerosol[0], self._calculation_input.aerosol[1]])
+                             [self._calculation_input.parameters.aerosol[0], self._calculation_input.parameters.aerosol[1]])
 
         libradtran.add_outputs(["sza", "edir", "edn", "eglo"])
         result = libradtran.calculate()

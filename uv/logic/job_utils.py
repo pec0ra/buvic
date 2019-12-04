@@ -8,16 +8,15 @@ from dataclasses import dataclass
 from datetime import date
 from logging import getLogger
 from os import path, makedirs, listdir
-from typing import Tuple, Callable, List, Any, TypeVar, Generic
+from typing import Callable, List, Any, TypeVar, Generic
 
 from watchdog.observers import Observer
 
-from uv.const import DEFAULT_ALBEDO_VALUE, DEFAULT_BETA_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_OZONE_VALUE
 from uv.logic.calculation_event_handler import CalculationEventHandler
 from uv.logic.output_utils import create_csv, create_spectrum_plots, create_sza_plot
 from uv.logic.result import Result
 from uv.logic.utils import date_range, date_to_days
-from .calculation_input import CalculationInput
+from .calculation_input import CalculationInput, Parameters
 from .irradiance_calculation import IrradianceCalculation
 from ..brewer_infos import get_brewer_info
 
@@ -33,41 +32,32 @@ class CalculationUtils:
             self,
             input_dir: str,
             output_dir: str,
-            only_csv: bool = False,
+            no_plots: bool = True,
             init_progress: Callable[[int], None] = None,
             finish_progress: Callable[[float], None] = None,
             progress_handler: Callable[[float], None] = None,
-            file_type: str = "png",
-            albedo: float = DEFAULT_ALBEDO_VALUE,
-            aerosol: Tuple[float, float] = (DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE),
-            default_ozone: float = DEFAULT_OZONE_VALUE
+            file_type: str = "png"
     ):
         """
         Create an instance of JobUtils with the given parameters
         :param input_dir: the directory to get the files from
         :param output_dir: the directory to save the plots and csv in
-        :param only_csv: whether to only create csv files (no plots)
+        :param no_plots: whether to only create csv files (no plots)
         :param init_progress: will be called at the beginning of the calculation with the total number of calculations
                               as parameter
         :param finish_progress: will be called at the end of the calculation
         :param progress_handler: will be called every time progress is made with the amount of progress given as
                                  parameter
         :param file_type: the file extension of the plots
-        :param albedo: the albedo to set for the calculations
-        :param aerosol: the aerosol values to set for the calculations
-        :param default_ozone: the ozone values to set for the calculations if none is found in a B file
         """
 
         self._input_dir = input_dir
         self._output_dir = output_dir
-        self._only_csv = only_csv
+        self._no_plots = no_plots
         self._init_progress = init_progress
         self._finish_progress = finish_progress
         self._progress_handler = progress_handler
         self._file_type = file_type
-        self._albedo = albedo
-        self._aerosol = aerosol
-        self._default_ozone = default_ozone
 
     def calculate_and_output(self, calculation_input: CalculationInput) -> List[Result]:
         """
@@ -81,9 +71,13 @@ class CalculationUtils:
                  calculation_input.b_file_name, calculation_input.calibration_file_name,
                  calculation_input.arf_file_name)
 
+        if calculation_input.parameters.no_coscor:
+            output_dir = path.join(self._output_dir, "nocoscor")
+        else:
+            output_dir = self._output_dir
         # Create output directory if needed
-        if not path.exists(self._output_dir):
-            makedirs(self._output_dir)
+        if not path.exists(output_dir):
+            makedirs(output_dir)
 
         # Create `IrradianceCalculation` Jobs
         calculation_jobs = self._create_jobs(calculation_input)
@@ -98,8 +92,8 @@ class CalculationUtils:
         result_list = self._execute_jobs(calculation_jobs)
 
         # Create an extra plot of the correction factor against the szas
-        if not self._only_csv:
-            create_sza_plot(self._output_dir, result_list, self._file_type)
+        if not self._no_plots:
+            create_sza_plot(output_dir, result_list, self._file_type)
 
         duration = time.time() - start
         if self._finish_progress is not None:
@@ -141,18 +135,24 @@ class CalculationUtils:
         LOG.info("Finished calculation batch in %ds", duration)
         return ret
 
-    def calculate_for_all_between(self, start_date: date, end_date: date, brewer_id) -> List[Result]:
+    def calculate_for_all_between(self, start_date: date, end_date: date, brewer_id, parameters: Parameters) -> List[Result]:
         """
         Calculate irradiance and create plots and csv for all UV Files found for between a start date and an end date for a given brewer id.
 
         :param start_date: the dates' lower bound (inclusive) for the measurements
         :param end_date: the dates' upper bound (inclusive) for the measurements
         :param brewer_id: the id of the brewer instrument
+        :param parameters: the parameters to use for the calculation
         :return: the calculation results
         """
 
-        if not path.exists(self._output_dir):
-            makedirs(self._output_dir)
+        if parameters.no_coscor:
+            output_dir = path.join(self._output_dir, "nocoscor")
+        else:
+            output_dir = self._output_dir
+        # Create output directory if needed
+        if not path.exists(output_dir):
+            makedirs(output_dir)
 
         input_list = []
         for d in date_range(start_date, end_date):
@@ -160,13 +160,13 @@ class CalculationUtils:
             days = date_to_days(d)
 
             LOG.debug("Creating input for date %s as days %d and year %d", d.isoformat(), days, year)
-            calculation_input = self.input_from_files(f"{days:03}", f"{year:02}", brewer_id)
+            calculation_input = self.input_from_files(f"{days:03}", f"{year:02}", brewer_id, parameters)
             if calculation_input is not None:
                 input_list.append(calculation_input)
 
         return self.calculate_for_inputs(input_list)
 
-    def calculate_for_all(self) -> None:
+    def calculate_for_all(self, parameters: Parameters) -> None:
         """
         Calculate irradiance and create plots and csv for all UV Files in a the input directory.
 
@@ -174,10 +174,17 @@ class CalculationUtils:
         corresponding B file, UVR file and ARF file exist.
         If they exist, it will call IrradianceCalculation to create a result and it will then create plots and csv from
         this result
+
+        :param parameters: the parameters to use for calculation
         """
 
-        if not path.exists(self._output_dir):
-            makedirs(self._output_dir)
+        if parameters.no_coscor:
+            output_dir = path.join(self._output_dir, "nocoscor")
+        else:
+            output_dir = self._output_dir
+        # Create output directory if needed
+        if not path.exists(output_dir):
+            makedirs(output_dir)
 
         input_list = []
         for file_name in listdir(self._input_dir):
@@ -190,13 +197,13 @@ class CalculationUtils:
                 year = res.group("year")
                 brewer_id = res.group("brewer_id")
 
-                calculation_input = self.input_from_files(days, year, brewer_id)
+                calculation_input = self.input_from_files(days, year, brewer_id, parameters)
                 if calculation_input is not None:
                     input_list.append(calculation_input)
 
         self.calculate_for_inputs(input_list)
 
-    def watch(self) -> None:
+    def watch(self, parameters: Parameters) -> None:
         """
         Watch a directory for new UV or B files.
 
@@ -204,10 +211,12 @@ class CalculationUtils:
         will calculate the irradiance and generate the corresponding output (plots/csv).
 
         This method will run until interrupted by the user
+
+        :param parameters: the parameters to use for calculation
         """
         self._init_progress = None
         self._progress_handler = None
-        event_handler = CalculationEventHandler(self._on_new_file)
+        event_handler = CalculationEventHandler(self._on_new_file, parameters)
         observer = Observer()
         observer.schedule(event_handler, self._input_dir)
         observer.start()
@@ -218,17 +227,17 @@ class CalculationUtils:
             observer.stop()
         observer.join()
 
-    def _on_new_file(self, file_type: str, days: str, year: str, brewer_id: str) -> None:
+    def _on_new_file(self, file_type: str, days: str, year: str, brewer_id: str, parameters: Parameters) -> None:
         if file_type == "UV":
-            calculation_input = self.input_from_files(days, year, brewer_id)
+            calculation_input = self.input_from_files(days, year, brewer_id, parameters)
             if calculation_input is not None:
                 self.calculate_and_output(calculation_input)
         if file_type == "B":
-            calculation_input = self.input_from_files(days, year, brewer_id)
+            calculation_input = self.input_from_files(days, year, brewer_id, parameters)
             if calculation_input is not None:
                 self.calculate_and_output(calculation_input)
 
-    def input_from_files(self, days: str, year: str, brewer_id: str):
+    def input_from_files(self, days: str, year: str, brewer_id: str, parameters: Parameters):
         uv_file = "UV" + days + year + "." + brewer_id
         b_file = "B" + days + year + "." + brewer_id
         info = get_brewer_info(brewer_id)
@@ -252,9 +261,7 @@ class CalculationUtils:
 
         # If everything is ok, return a calculation input
         return CalculationInput(
-            self._albedo,
-            self._aerosol,
-            self._default_ozone,
+            parameters,
             path.join(self._input_dir, uv_file),
             path.join(self._input_dir, b_file),
             path.join(self._input_dir, calibration_file),
@@ -291,17 +298,22 @@ class CalculationUtils:
 
             for future in future_result:
                 # Wait for each job to finish and produce a result
-                result = future.result()
+                result: Result = future.result()
 
                 # Notify the progress bar
                 self._make_progress()
-                if self._only_csv:
+                if self._no_plots:
                     # Notify the progress bar
                     self._make_progress()
 
+                if result.calculation_input.parameters.no_coscor:
+                    output_dir = path.join(self._output_dir, "nocoscor")
+                else:
+                    output_dir = self._output_dir
+
                 # Schedule the creation of plots and csv
                 future_output.append(
-                    process_pool.submit(self._create_output, result, self._output_dir, self._only_csv, self._file_type))
+                    process_pool.submit(self._create_output, result, output_dir, self._no_plots, self._file_type))
 
                 # Add the result to the return list
                 result_list.append(result)
@@ -313,7 +325,7 @@ class CalculationUtils:
                 # Wait for each plots/csv creation to finish
                 future.result()
 
-                if not self._only_csv:
+                if not self._no_plots:
                     # Notify the progress bar
                     self._make_progress()
 
@@ -347,7 +359,7 @@ class CalculationUtils:
         return job_list
 
     @staticmethod
-    def _create_output(result: Result, output_dir: str, only_csv: bool, file_type: str) -> None:
+    def _create_output(result: Result, output_dir: str, no_plots: bool, file_type: str) -> None:
         """
         Create the plots and csv for a given result.
         The created plots and csv will be saved as files.
@@ -358,7 +370,7 @@ class CalculationUtils:
                   result.calculation_input.uv_file_name)
 
         create_csv(output_dir, result)
-        if not only_csv:
+        if not no_plots:
             create_spectrum_plots(output_dir, result, file_type)
 
     def _make_progress(self) -> None:

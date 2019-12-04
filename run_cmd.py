@@ -11,7 +11,7 @@ import progressbar
 from matplotlib import rcParams
 
 from uv.const import DEFAULT_ALBEDO_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE, TMP_FILE_DIR, DEFAULT_OZONE_VALUE
-from uv.logic.calculation_input import CalculationInput
+from uv.logic.calculation_input import CalculationInput, Parameters, Angstrom
 from uv.logic.job_utils import CalculationUtils
 from uv.logutils import init_logging
 
@@ -43,11 +43,12 @@ parser.add_argument("--output-dir", "-o", help="The directory to save the result
 parser.add_argument("--albedo", "-a", type=float, help="The albedo value to use for the calculations",
                     default=DEFAULT_ALBEDO_VALUE)
 parser.add_argument("--aerosol", "-e", type=float, nargs=2, metavar=("ALPHA", "BETA"),
-                    default=(DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE),
+                    default=Angstrom(DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE),
                     help="The aerosol angstrom's alpha and beta values to use for the calculations.")
 parser.add_argument("--ozone", "-z", type=float, help="The ozone value in DU to use for the calculations if no value is found in a B file",
                     default=DEFAULT_OZONE_VALUE)
-parser.add_argument("--only-csv", "-c", help="Don't generate plots but only csv files", action="store_true")
+parser.add_argument("--no-coscor", "-c", help="Don't apply cos correction", action="store_true")
+parser.add_argument("--no-plots", "-q", help="Don't generate plots but only qasume files", action="store_true")
 
 args = parser.parse_args()
 pp.pprint(vars(args))
@@ -57,11 +58,12 @@ paths = args.paths
 do_all = args.all
 watch = args.watch
 albedo = args.albedo
-aerosol = args.aerosol
+aerosol = Angstrom(args.aerosol[0], args.aerosol[1])
 ozone = args.ozone
 output_dir = args.output_dir
 input_dir = args.input_dir
-only_csv = args.only_csv
+no_plots = args.no_plots
+no_coscor = args.no_coscor
 
 if not os.path.exists(TMP_FILE_DIR):
     os.makedirs(TMP_FILE_DIR)
@@ -97,8 +99,14 @@ def show_progress(value: float):
 
 if input_dir is None:
     input_dir = DEFAULT_DATA_DIR
-cmd = CalculationUtils(input_dir, output_dir, only_csv, init_progress=init_progress, progress_handler=show_progress,
-                       finish_progress=finish_progress, albedo=albedo, aerosol=aerosol, default_ozone=ozone)
+parameters = Parameters(
+    albedo,
+    aerosol,
+    ozone,
+    no_coscor
+)
+cmd = CalculationUtils(input_dir, output_dir, no_plots, init_progress=init_progress, progress_handler=show_progress,
+                       finish_progress=finish_progress)
 
 if dates_and_brewer_id is not None:
     init_logging(logging.INFO)
@@ -107,7 +115,7 @@ if dates_and_brewer_id is not None:
     date_end = date.fromisoformat(dates_and_brewer_id[1])
     brewer_id = dates_and_brewer_id[2]
 
-    cmd.calculate_for_all_between(date_start, date_end, brewer_id)
+    cmd.calculate_for_all_between(date_start, date_end, brewer_id, parameters)
 
 elif paths is not None:
     init_logging(logging.WARN)
@@ -115,9 +123,7 @@ elif paths is not None:
         input_dir = ""
 
     calculation_input = CalculationInput(
-        albedo,
-        aerosol,
-        ozone,
+        parameters,
         input_dir + paths[0],
         input_dir + paths[1],
         input_dir + paths[2],
@@ -129,9 +135,9 @@ elif paths is not None:
 elif do_all:
     init_logging(logging.WARN)
 
-    cmd.calculate_for_all()
+    cmd.calculate_for_all(parameters)
 
 elif watch:
     init_logging(logging.INFO)
 
-    cmd.watch()
+    cmd.watch(parameters)

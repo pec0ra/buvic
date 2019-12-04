@@ -4,14 +4,17 @@ from typing import Callable
 
 from watchdog.events import FileSystemEventHandler, FileSystemMovedEvent, FileSystemEvent
 
+from uv.logic.calculation_input import Parameters
+
 LOG = getLogger(__name__)
 
 
 class CalculationEventHandler(FileSystemEventHandler):
     ACCEPTED_FILE_REGEX = re.compile(".*(?P<file_type>B|UV)(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d{3})$")
 
-    def __init__(self, on_new_file: Callable[[str, str, str, str], None]):
+    def __init__(self, on_new_file: Callable[[str, str, str, str, Parameters], None], parameters: Parameters):
         self._on_new_file = on_new_file
+        self._parameters = parameters
 
     def on_modified(self, event):
         self._on_created_or_modified(event)
@@ -36,6 +39,6 @@ class CalculationEventHandler(FileSystemEventHandler):
             year = res.group("year")
             brewer_id = res.group("brewer_id")
             try:
-                self._on_new_file(file_type, days, year, brewer_id)
+                self._on_new_file(file_type, days, year, brewer_id, self._parameters)
             except Exception:
                 LOG.error("An error occurred while handling file", exc_info=True)

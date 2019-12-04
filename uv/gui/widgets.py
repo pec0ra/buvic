@@ -9,8 +9,8 @@ import remi.gui as gui
 from uv.logic.result import Result
 from .utils import show, hide
 from ..brewer_infos import brewer_infos
-from ..const import TMP_FILE_DIR, OUTPUT_DIR, DEFAULT_BETA_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_ALBEDO_VALUE
-from ..logic.calculation_input import CalculationInput
+from ..const import TMP_FILE_DIR, OUTPUT_DIR, DEFAULT_BETA_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_ALBEDO_VALUE, DEFAULT_OZONE_VALUE
+from ..logic.calculation_input import CalculationInput, Angstrom, Parameters
 from ..logic.job_utils import CalculationUtils
 
 
@@ -140,8 +140,7 @@ class Loader(VBox):
 
 
 class MainForm(VBox):
-    albedo: float
-    aerosol: Tuple[float, float]
+    parameters: Parameters
 
     def __init__(self, calculate: Callable[[Callable[[CalculationUtils], List[Result]]], None]):
         """
@@ -153,8 +152,11 @@ class MainForm(VBox):
         """
 
         super().__init__()
-        self.albedo = DEFAULT_ALBEDO_VALUE
-        self.aerosol = (DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE)
+        self.parameters = Parameters(
+            DEFAULT_ALBEDO_VALUE,
+            Angstrom(DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE),
+            DEFAULT_OZONE_VALUE
+        )
 
         self.set_style("align-items: flex-end")
 
@@ -172,17 +174,15 @@ class MainForm(VBox):
     def start_calculation(self, calculation_utils: CalculationUtils) -> List[Result]:
         pass
 
-    def extra_param_change_callback(self, albedo: float, aerosol: Tuple[float, float]) -> None:
+    def extra_param_change_callback(self, parameters: Parameters) -> None:
         """
         Update the inner representation of the extra params.
 
         This is supposed to be called from outside when the extra params are changed.
-        :param albedo: the new value for the albedo
-        :param aerosol: the new value for the aerosol
+        :param parameters: the new parameter values
         """
 
-        self.albedo = albedo
-        self.aerosol = aerosol
+        self.parameters = parameters
         self.check_fields()
 
     def _init_elements(self) -> None:
@@ -356,7 +356,7 @@ class SimpleMainForm(MainForm):
             self._calculate_button.set_enabled(False)
 
     def start_calculation(self, calculation_utils: CalculationUtils) -> List[Result]:
-        return calculation_utils.calculate_for_all_between(self._date_start, self._date_end, self._brewer_id)
+        return calculation_utils.calculate_for_all_between(self._date_start, self._date_end, self._brewer_id, self.parameters)
 
 
 class Input(VBox):
@@ -486,11 +486,13 @@ class ExtraParamForm(gui.HBox):
     """
     The form for the extra parameters albedo and aerosol
     """
-    _handler: Callable[[float, Tuple[float, float]], None] = None
+    _handler: Callable[[Parameters], None] = None
 
     _albedo: float = DEFAULT_ALBEDO_VALUE
     _alpha: float = DEFAULT_ALPHA_VALUE
     _beta: float = DEFAULT_BETA_VALUE
+    _default_ozone: float = DEFAULT_OZONE_VALUE
+    _no_coscor: bool = False
 
     def __init__(self):
         super().__init__()
@@ -522,22 +524,52 @@ class ExtraParamForm(gui.HBox):
         aerosol_input = Input("Aerosol", aerosol)
         self.append(aerosol_input)
 
+        # Ozone field
+        ozone_spin = gui.SpinBox(DEFAULT_OZONE_VALUE, 200, 600, 0.5)
+        ozone_spin.onchange.do(self._on_ozone_change)
+        ozone_input = Input("Ozone (Used if no value found in B file)", ozone_spin)
+        self.append(ozone_input)
+
+        no_coscor_checkbox = gui.CheckBoxLabel("Skip cos correction")
+        no_coscor_checkbox.set_style("align-self: flex-end; height: 30px")
+        no_coscor_checkbox.onchange.do(self._on_no_coscor_change)
+        self.append(no_coscor_checkbox)
+
     def _on_albedo_change(self, widget: gui.Widget, value: float):
         del widget  # remove unused parameter
         self._albedo = value
-        self._handler(self._albedo, (self._alpha, self._beta))
+        self._on_value_change()
 
     def _on_alpha_change(self, widget: gui.Widget, value: float):
         del widget  # remove unused parameter
         self._alpha = value
-        self._handler(self._albedo, (self._alpha, self._beta))
+        self._on_value_change()
 
     def _on_beta_change(self, widget: gui.Widget, value: float):
         del widget  # remove unused parameter
         self._beta = value
-        self._handler(self._albedo, (self._alpha, self._beta))
+        self._on_value_change()
 
-    def register_handler(self, handler: Callable[[float, Tuple[float, float]], None]) -> None:
+    def _on_ozone_change(self, widget: gui.Widget, value: float):
+        del widget  # remove unused parameter
+        self._default_ozone = value
+        self._on_value_change()
+
+    def _on_no_coscor_change(self, widget: gui.Widget, value: bool):
+        del widget  # remove unused parameter
+        self._no_coscor = value
+        self._on_value_change()
+
+    def _on_value_change(self):
+        parameters = Parameters(
+            self._albedo,
+            Angstrom(self._alpha, self._beta),
+            self._default_ozone,
+            self._no_coscor
+        )
+        self._handler(parameters)
+
+    def register_handler(self, handler: Callable[[Parameters], None]) -> None:
         """
         Registers a given handler which will be called every time one of the values of the fields is changed
         :param handler: the handler to register
@@ -545,4 +577,4 @@ class ExtraParamForm(gui.HBox):
         self._handler = handler
 
         # Call the handler to update it with the current values
-        self._handler(self._albedo, (self._alpha, self._beta))
+        self._on_value_change()

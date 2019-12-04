@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections import namedtuple
 from dataclasses import dataclass
 from enum import Enum
-from typing import Tuple, List
+from typing import List
 
 from cached_property import threaded_cached_property
 
@@ -18,14 +19,11 @@ class CalculationInput:
     """
     An input for the `IrradianceCalculation`
     """
-    albedo: float
-    aerosol: Tuple[float, float]
-    default_ozone: float
+    parameters: Parameters
     uv_file_name: str
     b_file_name: str
     calibration_file_name: str
     arf_file_name: str
-    no_coscor: bool = False  # TODO
     arf_direction: Direction = Direction.SOUTH
 
     @threaded_cached_property
@@ -52,7 +50,7 @@ class CalculationInput:
         return get_cloud_cover(position.latitude, position.longitude, date)
 
     def cos_correction_to_apply(self, time: float) -> CosCorrection:
-        if self.no_coscor:
+        if self.parameters.no_coscor:
             return CosCorrection.NONE
         elif self.cloud_cover.is_diffuse(time):
             return CosCorrection.DIFFUSE
@@ -61,6 +59,17 @@ class CalculationInput:
 
     def to_hash(self) -> str:
         return hex(hash(self))[-6:]
+
+
+@dataclass
+class Parameters:
+    albedo: float
+    aerosol: Angstrom
+    default_ozone: float
+    no_coscor: bool = False
+
+
+Angstrom = namedtuple('Angstrom', ['alpha', 'beta'])
 
 
 class CosCorrection(Enum):

@@ -21,13 +21,13 @@ class Result:
         :param file: the file to write the qasume content to
         """
         minutes = self.uv_file_entry.raw_values[0].time
-        ozone = self.calculation_input.ozone.interpolated_value(minutes, self.calculation_input.default_ozone)
+        ozone = self.calculation_input.ozone.interpolated_value(minutes, self.calculation_input.parameters.default_ozone)
         cos_cor_to_apply = self.calculation_input.cos_correction_to_apply(minutes)
         file.write(f"% {self.uv_file_entry.header.place} {self.uv_file_entry.header.position.latitude}N "
                    f"{self.uv_file_entry.header.position.longitude}W\n")
         file.write(f"% type={self.uv_file_entry.header.type}\tcoscor={cos_cor_to_apply.value}\ttempcor=false\to3={ozone}DU\t"
-                   f"albedo={self.calculation_input.albedo}\talpha={self.calculation_input.aerosol[0]}\t"
-                   f"beta={self.calculation_input.aerosol[1]}\n")
+                   f"albedo={self.calculation_input.parameters.albedo}\talpha={self.calculation_input.parameters.aerosol.alpha}\t"
+                   f"beta={self.calculation_input.parameters.aerosol.beta}\n")
         file.write(f"% wavelength(nm)	spectral_irradiance(W m-2 nm-1)	time_hour_UTC\n")
 
         for i in range(len(self.spectrum.wavelengths)):

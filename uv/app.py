@@ -48,7 +48,7 @@ class UVApp(App):
         self._forms.set_style("width: 100%")
 
         form_selection_checkbox = gui.CheckBoxLabel("Manual mode")
-        form_selection_checkbox.set_style("align-self: flex-start; margin-bottom: 20px")
+        form_selection_checkbox.set_style("align-self: flex-start; margin-bottom: 20px; height: 30px")
         form_selection_checkbox.onchange.do(self._on_form_selection_change)
         self._forms.append(form_selection_checkbox)
 
@@ -104,7 +104,7 @@ class UVApp(App):
         """
         try:
             job_utils = CalculationUtils(DATA_DIR, OUTPUT_DIR, init_progress=self._init_progress, progress_handler=self._make_progress,
-                                         finish_progress=self._finish_progress, only_csv=True)
+                                         finish_progress=self._finish_progress, no_plots=True)
             results = calculation(job_utils)
             self._show_result(results)
         except Exception as e:
@@ -175,9 +175,9 @@ class UVApp(App):
 
         if calculation_input is None:
             raise ValueError("Unexpected error: form data could not be read correctly. Please try again")
-        if calculation_input.albedo is None:
+        if calculation_input.parameters.albedo is None:
             raise ValueError("Unexpected error: Albedo has not been correctly set")
-        if calculation_input.aerosol is None:
+        if calculation_input.parameters.aerosol is None:
             raise ValueError("Unexpected error: Aerosol has not been correctly set")
 
         if calculation_input.uv_file_name is None:
