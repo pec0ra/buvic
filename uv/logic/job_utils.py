@@ -12,7 +12,7 @@ from typing import Tuple, Callable, List, Any, TypeVar, Generic
 
 from watchdog.observers import Observer
 
-from uv.const import DEFAULT_ALBEDO_VALUE, DEFAULT_BETA_VALUE, DEFAULT_ALPHA_VALUE
+from uv.const import DEFAULT_ALBEDO_VALUE, DEFAULT_BETA_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_OZONE_VALUE
 from uv.logic.calculation_event_handler import CalculationEventHandler
 from uv.logic.output_utils import create_csv, create_spectrum_plots, create_sza_plot
 from uv.logic.result import Result
@@ -39,7 +39,8 @@ class CalculationUtils:
             progress_handler: Callable[[float], None] = None,
             file_type: str = "png",
             albedo: float = DEFAULT_ALBEDO_VALUE,
-            aerosol: Tuple[float, float] = (DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE)
+            aerosol: Tuple[float, float] = (DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE),
+            default_ozone: float = DEFAULT_OZONE_VALUE
     ):
         """
         Create an instance of JobUtils with the given parameters
@@ -54,6 +55,7 @@ class CalculationUtils:
         :param file_type: the file extension of the plots
         :param albedo: the albedo to set for the calculations
         :param aerosol: the aerosol values to set for the calculations
+        :param default_ozone: the ozone values to set for the calculations if none is found in a B file
         """
 
         self._input_dir = input_dir
@@ -65,6 +67,7 @@ class CalculationUtils:
         self._file_type = file_type
         self._albedo = albedo
         self._aerosol = aerosol
+        self._default_ozone = default_ozone
 
     def calculate_and_output(self, calculation_input: CalculationInput) -> List[Result]:
         """
@@ -251,6 +254,7 @@ class CalculationUtils:
         return CalculationInput(
             self._albedo,
             self._aerosol,
+            self._default_ozone,
             path.join(self._input_dir, uv_file),
             path.join(self._input_dir, b_file),
             path.join(self._input_dir, calibration_file),

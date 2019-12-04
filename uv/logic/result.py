@@ -20,11 +20,18 @@ class Result:
         Convert this results value into qasume format and write it to a given file
         :param file: the file to write the qasume content to
         """
-        file.write("wavelength(nm)	spectral_irradiance(W m-2 nm-1)	time_min_UTC\n")
+        minutes = self.uv_file_entry.raw_values[0].time
+        ozone = self.calculation_input.ozone.interpolated_value(minutes, self.calculation_input.default_ozone)
+        cos_cor_to_apply = self.calculation_input.cos_correction_to_apply(minutes)
+        print(cos_cor_to_apply.value)
+        file.write(f"% {self.uv_file_entry.header.place} {self.uv_file_entry.header.position.latitude}N {self.uv_file_entry.header.position.longitude}E\n")
+        file.write(f"% type={self.uv_file_entry.header.type}\tcoscor={cos_cor_to_apply.value}\ttempcor=false\to3={ozone}DU\talbedo={self.calculation_input.albedo}\t"
+                   f"alpha={self.calculation_input.aerosol[0]}\tbeta={self.calculation_input.aerosol[1]}\n")
+        file.write(f"% wavelength(nm)	spectral_irradiance(W m-2 nm-1)	time_hour_UTC\n")
 
         for i in range(len(self.spectrum.wavelengths)):
             file.write(
-                f"{self.spectrum.wavelengths[i]:.1f}\t {self.spectrum.cos_corrected_spectrum[i] / 1000:.9f}\t   {self.spectrum.measurement_times[i]:.5f}\n")
+                f"{self.spectrum.wavelengths[i]:.1f}\t {self.spectrum.cos_corrected_spectrum[i] / 1000:.9f}\t   {self.spectrum.measurement_times[i] / 60:.5f}\n")
 
     def get_name(self, prefix: str = "", suffix: str = ""):
         """

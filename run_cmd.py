@@ -10,7 +10,7 @@ from pprint import PrettyPrinter
 import progressbar
 from matplotlib import rcParams
 
-from uv.const import DEFAULT_ALBEDO_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE, TMP_FILE_DIR
+from uv.const import DEFAULT_ALBEDO_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE, TMP_FILE_DIR, DEFAULT_OZONE_VALUE
 from uv.logic.calculation_input import CalculationInput
 from uv.logic.job_utils import CalculationUtils
 from uv.logutils import init_logging
@@ -44,7 +44,9 @@ parser.add_argument("--albedo", "-a", type=float, help="The albedo value to use 
                     default=DEFAULT_ALBEDO_VALUE)
 parser.add_argument("--aerosol", "-e", type=float, nargs=2, metavar=("ALPHA", "BETA"),
                     default=(DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE),
-                    help="The aerosol angstrom's alhpa and beta values to use for the calculations.")
+                    help="The aerosol angstrom's alpha and beta values to use for the calculations.")
+parser.add_argument("--ozone", "-z", type=float, help="The ozone value in DU to use for the calculations if no value is found in a B file",
+                    default=DEFAULT_OZONE_VALUE)
 parser.add_argument("--only-csv", "-c", help="Don't generate plots but only csv files", action="store_true")
 
 args = parser.parse_args()
@@ -56,6 +58,7 @@ do_all = args.all
 watch = args.watch
 albedo = args.albedo
 aerosol = args.aerosol
+ozone = args.ozone
 output_dir = args.output_dir
 input_dir = args.input_dir
 only_csv = args.only_csv
@@ -95,10 +98,10 @@ def show_progress(value: float):
 if input_dir is None:
     input_dir = DEFAULT_DATA_DIR
 cmd = CalculationUtils(input_dir, output_dir, only_csv, init_progress=init_progress, progress_handler=show_progress,
-                       finish_progress=finish_progress, albedo=albedo, aerosol=aerosol)
+                       finish_progress=finish_progress, albedo=albedo, aerosol=aerosol, default_ozone=ozone)
 
 if dates_and_brewer_id is not None:
-    init_logging(logging.DEBUG)
+    init_logging(logging.INFO)
 
     date_start = date.fromisoformat(dates_and_brewer_id[0])
     date_end = date.fromisoformat(dates_and_brewer_id[1])
@@ -114,6 +117,7 @@ elif paths is not None:
     calculation_input = CalculationInput(
         albedo,
         aerosol,
+        ozone,
         input_dir + paths[0],
         input_dir + paths[1],
         input_dir + paths[2],

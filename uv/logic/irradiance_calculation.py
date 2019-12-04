@@ -8,7 +8,7 @@ from numpy import multiply, divide, sin, add, pi, mean, exp, maximum, linspace, 
 from scipy.interpolate import UnivariateSpline
 
 from .arf_file import ARF
-from .calculation_input import CalculationInput
+from .calculation_input import CalculationInput, CosCorrection
 from .libradtran import Libradtran, LibradtranInput, LibradtranResult
 from .result import Result, Spectrum
 from .utils import minutes_to_time
@@ -48,11 +48,22 @@ class IrradianceCalculation:
         try:
             LOG.debug("Starting calculation for section %d of '%s'", index, self._calculation_input.uv_file_name)
 
-            uv_file_entry = self._calculation_input.uv_file_entries[index]
+            uv_file_entry: UVFileEntry = self._calculation_input.uv_file_entries[index]
 
             libradtran_result = self._execute_libradtran(uv_file_entry)
             calibrated_spectrum = self._to_calibrated_spectrum(uv_file_entry, self._calculation_input.calibration)
-            cos_correction = self._cos_correction(self._calculation_input.arf, libradtran_result)
+
+            minutes = uv_file_entry.raw_values[0].time
+            cos_cor_to_apply = self._calculation_input.cos_correction_to_apply(minutes)
+            if cos_cor_to_apply == CosCorrection.DIFFUSE:
+                LOG.debug("Using diffuse correction for time %s", minutes_to_time(minutes).isoformat())
+                cos_correction = divide([1] * len(libradtran_result.columns["sza"]), self._calculate_coscor_diff(self._calculation_input.arf))
+            elif cos_cor_to_apply == CosCorrection.CLEAR_SKY:
+                LOG.debug("Using clear sky correction for time %s", minutes_to_time(minutes).isoformat())
+                cos_correction = self._cos_correction(self._calculation_input.arf, libradtran_result)
+            else:
+                LOG.debug("Using no cos correction")
+                cos_correction = [1] * len(libradtran_result.columns["sza"])
 
             # Set nan to 1
             cos_correction_no_nan = cos_correction.copy()
@@ -163,8 +174,7 @@ class IrradianceCalculation:
                              [uv_file_entry.wavelengths[0], uv_file_entry.wavelengths[-1], step])
 
         ozone = self._calculation_input.ozone
-        if ozone is not None:
-            libradtran.add_input(LibradtranInput.OZONE, [ozone.interpolated_value(minutes)])
+        libradtran.add_input(LibradtranInput.OZONE, [ozone.interpolated_value(minutes, self._calculation_input.default_ozone)])
 
         libradtran.add_input(LibradtranInput.TIME, [
             uv_file_header.date.year,
