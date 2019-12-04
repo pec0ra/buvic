@@ -57,7 +57,8 @@ class IrradianceCalculation:
             cos_cor_to_apply = self._calculation_input.cos_correction_to_apply(minutes)
             if cos_cor_to_apply == CosCorrection.DIFFUSE:
                 LOG.debug("Using diffuse correction for time %s", minutes_to_time(minutes).isoformat())
-                cos_correction = divide([1] * len(libradtran_result.columns["sza"]), self._calculate_coscor_diff(self._calculation_input.arf))
+                cos_correction = divide([1] * len(libradtran_result.columns["sza"]),
+                                        self._calculate_coscor_diff(self._calculation_input.arf))
             elif cos_cor_to_apply == CosCorrection.CLEAR_SKY:
                 LOG.debug("Using clear sky correction for time %s", minutes_to_time(minutes).isoformat())
                 cos_correction = self._cos_correction(self._calculation_input.arf, libradtran_result)

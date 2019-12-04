@@ -4,8 +4,8 @@ import re
 from dataclasses import dataclass
 from datetime import timedelta
 from logging import getLogger
-from typing import List
 from os import path
+from typing import List
 
 from scipy.interpolate import interp1d
 
