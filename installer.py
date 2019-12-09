@@ -13,19 +13,21 @@ OUTPUT_PATH_KEY = "output_dir"
 USER_KEY = "user"
 CONTAINER_NAME_KEY = "container_name"
 PERSIST_KEY = "persist"
+DARKSKY_TOKEN_KEY = "darksky_token"
 
 CONFIG_FILE_PATH = os.path.join(os.path.expanduser("~"), '.uv-server.conf')
 FNULL = open(os.devnull, 'w')
 
 
-def save_config(port, input_path, output_path, user, container_name, persist):
+def save_config(port, input_path, output_path, user, container_name, persist, darksky_token):
     config = {
         PORT_KEY: port,
         INPUT_PATH_KEY: input_path,
         OUTPUT_PATH_KEY: output_path,
         USER_KEY: user,
         CONTAINER_NAME_KEY: container_name,
-        PERSIST_KEY: persist
+        PERSIST_KEY: persist,
+        DARKSKY_TOKEN_KEY: darksky_token
     }
     with open(CONFIG_FILE_PATH, 'w') as config_file:
         json.dump(config, config_file)
@@ -72,10 +74,14 @@ def check_user(user):
     return uid_res.stdout.rstrip() + ":" + gid_res.stdout.rstrip()
 
 
+def check_darksky_token(token):
+    return token.strip()
+
+
 def check_version(value, versions):
     index = int(value)
-    if index < 0 or index >= len(versions):
-        raise ValueError(f"The value must be between 0 and {len(versions) - 1}")
+    if index < 0 or index > len(versions):
+        raise ValueError(f"The value must be between 0 and {len(versions)}")
     return index
 
 
@@ -142,6 +148,16 @@ def run_installer():
     else:
         print("* Do you want the container to start automatically at boot? (Y/n)")
         persist = check_yes_no()
+
+    if DARKSKY_TOKEN_KEY in prev_config:
+        darksky_token = prev_config[DARKSKY_TOKEN_KEY]
+        if darksky_token is None:
+            print(f" darksky token: None")
+        else:
+            print(f" darksky token: ****")
+    else:
+        print("* Your 'darksky.net' api token?")
+        darksky_token = input_check(check_darksky_token, none_default=True)
     print()
 
     link = "https://registry.hub.docker.com/v1/repositories/pec0ra/uv-server/tags"
@@ -149,16 +165,19 @@ def run_installer():
         data = json.loads(url.read().decode())
 
     print("* Which version do you want to install?")
+    print(" 0: Local copy (Default)")
     for index, version in enumerate(data):
-        default_text = " (default)" if index == 0 else ""
-        print(f" {index}: {version['name']}{default_text}")
+        print(f" {index + 1}: {version['name']}")
     version_index = input_check(lambda value: check_version(value, data), default_value=0)
-    version = data[version_index]["name"]
+    if version_index == 0:
+        version = ""
+    else:
+        version = ":" + data[version_index - 1]["name"]
 
-    if version == "latest":
+    if version == ":latest":
         must_pull = True
-    elif not check_command(f"docker image inspect pec0ra/uv-server:{version} >/dev/null 2>&1 || exit 1"):
-        print(f"* Docker image pec0ra/uv-server:{version} doesn't exist locally")
+    elif not check_command(f"docker image inspect pec0ra/uv-server{version} >/dev/null 2>&1 || exit 1"):
+        print(f"* Docker image pec0ra/uv-server{version} does not exist locally")
         must_pull = True
     else:
         must_pull = False
@@ -166,7 +185,7 @@ def run_installer():
     if must_pull:
         print("* Pulling docker image")
         print(Colors.LIGHTGRAY, end='', flush=True)
-        result = call(["docker", "pull", f"pec0ra/uv-server:{version}"])
+        result = call(["docker", "pull", f"pec0ra/uv-server{version}"])
         print(Colors.ENDC, end='', flush=True)
         if result != 0:
             p("ERROR: An error occurred while pulling image!", Colors.ERROR)
@@ -198,7 +217,10 @@ def run_installer():
     if persist:
         docker_command.append("--restart always")
 
-    docker_command.extend(["-e PORT=4444", f"--name {container_name}", f"pec0ra/uv-server:{version}"])
+    if darksky_token is not None:
+        docker_command.extend([f"-e DARKSKY_TOKEN={darksky_token}"])
+
+    docker_command.extend(["-e PORT=4444", f"--name {container_name}", f"pec0ra/uv-server{version}"])
     print(" ".join(docker_command))
     print(Colors.LIGHTGRAY, end='', flush=True)
     result = run(" ".join(docker_command), shell=True)
@@ -215,7 +237,7 @@ def run_installer():
     p("                                                                    ", Colors.HEADER)
     print()
 
-    save_config(port, input_path, output_path, user, container_name, persist)
+    save_config(port, input_path, output_path, user, container_name, persist, darksky_token)
 
 
 try:

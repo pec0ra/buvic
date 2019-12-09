@@ -9,12 +9,19 @@ from typing import List
 
 from scipy.interpolate import interp1d
 
+from ..const import DARKSKY_TOKEN
+
 LOG = getLogger(__name__)
 
 
 def get_cloud_cover(latitude: float, longitude: float, d: date) -> CloudCover:
+    if DARKSKY_TOKEN is None:
+        LOG.warning("DARKSKY_TOKEN environment variable is not defined. Functionality will be deactivated and 'clear_sky' will be used as "
+                    "default")
+        return CloudCover([], [])
+
     t = datetime.combine(d, time(0, 0, 0, 0)).isoformat()
-    url_string = f"https://api.darksky.net/forecast/b025a7da3f7c0de2dfda341cc9a7cc39/{latitude},{-longitude},{t}?exclude=minutely,currently,daily&units=si"
+    url_string = f"https://api.darksky.net/forecast/{DARKSKY_TOKEN}/{latitude},{-longitude},{t}?exclude=minutely,currently,daily&units=si"
     LOG.debug("Retrieved weather data from %s", url_string)
     with urllib.request.urlopen(url_string) as url:
         data = json.loads(url.read().decode())

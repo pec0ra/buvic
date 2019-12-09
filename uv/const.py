@@ -1,3 +1,6 @@
+import os
+from logging import getLogger
+
 TMP_FILE_DIR = "tmp/"
 OUTPUT_DIR = "out/"
 DATA_DIR = "data/"
@@ -15,3 +18,8 @@ DEFAULT_OZONE_VALUE = 300
 
 with open("version") as version_file:
     APP_VERSION = version_file.readline().strip()
+
+if "DARKSKY_TOKEN" not in os.environ:
+    DARKSKY_TOKEN = None
+else:
+    DARKSKY_TOKEN = os.environ['DARKSKY_TOKEN']
