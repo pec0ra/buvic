@@ -11,7 +11,7 @@ from .arf_file import ARF
 from .calculation_input import CalculationInput, CosCorrection
 from .libradtran import Libradtran, LibradtranInput, LibradtranResult
 from .result import Result, Spectrum
-from .utils import minutes_to_time
+from .utils import minutes_to_time, date_to_days
 from .uv_file import UVFileEntry
 
 LOG = getLogger(__name__)
@@ -175,7 +175,8 @@ class IrradianceCalculation:
                              [uv_file_entry.wavelengths[0], uv_file_entry.wavelengths[-1], step])
 
         ozone = self._calculation_input.ozone
-        libradtran.add_input(LibradtranInput.OZONE, [ozone.interpolated_value(minutes, self._calculation_input.parameters.default_ozone)])
+        libradtran.add_input(LibradtranInput.OZONE,
+                             [ozone.interpolated_value(minutes, self._calculation_input.input_parameters.default_ozone)])
 
         libradtran.add_input(LibradtranInput.TIME, [
             uv_file_header.date.year,
@@ -186,10 +187,15 @@ class IrradianceCalculation:
             time.second
         ])
 
+        days = date_to_days(uv_file_header.date)
         libradtran.add_input(LibradtranInput.PRESSURE, [uv_file_header.pressure])
-        libradtran.add_input(LibradtranInput.ALBEDO, [self._calculation_input.parameters.albedo])
+        libradtran.add_input(LibradtranInput.ALBEDO, [self._calculation_input.parameters.interpolated_albedo(
+            days,
+            self._calculation_input.input_parameters.default_albedo
+        )])
+        aerosol = self._calculation_input.parameters.interpolated_aerosol(days, self._calculation_input.input_parameters.default_aerosol)
         libradtran.add_input(LibradtranInput.AEROSOL,
-                             [self._calculation_input.parameters.aerosol[0], self._calculation_input.parameters.aerosol[1]])
+                             [aerosol.alpha, aerosol.beta])
 
         libradtran.add_outputs(["sza", "edir", "edn", "eglo"])
         result = libradtran.calculate()

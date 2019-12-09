@@ -175,9 +175,9 @@ class UVApp(App):
 
         if calculation_input is None:
             raise ValueError("Unexpected error: form data could not be read correctly. Please try again")
-        if calculation_input.parameters.albedo is None:
+        if calculation_input.input_parameters.default_albedo is None:
             raise ValueError("Unexpected error: Albedo has not been correctly set")
-        if calculation_input.parameters.aerosol is None:
+        if calculation_input.input_parameters.default_aerosol is None:
             raise ValueError("Unexpected error: Aerosol has not been correctly set")
 
         if calculation_input.uv_file_name is None:

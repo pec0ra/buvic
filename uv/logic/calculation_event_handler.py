@@ -4,7 +4,7 @@ from typing import Callable
 
 from watchdog.events import FileSystemEventHandler, FileSystemMovedEvent, FileSystemEvent
 
-from uv.logic.calculation_input import Parameters
+from uv.logic.calculation_input import InputParameters
 
 LOG = getLogger(__name__)
 
@@ -12,7 +12,7 @@ LOG = getLogger(__name__)
 class CalculationEventHandler(FileSystemEventHandler):
     ACCEPTED_FILE_REGEX = re.compile(".*(?P<file_type>B|UV)(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d{3})$")
 
-    def __init__(self, on_new_file: Callable[[str, str, str, str, Parameters], None], parameters: Parameters):
+    def __init__(self, on_new_file: Callable[[str, str, str, str, InputParameters], None], parameters: InputParameters):
         self._on_new_file = on_new_file
         self._parameters = parameters
 

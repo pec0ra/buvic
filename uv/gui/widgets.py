@@ -2,7 +2,7 @@ from datetime import date, timedelta
 from enum import Enum
 from os import path
 from threading import Lock
-from typing import Any, Callable, List, Tuple, Dict
+from typing import Any, Callable, List, Dict
 
 import remi.gui as gui
 
@@ -10,7 +10,7 @@ from uv.logic.result import Result
 from .utils import show, hide
 from ..brewer_infos import brewer_infos
 from ..const import TMP_FILE_DIR, OUTPUT_DIR, DEFAULT_BETA_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_ALBEDO_VALUE, DEFAULT_OZONE_VALUE
-from ..logic.calculation_input import CalculationInput, Angstrom, Parameters
+from ..logic.calculation_input import CalculationInput, Angstrom, InputParameters
 from ..logic.job_utils import CalculationUtils
 
 
@@ -140,7 +140,7 @@ class Loader(VBox):
 
 
 class MainForm(VBox):
-    parameters: Parameters
+    parameters: InputParameters
 
     def __init__(self, calculate: Callable[[Callable[[CalculationUtils], List[Result]]], None]):
         """
@@ -152,7 +152,7 @@ class MainForm(VBox):
         """
 
         super().__init__()
-        self.parameters = Parameters(
+        self.parameters = InputParameters(
             DEFAULT_ALBEDO_VALUE,
             Angstrom(DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE),
             DEFAULT_OZONE_VALUE
@@ -174,7 +174,7 @@ class MainForm(VBox):
     def start_calculation(self, calculation_utils: CalculationUtils) -> List[Result]:
         pass
 
-    def extra_param_change_callback(self, parameters: Parameters) -> None:
+    def extra_param_change_callback(self, parameters: InputParameters) -> None:
         """
         Update the inner representation of the extra params.
 
@@ -485,7 +485,7 @@ class ExtraParamForm(gui.HBox):
     """
     The form for the extra parameters albedo and aerosol
     """
-    _handler: Callable[[Parameters], None] = None
+    _handler: Callable[[InputParameters], None] = None
 
     _albedo: float = DEFAULT_ALBEDO_VALUE
     _alpha: float = DEFAULT_ALPHA_VALUE
@@ -560,7 +560,7 @@ class ExtraParamForm(gui.HBox):
         self._on_value_change()
 
     def _on_value_change(self):
-        parameters = Parameters(
+        parameters = InputParameters(
             self._albedo,
             Angstrom(self._alpha, self._beta),
             self._default_ozone,
@@ -568,7 +568,7 @@ class ExtraParamForm(gui.HBox):
         )
         self._handler(parameters)
 
-    def register_handler(self, handler: Callable[[Parameters], None]) -> None:
+    def register_handler(self, handler: Callable[[InputParameters], None]) -> None:
         """
         Registers a given handler which will be called every time one of the values of the fields is changed
         :param handler: the handler to register

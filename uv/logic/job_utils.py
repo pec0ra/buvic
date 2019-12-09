@@ -12,12 +12,12 @@ from typing import Callable, List, Any, TypeVar, Generic
 
 from watchdog.observers import Observer
 
-from uv.const import CALIBRATION_FILES_SUBDIR, ARF_FILES_SUBDIR, UV_FILES_SUBDIR, B_FILES_SUBDIR
+from uv.const import CALIBRATION_FILES_SUBDIR, ARF_FILES_SUBDIR, UV_FILES_SUBDIR, B_FILES_SUBDIR, PARAMETER_FILES_SUBDIR
 from uv.logic.calculation_event_handler import CalculationEventHandler
 from uv.logic.output_utils import create_csv, create_spectrum_plots, create_sza_plot
 from uv.logic.result import Result
 from uv.logic.utils import date_range, date_to_days
-from .calculation_input import CalculationInput, Parameters
+from .calculation_input import CalculationInput, InputParameters
 from .irradiance_calculation import IrradianceCalculation
 from ..brewer_infos import get_brewer_info
 
@@ -72,7 +72,7 @@ class CalculationUtils:
                  calculation_input.b_file_name, calculation_input.calibration_file_name,
                  calculation_input.arf_file_name)
 
-        if calculation_input.parameters.no_coscor:
+        if calculation_input.input_parameters.no_coscor:
             output_dir = path.join(self._output_dir, "nocoscor")
         else:
             output_dir = self._output_dir
@@ -136,7 +136,7 @@ class CalculationUtils:
         LOG.info("Finished calculation batch in %ds", duration)
         return ret
 
-    def calculate_for_all_between(self, start_date: date, end_date: date, brewer_id, parameters: Parameters) -> List[Result]:
+    def calculate_for_all_between(self, start_date: date, end_date: date, brewer_id, parameters: InputParameters) -> List[Result]:
         """
         Calculate irradiance and create plots and csv for all UV Files found for between a start date and an end date for a given brewer id.
 
@@ -167,7 +167,7 @@ class CalculationUtils:
 
         return self.calculate_for_inputs(input_list)
 
-    def calculate_for_all(self, parameters: Parameters) -> None:
+    def calculate_for_all(self, parameters: InputParameters) -> None:
         """
         Calculate irradiance and create plots and csv for all UV Files in a the input directory.
 
@@ -204,7 +204,7 @@ class CalculationUtils:
 
         self.calculate_for_inputs(input_list)
 
-    def watch(self, parameters: Parameters) -> None:
+    def watch(self, parameters: InputParameters) -> None:
         """
         Watch a directory for new UV or B files.
 
@@ -228,7 +228,7 @@ class CalculationUtils:
             observer.stop()
         observer.join()
 
-    def _on_new_file(self, file_type: str, days: str, year: str, brewer_id: str, parameters: Parameters) -> None:
+    def _on_new_file(self, file_type: str, days: str, year: str, brewer_id: str, parameters: InputParameters) -> None:
         if file_type == "UV":
             calculation_input = self.input_from_files(days, year, brewer_id, parameters)
             if calculation_input is not None:
@@ -238,12 +238,13 @@ class CalculationUtils:
             if calculation_input is not None:
                 self.calculate_and_output(calculation_input)
 
-    def input_from_files(self, days: str, year: str, brewer_id: str, parameters: Parameters):
+    def input_from_files(self, days: str, year: str, brewer_id: str, parameters: InputParameters):
         uv_file = "UV" + days + year + "." + brewer_id
         b_file = "B" + days + year + "." + brewer_id
         info = get_brewer_info(brewer_id)
         calibration_file = info.uvr_file_name
         arf_file = info.arf_file_name
+        parameter_file = year + ".par"
 
         uv_file_path = path.join(self._input_dir, UV_FILES_SUBDIR, uv_file)
         if not path.exists(uv_file_path):
@@ -252,7 +253,8 @@ class CalculationUtils:
 
         b_file_path = path.join(self._input_dir, B_FILES_SUBDIR, b_file)
         if not path.exists(b_file_path):
-            LOG.debug("Corresponding B file '" + str(b_file_path) + "' not found for UV file '" + uv_file + "', will use default ozone values")
+            LOG.debug(
+                "Corresponding B file '" + str(b_file_path) + "' not found for UV file '" + uv_file + "', will use default ozone values")
 
         calibration_file_path = path.join(self._input_dir, CALIBRATION_FILES_SUBDIR, calibration_file)
         if not path.exists(calibration_file_path):
@@ -264,13 +266,19 @@ class CalculationUtils:
             LOG.info("Corresponding ARF file '" + str(arf_file_path) + "' not found for UV file '" + uv_file + "', skipping")
             return None
 
+        parameter_file_path = path.join(self._input_dir, PARAMETER_FILES_SUBDIR, parameter_file)
+        if not path.exists(arf_file_path):
+            LOG.info("Corresponding Parameter file '" + str(parameter_file_path) + "' not found for UV file '" + uv_file + "', skipping")
+            return None
+
         # If everything is ok, return a calculation input
         return CalculationInput(
             parameters,
             uv_file_path,
             b_file_path,
             calibration_file_path,
-            arf_file_path
+            arf_file_path,
+            parameter_file_name=parameter_file_path
         )
 
     def _execute_jobs(self, jobs: List[Job[Any, Result]]) -> List[Result]:
@@ -311,7 +319,7 @@ class CalculationUtils:
                     # Notify the progress bar
                     self._make_progress()
 
-                if result.calculation_input.parameters.no_coscor:
+                if result.calculation_input.input_parameters.no_coscor:
                     output_dir = path.join(self._output_dir, "nocoscor")
                 else:
                     output_dir = self._output_dir
