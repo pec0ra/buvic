@@ -260,8 +260,7 @@ class PathMainForm(MainForm):
 
             # If all fields are valid, we initialize a CalculationInput and enable the button
             self._calculation_input = CalculationInput(
-                self.albedo,
-                self.aerosol,
+                self.parameters,
                 self._uv_file,
                 self._b_file,
                 self._calibration_file,

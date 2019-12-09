@@ -12,6 +12,7 @@ from typing import Callable, List, Any, TypeVar, Generic
 
 from watchdog.observers import Observer
 
+from uv.const import CALIBRATION_FILES_SUBDIR, ARF_FILES_SUBDIR, UV_FILES_SUBDIR, B_FILES_SUBDIR
 from uv.logic.calculation_event_handler import CalculationEventHandler
 from uv.logic.output_utils import create_csv, create_spectrum_plots, create_sza_plot
 from uv.logic.result import Result
@@ -244,28 +245,32 @@ class CalculationUtils:
         calibration_file = info.uvr_file_name
         arf_file = info.arf_file_name
 
-        if not path.exists(path.join(self._input_dir, uv_file)):
-            LOG.info("Corresponding UV file '" + uv_file + "' not found for B file '" + b_file + "', skipping")
+        uv_file_path = path.join(self._input_dir, UV_FILES_SUBDIR, uv_file)
+        if not path.exists(uv_file_path):
+            LOG.info("Corresponding UV file '" + str(uv_file_path) + "' not found for B file '" + b_file + "', skipping")
             return None
 
-        if not path.exists(path.join(self._input_dir, b_file)):
-            LOG.debug("Corresponding B file '" + b_file + "' not found for UV file '" + uv_file + "', will use default ozone values")
+        b_file_path = path.join(self._input_dir, B_FILES_SUBDIR, b_file)
+        if not path.exists(b_file_path):
+            LOG.debug("Corresponding B file '" + str(b_file_path) + "' not found for UV file '" + uv_file + "', will use default ozone values")
 
-        if not path.exists(path.join(self._input_dir, calibration_file)):
-            LOG.info("Corresponding UVR file '" + calibration_file + "' not found for UV file '" + uv_file + "', skipping")
+        calibration_file_path = path.join(self._input_dir, CALIBRATION_FILES_SUBDIR, calibration_file)
+        if not path.exists(calibration_file_path):
+            LOG.info("Corresponding UVR file '" + str(calibration_file_path) + "' not found for UV file '" + uv_file + "', skipping")
             return None
 
-        if not path.exists(path.join(self._input_dir, arf_file)):
-            LOG.info("Corresponding ARF file '" + arf_file + "' not found for UV file '" + uv_file + "', skipping")
+        arf_file_path = path.join(self._input_dir, ARF_FILES_SUBDIR, arf_file)
+        if not path.exists(arf_file_path):
+            LOG.info("Corresponding ARF file '" + str(arf_file_path) + "' not found for UV file '" + uv_file + "', skipping")
             return None
 
         # If everything is ok, return a calculation input
         return CalculationInput(
             parameters,
-            path.join(self._input_dir, uv_file),
-            path.join(self._input_dir, b_file),
-            path.join(self._input_dir, calibration_file),
-            path.join(self._input_dir, arf_file)
+            uv_file_path,
+            b_file_path,
+            calibration_file_path,
+            arf_file_path
         )
 
     def _execute_jobs(self, jobs: List[Job[Any, Result]]) -> List[Result]:

@@ -2,6 +2,11 @@ TMP_FILE_DIR = "tmp/"
 OUTPUT_DIR = "out/"
 DATA_DIR = "data/"
 
+UV_FILES_SUBDIR = "uvdata/"
+B_FILES_SUBDIR = "uvdata/"
+CALIBRATION_FILES_SUBDIR = "instr/"
+ARF_FILES_SUBDIR = "instr/"
+
 LIBRADTRAN_COMMAND = "uvspec"
 
 DEFAULT_ALBEDO_VALUE = 0.04
