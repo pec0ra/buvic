@@ -6,18 +6,21 @@ This repository contains a set of tools to calculate the cosine corrected irradi
 ## Table of content
 <!--ts-->
    * [UV irradiance calculations](#uv-irradiance-calculations)
+      * [Table of content](#table-of-content)
       * [Requirements](#requirements)
       * [UV Web Application](#uv-web-application)
       * [Command line app](#command-line-app)
-         * [1. Calculate for a date and brewer id](#1-calculate-for-a-date-and-brewer-id)
+         * [1. Calculate dates and brewer id](#1-calculate-dates-and-brewer-id)
          * [2. Calculate for given files](#2-calculate-for-given-files)
          * [3. Calculate for all files of a given directory](#3-calculate-for-all-files-of-a-given-directory)
          * [4. Watchdog](#4-watchdog)
+      * [Installer](#installer)
+      * [Releases](#releases)
       * [Docker](#docker)
          * [1. UV Server](#1-uv-server)
          * [2. UV Watch](#2-uv-watch)
 
-<!-- Added by: basile, at: Fr Nov 29 14:54:18 CET 2019 -->
+<!-- Added by: basile, at: Mo Dez  9 16:26:35 CET 2019 -->
 
 <!--te-->
 
@@ -36,7 +39,7 @@ The Docker images require docker
 
 UV Web Application is a small application running in the browser to facilitate the execution of irradiance calculation.
 
-It offers the possibility to choose a date and a brewer id to automatically find the measurement files from a predefined set or to manually upload measurement files (manual mode).
+It offers the possibility to choose dates and a brewer id to automatically find the measurement files from a predefined set or to manually upload measurement files (manual mode).
 
 **Instructions:**
 
@@ -69,7 +72,8 @@ which yields the result:
 usage: run_cmd.py [-h]
                   (--dates-and-brewer-id DATE_START DATE_END BREWER_ID | --paths UV_FILE B_FILE UVR_FILE ARF_FILE | --all | --watch)
                   [--input-dir INPUT_DIR] [--output-dir OUTPUT_DIR]
-                  [--albedo ALBEDO] [--aerosol ALPHA BETA] [--only-csv]
+                  [--albedo ALBEDO] [--aerosol ALPHA BETA] [--ozone OZONE]
+                  [--no-coscor] [--no-plots]
 
 Calculate irradiance spectra
 
@@ -88,19 +92,23 @@ optional arguments:
   --watch, -w           Watches the input directory for file changes and
                         automatically converts changed UV files
   --input-dir INPUT_DIR, -i INPUT_DIR
-                        The directory get the files from
+                        The directory to get the files from
   --output-dir OUTPUT_DIR, -o OUTPUT_DIR
                         The directory to save the results in
   --albedo ALBEDO, -a ALBEDO
                         The albedo value to use for the calculations
   --aerosol ALPHA BETA, -e ALPHA BETA
-                        The aerosol angstrom's alhpa and beta values to use
+                        The aerosol angstrom's alpha and beta values to use
                         for the calculations.
-  --only-csv, -c        Don't generate plots but only csv files
+  --ozone OZONE, -z OZONE
+                        The ozone value in DU to use for the calculations if
+                        no value is found in a B file
+  --no-coscor, -c       Don't apply cos correction
+  --no-plots, -q        Don't generate plots but only qasume files
 ```
 The options `--days-and-brewer-id`, `--paths`, `--all` and `--watch` correspond to the 4 different ways to run the tool and only one can be used at a time.
 
-The options `--input-dir`, `--output-dir`, `--albedo`, `--aerosol` and `--only-csv` are optional parameters and can be used with any of the 4 options cited above. If not specified, default values will be used.
+The options `--input-dir`, `--output-dir`, `--albedo`, `--aerosol` , `--ozone`, `--no-coscor` and `--no-plots` are optional parameters and can be used with any of the 4 options cited above. If not specified, default values will be used.
 
 ### 1. Calculate dates and brewer id
 
@@ -164,7 +172,40 @@ python run_cmd.py --watch --input-dir measurements/
 ```
 Note that if `--input-dir` is not specified, the measurement files will be taken from `data/`.
 
+## Installer
 
+`installer.py` is a small script to help deploy the docker UV Server image.
+
+**Instructions:**
+
+`installer.py` requires python 3+.
+To run the script:
+```
+python installer.py
+```
+or on linux simply:
+```
+./installer.py
+```
+Then follow the instructions on terminal
+
+
+## Releases
+
+Releases have a version in the form `vMAJOR.MINOR` (e.g `v1.2`).
+
+To create a new release, change the version in the [version file](version).
+Then, create a new tag with the version as a name:
+```
+git tag v1.2 -a -m "UV Server v1.2"
+```
+and push it to github:
+```
+git push --tags
+```
+Docker hub will automatically build the corresponding docker image (Note: it can take a few hours until the images are built).
+
+Alternatively, you can run the script `release.py` which will do these steps automatically.
 
 ## Docker
 
@@ -177,6 +218,8 @@ Two docker images are available for calculations:
 This docker image contains the UV Web Application (See section above)
 
 **Instructions:**
+
+See the [Installer section](#installer) for an easier way to run this docker image.
 
 To build this image, run:
 ```
@@ -191,10 +234,16 @@ docker run -d -p <PORT>:80 --name uv-server pec0ra/uv-server
 ```
 Where `<PORT>` is the port on which the web app will listen (e.g. 8080).
 
-The flag `-d` tells docker to run this container as a daemon (in the background). It may be ommited if you want to run it in your current terminal.
+The flag `-d` tells docker to run this container as a daemon (in the background). It may be omitted if you want to run it in your current terminal.
 
 After running this command, you can access the web app in your browser at `http://localhost:<PORT>`
 
+If you want [darksky](https://darksky.net/dev) to be used, you will need to create an account and give your api key as environment variable.
+This can be done by adding the parameter `-e DARKSKY_TOKEN=your_darksky_token`.
+Example:
+```
+docker run -d -p <PORT>:80 -e DARKSKY_TOKEN=your_darksky_token --name uv-server pec0ra/uv-server
+```
 
 If you want to use a custom directory as a source for measurement files and/or for output files, you can mount the container's `/data` and `/out` as volumes:
 ```

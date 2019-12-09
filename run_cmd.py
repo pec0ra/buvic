@@ -38,7 +38,7 @@ group.add_argument("--all", action="store_true", help="Finds and converts all UV
 group.add_argument("--watch", "-w", action="store_true",
                    help="Watches the input directory for file changes and automatically converts changed UV files")
 
-parser.add_argument("--input-dir", "-i", help="The directory get the files from")
+parser.add_argument("--input-dir", "-i", help="The directory to get the files from")
 parser.add_argument("--output-dir", "-o", help="The directory to save the results in", default=DEFAULT_OUTPUT)
 parser.add_argument("--albedo", "-a", type=float, help="The albedo value to use for the calculations",
                     default=DEFAULT_ALBEDO_VALUE)
