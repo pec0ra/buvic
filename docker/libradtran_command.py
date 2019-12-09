@@ -1,0 +1,1 @@
+LIBRADTRAN_COMMAND = "uvspec"

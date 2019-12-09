@@ -7,8 +7,6 @@ B_FILES_SUBDIR = "uvdata/"
 CALIBRATION_FILES_SUBDIR = "instr/"
 ARF_FILES_SUBDIR = "instr/"
 
-LIBRADTRAN_COMMAND = "docker run --rm -i siarhei/libradtran uvspec"
-
 DEFAULT_ALBEDO_VALUE = 0.04
 DEFAULT_ALPHA_VALUE = 1.3
 DEFAULT_BETA_VALUE = 0.1
