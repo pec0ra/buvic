@@ -292,7 +292,7 @@ class CalculationUtils:
 
             # Submit the jobs to the thread pool
             for job in jobs:
-                future_result.append(thread_pool.submit(job.call))
+                future_result.append(thread_pool.submit(job.run))
 
             future_output = []
 
@@ -404,7 +404,7 @@ class Job(Generic[INPUT, RETURN]):
     _fn: Callable[[INPUT], RETURN]
     _args: INPUT
 
-    def call(self) -> RETURN:
+    def run(self) -> RETURN:
         """
         Execute the job
         :return: the job's return value
