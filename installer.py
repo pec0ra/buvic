@@ -2,7 +2,10 @@
 import json
 import os
 import sys
+import urllib.request
 from subprocess import call, run, PIPE
+
+from script_utils import Colors, p, check_yes_no, input_check, check_command
 
 PORT_KEY = "port"
 INPUT_PATH_KEY = "input_dir"
@@ -15,37 +18,15 @@ CONFIG_FILE_PATH = os.path.join(os.path.expanduser("~"), '.uv-server.conf')
 FNULL = open(os.devnull, 'w')
 
 
-class Colors:
-    HEADER = '\x1b[37;44m'
-    LIGHTGRAY = '\x1b[37m'
-    OKBLUE = '\x1b[34m'
-    ERROR = '\x1b[31m'
-    WARNING = '\x1b[33m'
-    ENDC = '\x1b[0m'
-
-
-def p(text, color):
-    print(color + text + Colors.ENDC)
-
-
-def check_yes_no():
-    print(Colors.OKBLUE, end='')
-    value = input()
-    print(Colors.ENDC, end='')
-    if value.lower() == "n" or value.lower() == "no":
-        return False
-    else:
-        return True
-
-
 def save_config(port, input_path, output_path, user, container_name, persist):
-    config = {}
-    config[PORT_KEY] = port
-    config[INPUT_PATH_KEY] = input_path
-    config[OUTPUT_PATH_KEY] = output_path
-    config[USER_KEY] = user
-    config[CONTAINER_NAME_KEY] = container_name
-    config[PERSIST_KEY] = persist
+    config = {
+        PORT_KEY: port,
+        INPUT_PATH_KEY: input_path,
+        OUTPUT_PATH_KEY: output_path,
+        USER_KEY: user,
+        CONTAINER_NAME_KEY: container_name,
+        PERSIST_KEY: persist
+    }
     with open(CONFIG_FILE_PATH, 'w') as config_file:
         json.dump(config, config_file)
     print(f"Config file saved to '{CONFIG_FILE_PATH}'.")
@@ -64,38 +45,6 @@ def load_config():
             return config
     else:
         return {}
-
-
-def input_check(check_value, error_message=None, default_value=None, none_default=False):
-    while True:
-        print(Colors.OKBLUE, end='')
-        value = input()
-        print(Colors.ENDC, end='')
-        if not value and (default_value is not None or none_default):
-            return default_value
-        try:
-            return check_value(value)
-        except Exception as e:
-            if error_message is None:
-                p(str(e), Colors.WARNING)
-            else:
-                p(error_message, Colors.WARNING)
-
-
-def run_command(command, show_std_err=False):
-    stderr = None if show_std_err else FNULL
-    return run(command, stdout=FNULL, stderr=stderr, shell=True)
-
-
-def check_command(command, show_std_err=False):
-    try:
-        result = run_command(command, show_std_err)
-    except OSError:
-        return False
-    if result.returncode != 0:
-        return False
-    else:
-        return True
 
 
 def check_container_name(name):
@@ -121,6 +70,13 @@ def check_user(user):
     if gid_res.returncode != 0:
         raise ValueError("User does not exist")
     return uid_res.stdout.rstrip() + ":" + gid_res.stdout.rstrip()
+
+
+def check_version(value, versions):
+    index = int(value)
+    if index < 0 or index >= len(versions):
+        raise ValueError(f"The value must be between 0 and {len(versions) - 1}")
+    return index
 
 
 def run_installer():
@@ -188,17 +144,29 @@ def run_installer():
         persist = check_yes_no()
     print()
 
-    if not check_command(f"docker image inspect pec0ra/uv-server >/dev/null 2>&1 || exit 1"):
-        print("* Docker image pec0ra/uv-server doesn't exist locally")
+    link = "https://registry.hub.docker.com/v1/repositories/pec0ra/uv-server/tags"
+    with urllib.request.urlopen(link) as url:
+        data = json.loads(url.read().decode())
+
+    print("* Which version do you want to install?")
+    for index, version in enumerate(data):
+        default_text = " (default)" if index == 0 else ""
+        print(f" {index}: {version['name']}{default_text}")
+    version_index = input_check(lambda value: check_version(value, data), default_value=0)
+    version = data[version_index]["name"]
+
+    if version == "latest":
+        must_pull = True
+    elif not check_command(f"docker image inspect pec0ra/uv-server:{version} >/dev/null 2>&1 || exit 1"):
+        print(f"* Docker image pec0ra/uv-server:{version} doesn't exist locally")
         must_pull = True
     else:
-        print("* Do you want to update the docker image to its latest version? (Y/n)")
-        must_pull = check_yes_no()
+        must_pull = False
 
     if must_pull:
-        print("* Pulling required docker image")
+        print("* Pulling docker image")
         print(Colors.LIGHTGRAY, end='', flush=True)
-        result = call(["docker", "pull", "pec0ra/uv-server"])
+        result = call(["docker", "pull", f"pec0ra/uv-server:{version}"])
         print(Colors.ENDC, end='', flush=True)
         if result != 0:
             p("ERROR: An error occurred while pulling image!", Colors.ERROR)
@@ -230,7 +198,7 @@ def run_installer():
     if persist:
         docker_command.append("--restart always")
 
-    docker_command.extend(["-e PORT=4444", f"--name {container_name}", "pec0ra/uv-server"])
+    docker_command.extend(["-e PORT=4444", f"--name {container_name}", f"pec0ra/uv-server:{version}"])
     print(" ".join(docker_command))
     print(Colors.LIGHTGRAY, end='', flush=True)
     result = run(" ".join(docker_command), shell=True)

@@ -12,7 +12,7 @@ from remi.gui import VBox
 from uv.logic.calculation_input import CalculationInput
 from uv.logic.job_utils import CalculationUtils
 from uv.logic.result import Result
-from .const import OUTPUT_DIR, DATA_DIR
+from .const import OUTPUT_DIR, DATA_DIR, APP_VERSION
 from .gui.utils import show, hide
 from .gui.widgets import Title, Level, Loader, PathMainForm, SimpleMainForm, ResultWidget, ExtraParamForm
 
@@ -40,7 +40,7 @@ class UVApp(App):
 
     def main(self):
         self._main_container = gui.VBox(width="80%")
-        self._main_container.set_style("margin: 30px auto; padding: 40px")
+        self._main_container.set_style("margin: 30px auto; padding: 40px 40px 10px 40px")
 
         title = Title(Level.H1, "Irradiance calculation")
 
@@ -77,6 +77,10 @@ class UVApp(App):
         self._main_container.append(self._error_label)
 
         self._main_container.append(self._result_container)
+
+        version = gui.Label(f"UV Calculator {APP_VERSION}")
+        version.set_style("color: #999; align-self: flex-end; margin-top: 30px")
+        self._main_container.append(version)
 
         # returning the root widget
         return self._main_container

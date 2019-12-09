@@ -12,3 +12,6 @@ DEFAULT_ALBEDO_VALUE = 0.04
 DEFAULT_ALPHA_VALUE = 1.3
 DEFAULT_BETA_VALUE = 0.1
 DEFAULT_OZONE_VALUE = 300
+
+with open("version") as version_file:
+    APP_VERSION = version_file.readline().strip()

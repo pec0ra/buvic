@@ -41,6 +41,7 @@ COPY run_cmd.py ./
 COPY uv ./uv
 COPY docker/libradtran_command.py ./uv/
 COPY data ./data
+COPY version ./
 
 # Start server
 CMD python3.7 run_cmd.py -w -i /in -o /out -c

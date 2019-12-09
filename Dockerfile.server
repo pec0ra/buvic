@@ -41,6 +41,7 @@ COPY docker/run_docker.py ./
 COPY uv ./uv
 COPY docker/libradtran_command.py ./uv/
 COPY data ./data
+COPY version ./
 
 # Start server
 CMD ["/usr/bin/python3.7", "run_docker.py"]
