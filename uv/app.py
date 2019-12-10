@@ -10,7 +10,7 @@ from remi import App, Label
 from remi.gui import VBox
 
 from uv.logic.calculation_input import CalculationInput
-from uv.logic.job_utils import CalculationUtils
+from uv.logic.calculation_utils import CalculationUtils
 from uv.logic.result import Result
 from .const import OUTPUT_DIR, DATA_DIR, APP_VERSION
 from .gui.utils import show, hide

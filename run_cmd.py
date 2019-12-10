@@ -12,7 +12,7 @@ from matplotlib import rcParams
 
 from uv.const import DEFAULT_ALBEDO_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE, TMP_FILE_DIR, DEFAULT_OZONE_VALUE
 from uv.logic.calculation_input import CalculationInput, InputParameters, Angstrom
-from uv.logic.job_utils import CalculationUtils
+from uv.logic.calculation_utils import CalculationUtils
 from uv.logutils import init_logging
 
 rcParams.update({'figure.autolayout': True})

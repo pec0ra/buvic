@@ -287,3 +287,8 @@ This prevents permissions issues at the moment of writing files to the output di
 You might need to skip this option on Windows.
 
 After running this command, any new pair of UV and B files added/modified in `<WATCH_PATH>` will automatically be converted an irradiance spectrum saved in `<OUT_PATH>`
+
+
+## TECHNICAL DETAILS
+
+![Technical details](assets/technical_detail_1.png | width=100)

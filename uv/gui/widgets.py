@@ -11,7 +11,7 @@ from .utils import show, hide
 from ..brewer_infos import brewer_infos
 from ..const import TMP_FILE_DIR, OUTPUT_DIR, DEFAULT_BETA_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_ALBEDO_VALUE, DEFAULT_OZONE_VALUE
 from ..logic.calculation_input import CalculationInput, Angstrom, InputParameters
-from ..logic.job_utils import CalculationUtils
+from ..logic.calculation_utils import CalculationUtils
 
 
 class Button(gui.Button):
