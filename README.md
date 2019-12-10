@@ -105,6 +105,7 @@ The command line offers 4 different possibilities to perform irradiance calculat
 4. Monitor a directory for changes and execute the calculation every time new measurement files are added
 
 **Instructions:**
+
 Help about the command line can be shown with:
 ```
 python run_cmd.py -h
@@ -180,7 +181,7 @@ This command executes the calculation for four given measurement files:
 1. UV File: Raw uv measurements
 2. B File: For ozone measurements
 3. UVR File: The instrument calibration data
-4. ARF File: TODO
+4. ARF File: The angular response of the instrument
 
 **Examples:**
 
