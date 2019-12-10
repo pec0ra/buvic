@@ -48,7 +48,7 @@ class Result:
         bid = self.uv_file_entry.brewer_info.id
         days = date_to_days(self.uv_file_entry.header.date)
         time = minutes_to_time(self.spectrum.measurement_times[0])
-        return f"{prefix}{days:03}{time.hour:02}{time.minute:02}G.{bid}{suffix}"
+        return f"{self.uv_file_entry.header.date.year}/{prefix}{days:03}{time.hour:02}{time.minute:02}G.{bid}{suffix}"
 
     @property
     def uv_file_entry(self) -> UVFileEntry:
