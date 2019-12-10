@@ -39,6 +39,46 @@ pip install -r requirements.txt
 The Docker images require docker
 
 
+#### Directory structure
+
+The following directory structure is required for your measurement files:
+```
+instr/
+    arf_033.dat
+    arf_070.dat
+    ...
+    UVR17319.070
+    UVR17319.117
+    UVR17419.033
+    ...
+    19.par
+uvdata/
+    B17019.033
+    B17019.070
+    B17119.033
+    B17119.070
+    ...
+    UV17019.033
+    UV17019.070
+    UV17119.033
+    UV17119.070
+    ...
+```
+
+In the `instr` directory:
+* ARF files with the name pattern `arf_<brewer_id>.dat`
+* Calibration files with the name pattern `UVR17319.<brewer_id>` or `UVR17419.<brewer_id>` (TODO: the name will probably change)
+* Parameter files with the name patter `<year>.par` where *year* is the last two digits of the year (e.g. 19)
+
+In the `uvdata` directory:
+* B files with the name pattern `B<days><year>.<brewer_id>` where *days* is the number of days since new year and *year* is the last two
+digits of the year (e.g. 19)
+* UV files with the name pattern `UV<days><year>.<brewer_id>` where *days* is the number of days since new year and *year* is the last two
+digits of the year (e.g. 19)
+
+Both directories `instr` and `uvdata` must be inside your input directory (e.g. [`data/`](data)).
+
+
 ## UV Web Application
 
 UV Web Application is a small application running in the browser to facilitate the execution of irradiance calculation.
