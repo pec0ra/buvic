@@ -291,4 +291,4 @@ After running this command, any new pair of UV and B files added/modified in `<W
 
 ## TECHNICAL DETAILS
 
-![Technical details](assets/technical_detail_1.png | width=100)
+![Technical details](assets/technical_detail_1.png)
