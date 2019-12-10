@@ -19,12 +19,13 @@ This repository contains a set of tools to calculate the cosine corrected irradi
       * [Docker](#docker)
          * [1. UV Server](#1-uv-server)
          * [2. UV Watch](#2-uv-watch)
-      * [Technical Details](#technical-details)
+      * [Implementation](#implementation)
          * [1. User Interface](#1-user-interface)
          * [2. Job creation / handling](#2-job-creation--handling)
          * [3. Calculations](#3-calculations)
+         * [4. Technical details](#4-technical-details)
 
-<!-- Added by: basile, at: Di Dez 10 09:23:59 CET 2019 -->
+<!-- Added by: basile, at: Di Dez 10 10:05:53 CET 2019 -->
 
 <!--te-->
 
@@ -44,6 +45,8 @@ The Docker images require docker
 UV Web Application is a small application running in the browser to facilitate the execution of irradiance calculation.
 
 It offers the possibility to choose dates and a brewer id to automatically find the measurement files from a predefined set or to manually upload measurement files (manual mode).
+
+![GUI](assets/gui.png)
 
 **Instructions:**
 
@@ -293,13 +296,14 @@ You might need to skip this option on Windows.
 After running this command, any new pair of UV and B files added/modified in `<WATCH_PATH>` will automatically be converted an irradiance spectrum saved in `<OUT_PATH>`
 
 
-## Technical Details
+## Implementation
 
-The technical details will split the functionality of the application in the following parts:
+For this implementation section, we will split the functionality of the application in the following parts:
 
 1. User Interface
 2. Job creation / handling
 3. Calculations
+4. Technical details
 
 
 ![Technical details](assets/technical_detail_1.png)
@@ -333,7 +337,7 @@ and brewer id as input). They keep track of the values of their fields and of th
 
 ### 2. Job creation / handling
 
-Job creation and handling is done in the class `CalculationUtils` of [`uv/logic/calculation_utils.py`](uv/logic/calculation_utils.py).
+Job creation and handling is done in the class [`CalculationUtils`](uv/logic/calculation_utils.py).
 
 Before creating the jobs, all the information required for the Jobs is written in a `CalculationInput` object.
 Each `CalculationInput` corresponds to one UV file (measurements for one day). Since multiple measurements are done each day (in each UV
@@ -355,3 +359,36 @@ Their results will then be scheduled on a `ProcessPoolExecutor` for the generati
 
 
 ### 3. Calculations
+
+The calculations executed in each Job from the [previous section](#2-job-creation--handling) are mostly implemented in
+[`IrradianceCalculation`](uv/logic/irradiance_calculation.py).
+The entry point in this class for the calculations is the method `calculate` as explained in the [previous section](#2-job-creation--handling),
+this method has access to a `CalculationInput` object for infos about the measurement files and extra parameters as well as the index of the
+section to do the calculations for.
+
+![Calculation workflow](assets/technical_detail_2.png)
+
+The first part of the calculations is to parse the measurement files to get the data from. Each file type has its own file parser. Their
+implementations can be found in the files [`uv/logic/uv_file.py`](uv/logic/uv_file.py), [`uv/logic/b_file.py`](uv/logic/b_file.py),
+[`uv/logic/arf_file.py`](uv/logic/arf_file.py), [`uv/logic/calibration_file.py`](uv/logic/calibration_file.py) and
+[`uv/logic/parameter_file.py`](uv/logic/parameter_file.py).
+
+Note that the file parsing is triggered automatically (and cached) when calling one of the following property on the `CalculationInput`:
+* `uv_file_entries`: parses the uv file
+* `ozone`: parses the b file
+* `calibration`: parses the calibration file
+* `arf`: parses the arf file
+* `parameters`: parses the parameter file
+
+In addition to parsing the files, an api call is made to [darksky.net](https://darksky.net/dev) to get the cloud cover for the day of the
+measurements. This information is used to choose between a clear sky or a diffuse cos correction.
+
+In the next step, the raw measurements and the calibration data is used to convert the raw UV measurements to a calibrated spectrum.
+A call to LibRadtran is also made with the infos from the measurement and parameter files to get `Fdiff`, `Fdir` and `Fglo`.
+
+Finally, the results from LibRadtran and from the darksky.net api call are used to apply the cos correction to the calibrated
+spectrum.
+This information as well as the input parameters used is returned from the `calculate` method as a `Result` object.
+
+
+### 4. Technical details
