@@ -9,7 +9,7 @@ This repository contains a set of tools to calculate the cosine corrected irradi
       * [Table of content](#table-of-content)
       * [Requirements](#requirements)
       * [UV Web Application](#uv-web-application)
-      * [Command line app](#command-line-app)
+      * [Command Line App](#command-line-app)
          * [1. Calculate dates and brewer id](#1-calculate-dates-and-brewer-id)
          * [2. Calculate for given files](#2-calculate-for-given-files)
          * [3. Calculate for all files of a given directory](#3-calculate-for-all-files-of-a-given-directory)
@@ -19,8 +19,12 @@ This repository contains a set of tools to calculate the cosine corrected irradi
       * [Docker](#docker)
          * [1. UV Server](#1-uv-server)
          * [2. UV Watch](#2-uv-watch)
+      * [Technical Details](#technical-details)
+         * [1. User Interface](#1-user-interface)
+         * [2. Job creation / handling](#2-job-creation--handling)
+         * [3. Calculations](#3-calculations)
 
-<!-- Added by: basile, at: Mo Dez  9 16:26:35 CET 2019 -->
+<!-- Added by: basile, at: Di Dez 10 09:23:59 CET 2019 -->
 
 <!--te-->
 
@@ -49,7 +53,7 @@ python run.py
 ```
 The application should automatically open in the browser.
 
-## Command line app
+## Command Line App
 
 The command line offers 4 different possibilities to perform irradiance calculations.
 
@@ -289,6 +293,65 @@ You might need to skip this option on Windows.
 After running this command, any new pair of UV and B files added/modified in `<WATCH_PATH>` will automatically be converted an irradiance spectrum saved in `<OUT_PATH>`
 
 
-## TECHNICAL DETAILS
+## Technical Details
+
+The technical details will split the functionality of the application in the following parts:
+
+1. User Interface
+2. Job creation / handling
+3. Calculations
+
 
 ![Technical details](assets/technical_detail_1.png)
+
+### 1. User Interface
+
+Two user interfaces are available:
+1. Command line interface (CLI)
+2. Graphical User Interface (GUI)
+
+Both interfaces are responsible for getting the necessary parameters from the user.
+The parameters include dates and brewer id to find the required files for the calculations as well as some default values for ozone, abledo
+and aerosol for the case where these cannot be found in the files.
+
+
+The first interface's implementation is written in [`run_cmd.py`](run_cmd.py) and mostly consists of command line argument parsing.
+Once the arguments are parsed, their values are passed to the `CalculationUtils` (See [next section](#2-job-creation--handling)).
+
+The second interface's implementation is more complex and consists of the following three files:
+1. [`run.py`](run.py) (or [`docker/run_docker.py`](docker/run_docker.py) for the docker image) which serves as an entry point to start the UVApp.
+2. [`uv/app.py`](uv/app.py) which contains the UVApp class.
+3. [`uv/gui/widgets.py`](uv/gui/widgets.py) which contains the implementation of some of the more complex interface's widgets.
+
+The UVApp class is the core of the GUI and uses the [remi library](https://github.com/dddomodossola/remi).
+The class initializes the widgets in its `main` method and adds them to its main container.
+
+The most important of the interface's widgets are the `MainForm`s (`PathMainForm` to give files as input and `SimpleMainForm` to give dates
+and brewer id as input). They keep track of the values of their fields and of the extra parameters and call the `CalculationUtils` (See
+[next section](#2-job-creation--handling)) with these values when the *Calculate* button is clicked.
+
+
+### 2. Job creation / handling
+
+Job creation and handling is done in the class `CalculationUtils` of [`uv/logic/calculation_utils.py`](uv/logic/calculation_utils.py).
+
+Before creating the jobs, all the information required for the Jobs is written in a `CalculationInput` object.
+Each `CalculationInput` corresponds to one UV file (measurements for one day). Since multiple measurements are done each day (in each UV
+file), the UV file is divided into sections, each represented as a `UVFileEntry` object.
+In the end, one Job will be created for each `UVFileEntry`. Each Job needs therefore to get a `CalculationInput` as parameter as well as the
+index of the section it does the calculation for.
+
+Jobs can be created in four different ways:
+1. `calculate_for_input`: Create jobs for a given `CalculationInput`. Used when file paths are already known.
+2. `calculate_for_all_between`: Finds all the files for measurements between two days and create the jobs for them.
+3. `calculate_for_all`: Finds all files in a directory and create the jobs for them
+4. `watch`: Monitors a directory and each time a file is found, calls `calculate_for_input`.
+
+The difference between way 1. (and 4.) and ways 2. and 3. is that way 1 only create Jobs for one `CalculationInput`.
+Ways 2. and 3. make calculation for multiple days and therefore create Jobs for multiple `CalculationInput` objects.
+
+All the Jobs are then scheduled on a `ThreadPoolExecutor` and will run in parallel.
+Their results will then be scheduled on a `ProcessPoolExecutor` for the generation of qasume and plot files.
+
+
+### 3. Calculations

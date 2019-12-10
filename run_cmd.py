@@ -130,7 +130,7 @@ elif paths is not None:
         input_dir + paths[3]
     )
 
-    cmd.calculate_and_output(calculation_input)
+    cmd.calculate_for_input(calculation_input)
 
 elif do_all:
     init_logging(logging.WARN)

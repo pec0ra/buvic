@@ -60,7 +60,7 @@ class CalculationUtils:
         self._progress_handler = progress_handler
         self._file_type = file_type
 
-    def calculate_and_output(self, calculation_input: CalculationInput) -> List[Result]:
+    def calculate_for_input(self, calculation_input: CalculationInput) -> List[Result]:
         """
         Calculate irradiance and create plots and csv for a given calculation input
 
@@ -104,38 +104,6 @@ class CalculationUtils:
                  calculation_input.arf_file_name, duration)
         return result_list
 
-    def calculate_for_inputs(self, calculation_inputs: List[CalculationInput]) -> List[Result]:
-        """
-        Calculate irradiance and create plots and csv for a given list of calculation inputs
-
-        :param calculation_inputs: the inputs for the calculation
-        :return: the results of the calculation
-        """
-        start = time.time()
-
-        if len(calculation_inputs) == 0:
-            return self._handle_empty_input()
-
-        job_list = []
-        for calculation_input in calculation_inputs:
-            # Create `IrradianceCalculation` Jobs
-            calculation_jobs = self._create_jobs(calculation_input)
-            job_list.extend(calculation_jobs)
-
-        LOG.info("Starting calculation of %d file sections in %d files", len(job_list), len(calculation_inputs))
-        # Init progress bar
-        if self._init_progress is not None:
-            self._init_progress(len(job_list))
-
-        # Execute the jobs
-        ret = self._execute_jobs(job_list)
-
-        duration = time.time() - start
-        if self._finish_progress is not None:
-            self._finish_progress(duration)
-        LOG.info("Finished calculation batch in %ds", duration)
-        return ret
-
     def calculate_for_all_between(self, start_date: date, end_date: date, brewer_id, parameters: InputParameters) -> List[Result]:
         """
         Calculate irradiance and create plots and csv for all UV Files found for between a start date and an end date for a given brewer id.
@@ -161,11 +129,11 @@ class CalculationUtils:
             days = date_to_days(d)
 
             LOG.debug("Creating input for date %s as days %d and year %d", d.isoformat(), days, year)
-            calculation_input = self.input_from_files(f"{days:03}", f"{year:02}", brewer_id, parameters)
+            calculation_input = self._input_from_files(f"{days:03}", f"{year:02}", brewer_id, parameters)
             if calculation_input is not None:
                 input_list.append(calculation_input)
 
-        return self.calculate_for_inputs(input_list)
+        return self._calculate_for_inputs(input_list)
 
     def calculate_for_all(self, parameters: InputParameters) -> None:
         """
@@ -198,11 +166,11 @@ class CalculationUtils:
                 year = res.group("year")
                 brewer_id = res.group("brewer_id")
 
-                calculation_input = self.input_from_files(days, year, brewer_id, parameters)
+                calculation_input = self._input_from_files(days, year, brewer_id, parameters)
                 if calculation_input is not None:
                     input_list.append(calculation_input)
 
-        self.calculate_for_inputs(input_list)
+        self._calculate_for_inputs(input_list)
 
     def watch(self, parameters: InputParameters) -> None:
         """
@@ -228,17 +196,49 @@ class CalculationUtils:
             observer.stop()
         observer.join()
 
+    def _calculate_for_inputs(self, calculation_inputs: List[CalculationInput]) -> List[Result]:
+        """
+        Calculate irradiance and create plots and csv for a given list of calculation inputs
+
+        :param calculation_inputs: the inputs for the calculation
+        :return: the results of the calculation
+        """
+        start = time.time()
+
+        if len(calculation_inputs) == 0:
+            return self._handle_empty_input()
+
+        job_list = []
+        for calculation_input in calculation_inputs:
+            # Create `IrradianceCalculation` Jobs
+            calculation_jobs = self._create_jobs(calculation_input)
+            job_list.extend(calculation_jobs)
+
+        LOG.info("Starting calculation of %d file sections in %d files", len(job_list), len(calculation_inputs))
+        # Init progress bar
+        if self._init_progress is not None:
+            self._init_progress(len(job_list))
+
+        # Execute the jobs
+        ret = self._execute_jobs(job_list)
+
+        duration = time.time() - start
+        if self._finish_progress is not None:
+            self._finish_progress(duration)
+        LOG.info("Finished calculation batch in %ds", duration)
+        return ret
+
     def _on_new_file(self, file_type: str, days: str, year: str, brewer_id: str, parameters: InputParameters) -> None:
         if file_type == "UV":
-            calculation_input = self.input_from_files(days, year, brewer_id, parameters)
+            calculation_input = self._input_from_files(days, year, brewer_id, parameters)
             if calculation_input is not None:
-                self.calculate_and_output(calculation_input)
+                self.calculate_for_input(calculation_input)
         if file_type == "B":
-            calculation_input = self.input_from_files(days, year, brewer_id, parameters)
+            calculation_input = self._input_from_files(days, year, brewer_id, parameters)
             if calculation_input is not None:
-                self.calculate_and_output(calculation_input)
+                self.calculate_for_input(calculation_input)
 
-    def input_from_files(self, days: str, year: str, brewer_id: str, parameters: InputParameters):
+    def _input_from_files(self, days: str, year: str, brewer_id: str, parameters: InputParameters):
         uv_file = "UV" + days + year + "." + brewer_id
         b_file = "B" + days + year + "." + brewer_id
         info = get_brewer_info(brewer_id)

@@ -272,7 +272,7 @@ class PathMainForm(MainForm):
             self._calculation_input = None
 
     def start_calculation(self, calculation_utils: CalculationUtils) -> List[Result]:
-        return calculation_utils.calculate_and_output(self._calculation_input)
+        return calculation_utils.calculate_for_input(self._calculation_input)
 
 
 class SimpleMainForm(MainForm):
