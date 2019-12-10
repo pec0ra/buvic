@@ -464,7 +464,7 @@ class ResultWidget(VBox):
         vbox.append(info_label)
 
         for result in results:
-            download_button = gui.FileDownloader(result.get_name(), OUTPUT_DIR + result.get_name(), width=130)
+            download_button = gui.FileDownloader(result.get_name(), path.join(OUTPUT_DIR, result.get_name()), width=330)
             download_button.set_style("margin-top: 5px; color: rgb(4, 90, 188)")
             vbox.append(download_button)
 

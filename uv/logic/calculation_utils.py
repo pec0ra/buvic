@@ -72,14 +72,6 @@ class CalculationUtils:
                  calculation_input.b_file_name, calculation_input.calibration_file_name,
                  calculation_input.arf_file_name)
 
-        if calculation_input.input_parameters.no_coscor:
-            output_dir = path.join(self._output_dir, "nocoscor")
-        else:
-            output_dir = self._output_dir
-        # Create output directory if needed
-        if not path.exists(output_dir):
-            makedirs(output_dir)
-
         # Create `IrradianceCalculation` Jobs
         calculation_jobs = self._create_jobs(calculation_input)
 
@@ -115,14 +107,6 @@ class CalculationUtils:
         :return: the calculation results
         """
 
-        if parameters.no_coscor:
-            output_dir = path.join(self._output_dir, "nocoscor")
-        else:
-            output_dir = self._output_dir
-        # Create output directory if needed
-        if not path.exists(output_dir):
-            makedirs(output_dir)
-
         input_list = []
         for d in date_range(start_date, end_date):
             year = d.year - 2000
@@ -146,14 +130,6 @@ class CalculationUtils:
 
         :param parameters: the parameters to use for calculation
         """
-
-        if parameters.no_coscor:
-            output_dir = path.join(self._output_dir, "nocoscor")
-        else:
-            output_dir = self._output_dir
-        # Create output directory if needed
-        if not path.exists(output_dir):
-            makedirs(output_dir)
 
         input_list = []
         for file_name in listdir(self._input_dir):
@@ -319,14 +295,9 @@ class CalculationUtils:
                     # Notify the progress bar
                     self._make_progress()
 
-                if result.calculation_input.input_parameters.no_coscor:
-                    output_dir = path.join(self._output_dir, "nocoscor")
-                else:
-                    output_dir = self._output_dir
-
                 # Schedule the creation of plots and csv
                 future_output.append(
-                    process_pool.submit(self._create_output, result, output_dir, self._no_plots, self._file_type))
+                    process_pool.submit(self._create_output, result, self._output_dir, self._no_plots, self._file_type))
 
                 # Add the result to the return list
                 result_list.append(result)

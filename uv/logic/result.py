@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from os import path
 from typing import TextIO, List
 
 from uv.logic.utils import date_to_days, minutes_to_time
@@ -37,7 +38,7 @@ class Result:
             file.write(f"{self.spectrum.wavelengths[i]:.1f}\t {self.spectrum.cos_corrected_spectrum[i] / 1000:.9f}\t   "
                        f"{self.spectrum.measurement_times[i] / 60:.5f}\n")
 
-    def get_name(self, prefix: str = "", suffix: str = ""):
+    def get_name(self, prefix: str = "", suffix: str = "") -> str:
         """
         Create a name specific to this result.
 
@@ -48,7 +49,14 @@ class Result:
         bid = self.uv_file_entry.brewer_info.id
         days = date_to_days(self.uv_file_entry.header.date)
         time = minutes_to_time(self.spectrum.measurement_times[0])
-        return f"{self.uv_file_entry.header.date.year}/{prefix}{days:03}{time.hour:02}{time.minute:02}G.{bid}{suffix}"
+
+        file_name = f"{prefix}{days:03}{time.hour:02}{time.minute:02}G.{bid}{suffix}"
+        file_path = path.join(f"{self.uv_file_entry.header.date.year}", file_name)
+
+        if self.calculation_input.input_parameters.no_coscor:
+            return path.join("nocoscor", file_path)
+        else:
+            return file_path
 
     @property
     def uv_file_entry(self) -> UVFileEntry:
