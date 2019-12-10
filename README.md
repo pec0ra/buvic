@@ -23,9 +23,8 @@ This repository contains a set of tools to calculate the cosine corrected irradi
          * [1. User Interface](#1-user-interface)
          * [2. Job creation / handling](#2-job-creation--handling)
          * [3. Calculations](#3-calculations)
-         * [4. Technical details](#4-technical-details)
 
-<!-- Added by: basile, at: Di Dez 10 10:05:53 CET 2019 -->
+<!-- Added by: basile, at: Di Dez 10 10:26:23 CET 2019 -->
 
 <!--te-->
 
@@ -303,7 +302,6 @@ For this implementation section, we will split the functionality of the applicat
 1. User Interface
 2. Job creation / handling
 3. Calculations
-4. Technical details
 
 
 ![Technical details](assets/technical_detail_1.png)
@@ -389,6 +387,3 @@ A call to LibRadtran is also made with the infos from the measurement and parame
 Finally, the results from LibRadtran and from the darksky.net api call are used to apply the cos correction to the calibrated
 spectrum.
 This information as well as the input parameters used is returned from the `calculate` method as a `Result` object.
-
-
-### 4. Technical details
