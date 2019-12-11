@@ -156,6 +156,8 @@ python run.py
 ```
 The application should automatically open in the browser.
 
+Alternatively (and the recommended way), you can use the docker image as described in [the docker section](#1-uv-server).
+
 ## Command Line App
 
 The command line offers 4 different possibilities to perform irradiance calculations.
@@ -279,6 +281,8 @@ Calculations will be skipped if UVR and ARF files are not available.
 python run_cmd.py --watch --input-dir measurements/
 ```
 Note that if `--input-dir` is not specified, the measurement files will be taken from `data/`.
+
+Alternatively, you can use the docker image as described in [the docker section](#2-uv-watch)
 
 ## Installer
 
