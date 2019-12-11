@@ -10,7 +10,8 @@ class UVFileReaderTestCase(unittest.TestCase):
         parameters = Parameters(
             [10, 12, 14],
             [0.1, 0.3, 0.5],
-            [Angstrom(1, 0.1), Angstrom(1.2, 0.3), Angstrom(1.5, 0.5)]
+            [Angstrom(1, 0.1), Angstrom(1.2, 0.3), Angstrom(1.5, 0.5)],
+            [0, None, 1]
         )
 
         self.assertEqual(0.1, parameters.interpolated_albedo(10, 0))
@@ -37,7 +38,16 @@ class UVFileReaderTestCase(unittest.TestCase):
         self.assertEqual(1.5, parameters.interpolated_aerosol(15, Angstrom(0, 0)).alpha)
         self.assertEqual(1.5, parameters.interpolated_aerosol(100, Angstrom(0, 0)).alpha)
 
+        self.assertEqual(0, parameters.cloud_cover(10))
+        self.assertEqual(1, parameters.cloud_cover(14))
+        self.assertEqual(None, parameters.cloud_cover(9))
+        self.assertEqual(None, parameters.cloud_cover(11))
+        self.assertEqual(None, parameters.cloud_cover(12))
+        self.assertEqual(None, parameters.cloud_cover(13))
+        self.assertEqual(None, parameters.cloud_cover(15))
+
         parameters = Parameters(
+            [],
             [],
             [],
             []
@@ -52,6 +62,11 @@ class UVFileReaderTestCase(unittest.TestCase):
         self.assertEqual(0, parameters.interpolated_aerosol(10, Angstrom(0, 0)).alpha)
         self.assertEqual(0, parameters.interpolated_aerosol(100, Angstrom(0, 0)).alpha)
         self.assertEqual(0, parameters.interpolated_aerosol(1000, Angstrom(0, 0)).alpha)
+
+        self.assertEqual(None, parameters.cloud_cover(0))
+        self.assertEqual(None, parameters.cloud_cover(10))
+        self.assertEqual(None, parameters.cloud_cover(100))
+        self.assertEqual(None, parameters.cloud_cover(1000))
 
     def test_file_loading(self):
         parameters = read_parameter_file("uv/logic/test/parameter_example")
@@ -79,6 +94,14 @@ class UVFileReaderTestCase(unittest.TestCase):
         self.assertEqual(1.5, parameters.interpolated_aerosol(14, Angstrom(0, 0)).alpha)
         self.assertEqual(1.5, parameters.interpolated_aerosol(15, Angstrom(0, 0)).alpha)
         self.assertEqual(1.5, parameters.interpolated_aerosol(100, Angstrom(0, 0)).alpha)
+
+        self.assertEqual(None, parameters.cloud_cover(9))
+        self.assertEqual(0, parameters.cloud_cover(10))
+        self.assertEqual(1, parameters.cloud_cover(11))
+        self.assertEqual(None, parameters.cloud_cover(12))
+        self.assertEqual(None, parameters.cloud_cover(13))
+        self.assertEqual(1, parameters.cloud_cover(14))
+        self.assertEqual(None, parameters.cloud_cover(15))
 
     def test_file_failures(self):
         with self.assertRaises(ParameterFileParsingError):

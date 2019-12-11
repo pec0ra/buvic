@@ -20,7 +20,7 @@ def read_parameter_file(file_name: str or None) -> Parameters:
 
     if file_name is None or not path.exists(file_name):
         LOG.info("Parameter File not found. Using default parameter values")
-        return Parameters([], [], [])
+        return Parameters([], [], [], [])
 
     LOG.debug("Parsing file: %s", file_name)
 
@@ -32,12 +32,13 @@ def read_parameter_file(file_name: str or None) -> Parameters:
             days = []
             albedos = []
             aerosols = []
+            cloud_covers = []
             for raw_line in file:
-                # Each line consists of 4 values separated by one semicolon
+                # Each line consists of 5 values separated by one semicolon
                 line_values = raw_line.strip().split(";")
 
-                if len(line_values) != 4:
-                    raise ValueError("Each line of the parameter file must contain 4 values")
+                if len(line_values) != 5:
+                    raise ValueError("Each line of the parameter file must contain 5 values")
 
                 days.append(int(line_values[0]))
 
@@ -61,12 +62,19 @@ def read_parameter_file(file_name: str or None) -> Parameters:
                         raise ValueError("The aerosol must be defined in the first line of the file")
                     aerosols.append(prev_aerosol)
 
+                cloud_cover = line_values[4]
+                if cloud_cover != "":
+                    cloud_covers.append(float(cloud_cover))
+                else:
+                    cloud_covers.append(None)
+
             LOG.debug("Finished parsing file: %s", file_name)
 
             return Parameters(
                 days,
                 albedos,
-                aerosols
+                aerosols,
+                cloud_covers
             )
         except Exception as e:
             raise ParameterFileParsingError(str(e))
@@ -77,6 +85,7 @@ class Parameters:
     days: List[int]
     albedos: List[float]
     aerosols: List[Angstrom]
+    cloud_covers: List[float or None]
 
     def interpolated_albedo(self, day: int, default_value: float) -> float:
         if len(self.albedos) == 0:
@@ -93,6 +102,13 @@ class Parameters:
         alpha_interpolator = interp1d(self.days, [a.alpha for a in self.aerosols], kind='previous', fill_value='extrapolate')
         beta_interpolator = interp1d(self.days, [a.beta for a in self.aerosols], kind='previous', fill_value='extrapolate')
         return Angstrom(alpha_interpolator(day), beta_interpolator(day))
+
+    def cloud_cover(self, day: int) -> float or None:
+        if day not in self.days:
+            return None
+
+        index = self.days.index(day)
+        return self.cloud_covers[index]
 
 
 Angstrom = namedtuple('Angstrom', ['alpha', 'beta'])

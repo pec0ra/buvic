@@ -4,8 +4,9 @@ from dataclasses import dataclass
 from os import path
 from typing import TextIO, List
 
+from uv.logic.darksky import DarkskyCloudCover
 from uv.logic.utils import date_to_days, minutes_to_time
-from .calculation_input import CalculationInput
+from .calculation_input import CalculationInput, CosCorrection
 from .uv_file import UVFileEntry
 
 
@@ -27,11 +28,27 @@ class Result:
         albedo = self.calculation_input.parameters.interpolated_albedo(days, self.calculation_input.input_parameters.default_albedo)
         aerosol = self.calculation_input.parameters.interpolated_aerosol(days, self.calculation_input.input_parameters.default_aerosol)
         cos_cor_to_apply = self.calculation_input.cos_correction_to_apply(minutes)
+
+        # If the value comes from Darksky, we add the cloud cover in parenthesis after the coscor type
+        cloud_cover_value = ""
+        if isinstance(self.calculation_input.cloud_cover, DarkskyCloudCover) and cos_cor_to_apply != CosCorrection.NONE:
+            cloud_cover_value = f"({self.calculation_input.cloud_cover.darksky_value(minutes)})"
+
         file.write(f"% {self.uv_file_entry.header.place} {self.uv_file_entry.header.position.latitude}N "
                    f"{self.uv_file_entry.header.position.longitude}W\n")
-        file.write(f"% type={self.uv_file_entry.header.type}\tcoscor={cos_cor_to_apply.value}\ttempcor=false\to3={ozone}DU\t"
-                   f"albedo={albedo}\talpha={aerosol.alpha}\t"
-                   f"beta={aerosol.beta}\n")
+
+        second_line_parts = {
+            "type": self.uv_file_entry.header.type,
+            "coscor": f"{cos_cor_to_apply.value}{cloud_cover_value}",
+            "tempcor": "false",
+            "o3": f"{ozone}DU",
+            "albedo": str(albedo),
+            "alpha": str(aerosol.alpha),
+            "beta": str(aerosol.beta)
+        }
+        # We join the second line parts like <key>=<value> and separate them with a tabulation (\t)
+        file.write("% " + ("\t".join("=".join(_) for _ in second_line_parts.items())) + "\n")
+
         file.write(f"% wavelength(nm)	spectral_irradiance(W m-2 nm-1)	time_hour_UTC\n")
 
         for i in range(len(self.spectrum.wavelengths)):

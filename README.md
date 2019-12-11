@@ -85,21 +85,22 @@ Both directories `instr` and `uvdata` must be inside your input directory (e.g. 
 
 #### Parameter files
 
-The parameter files are composed of multiple rows, where each row is composed of four values separated by a semicolon (`;`).
+The parameter files are composed of multiple rows, where each row is composed of five values separated by a semicolon (`;`).
 
-The first value of each row is the day since new year, the second value is the albedo and the third and fourth values are the angstrom's
-alpha and beta of the aerosol.
+The first value of each row is the day since new year, the second value is the albedo, the third and fourth values are the angstrom's
+alpha and beta of the aerosol and the fifth value is the cloud coverage (0 for no cloud and 1 for cloudy).
 
-In the first line, all values are required and cannot be empty.
+In the first line, only the cloud coverage is optional. The other values cannot be empty.
 For the following lines, the albedo, alpha and beta values can be omitted. If this is the case, the value of last line with non empty value
 is used.
+If the cloud coverage is omitted in any line, the value will be retrieved from the [darksky](https://darksky.net/dev) api.
 
 Here is an example of a parameter file content `19.par`:
 ```
-10;0.1;1;0.1
-11;;1.2;0.2
-12;0.3;;
-14;0.5;1.5;0.5
+10;0.1;1;0.1;
+11;;1.2;0.2;1
+12;0.3;;;0
+14;0.5;1.5;0.5;
 ```
 
 
@@ -113,6 +114,7 @@ Each qasume file begins with three header lines, each beginning with `% `.
 The first header line contains the place of the measurement with its name, latitude and longitude.
 The second line gives information about the parameter used for calculation. Each info has the format `<name>=<value>` and infos are
 separated by a tabulation.
+The value for `coscor` is followed by the cloud coverage in parenthesis if this value was taken from [darksky](https://darksky.net/dev).
 The third line contains the headers for the three columns of data.
 
 After the header, the following rows contain the data. Each row contains three values separated by white spaces: the wavelength, the spectral
@@ -121,7 +123,7 @@ irradiance and the time of the measurement (see the third line of the header for
 Here is an example of a (truncated) qasume file `1751130G.117`:
 ```
 % El Arenosillo 37.1N 6.73W
-% type=ua	coscor=clear_sky	tempcor=false	o3=312.1DU	albedo=0.04	alpha=1.3	beta=0.1
+% type=ua	coscor=clear_sky(0.67)	tempcor=false	o3=312.1DU	albedo=0.04	alpha=1.3	beta=0.1
 % wavelength(nm)	spectral_irradiance(W m-2 nm-1)	time_hour_UTC
 290.0	 0.000001157	   11.50033
 290.5	 0.000000000	   11.50133
@@ -359,7 +361,7 @@ docker run -d -p <PORT>:80 -e DARKSKY_TOKEN=your_darksky_token --name uv-server 
 
 If you want to use a custom directory as a source for measurement files and/or for output files, you can mount the container's `/data` and `/out` as volumes:
 ```
-docker run -d -p <PORT>:80 <MEASUREMENT_PATH>:/data -v <OUT_PATH>:/out --user $(id -u):$(id -g) --name uv-server pec0ra/uv-server
+docker run -d -p <PORT>:80 -v <MEASUREMENT_PATH>:/data -v <OUT_PATH>:/out --user $(id -u):$(id -g) --name uv-server pec0ra/uv-server
 ```
 where `<MEASUREMENT_PATH>` is the *absolute* path to your measurement and `<OUT_PATH>` is the *absolute* path to the directory you want to save the outputs in.
 

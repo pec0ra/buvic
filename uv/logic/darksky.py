@@ -5,7 +5,7 @@ import urllib.request
 from dataclasses import dataclass
 from datetime import datetime, time, date
 from logging import getLogger
-from typing import List
+from typing import List, Callable
 
 from scipy.interpolate import interp1d
 
@@ -18,7 +18,7 @@ def get_cloud_cover(latitude: float, longitude: float, d: date) -> CloudCover:
     if DARKSKY_TOKEN is None:
         LOG.warning("DARKSKY_TOKEN environment variable is not defined. Functionality will be deactivated and 'clear_sky' will be used as "
                     "default")
-        return CloudCover([], [])
+        return DefaultCloudCover()
 
     t = datetime.combine(d, time(0, 0, 0, 0)).isoformat()
     url_string = f"https://api.darksky.net/forecast/{DARKSKY_TOKEN}/{latitude},{-longitude},{t}?exclude=minutely,currently,daily&units=si"
@@ -44,16 +44,65 @@ def get_cloud_cover(latitude: float, longitude: float, d: date) -> CloudCover:
         times.append(i * 60)
         values.append(hour_data["cloudCover"])
         i += 1
-    return CloudCover(times, values)
+    return DarkskyCloudCover(times, values)
 
 
 @dataclass
 class CloudCover:
+    DIFFUSE_THRESHOLD = 0.9
+
+    def is_diffuse(self, t: float) -> bool:
+        """
+        Whether the sky is cloudy at a given time given time.
+
+        :param t: the time to get the value for
+        :return: True iff the sky is cloudy
+        """
+        raise NotImplementedError
+
+    def is_value_diffuse(self, value) -> bool:
+        return value >= self.DIFFUSE_THRESHOLD
+
+
+@dataclass
+class DefaultCloudCover(CloudCover):
+
+    def is_diffuse(self, t: float) -> bool:
+        LOG.debug("Using default cloud cover")
+        return False
+
+
+@dataclass
+class DarkskyCloudCover(CloudCover):
     times: List[float]
     values: List[float]
 
-    def is_diffuse(self, time: float) -> bool:
+    def is_diffuse(self, t: float) -> bool:
+        LOG.debug("Using darksky cloud cover")
         if len(self.values) == 0:
-            return False
-        interpolator = interp1d(self.times, self.values, kind='nearest', fill_value='extrapolate')
-        return interpolator(time) >= 0.9
+            raise ValueError("No cloud cover value found in DarkskyCloudCover")
+        interpolator = self._get_interpolator()
+        return self.is_value_diffuse(interpolator(t))
+
+    def darksky_value(self, t: float) -> float:
+        """
+        Get the cloud cover value returned by darksky for a given time.
+
+        This value is extrapolated from the hourly darksky data
+        :param t: the time to get the value for
+        :return: the cloud cover value
+        """
+        interpolator = self._get_interpolator()
+        return interpolator(t)
+
+    def _get_interpolator(self) -> Callable[[float], float]:
+        return interp1d(self.times, self.values, kind='nearest', fill_value='extrapolate')
+
+
+@dataclass
+class ParameterCloudCover(CloudCover):
+    fix_value: float
+
+    def is_diffuse(self, t: float) -> bool:
+        LOG.debug("Using parameter cloud cover")
+        return self.is_value_diffuse(self.fix_value)

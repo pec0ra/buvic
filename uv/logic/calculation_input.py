@@ -8,8 +8,9 @@ from cached_property import threaded_cached_property
 
 from uv.logic.b_file import read_ozone_from_b_file, Ozone
 from uv.logic.calibration_file import read_calibration_file, Calibration
-from uv.logic.darksky import get_cloud_cover, CloudCover
+from uv.logic.darksky import get_cloud_cover, CloudCover, ParameterCloudCover
 from uv.logic.parameter_file import Parameters, read_parameter_file, Angstrom
+from uv.logic.utils import date_to_days
 from uv.logic.uv_file import UVFileReader, UVFileEntry
 from .arf_file import Direction, read_arf_file, ARF
 
@@ -52,7 +53,13 @@ class CalculationInput:
     def cloud_cover(self) -> CloudCover:
         position = self.uv_file_entries[0].header.position
         date = self.uv_file_entries[0].header.date
-        return get_cloud_cover(position.latitude, position.longitude, date)
+
+        days = date_to_days(date)
+        parameter_value = self.parameters.cloud_cover(days)
+        if parameter_value is not None:
+            return ParameterCloudCover(parameter_value)
+        else:
+            return get_cloud_cover(position.latitude, position.longitude, date)
 
     def cos_correction_to_apply(self, time: float) -> CosCorrection:
         if self.input_parameters.no_coscor:
