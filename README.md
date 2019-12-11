@@ -327,7 +327,7 @@ Two docker images are available for calculations:
 
 ### 1. UV Server
 
-This docker image contains the UV Web Application (See section above)
+This docker image contains the [UV Web Application](#uv-web-application)
 
 **Instructions:**
 
@@ -365,12 +365,12 @@ where `<MEASUREMENT_PATH>` is the *absolute* path to your measurement and `<OUT_
 
 The `--user $(id -u):$(id -g)` option tells docker to run the container as the current user.
 This prevents permissions issues at the moment of writing files to the output directory.
-You might need to skip this option on Windows.
+It is optional and you might need to skip it on Windows.
 
 
 ### 2. UV Watch
 
-This docker image contains the UV Watchdog
+This docker image contains the [UV Watchdog](#4-watchdog)
 
 **Instructions:**
 
@@ -396,7 +396,7 @@ It may be ommited if you want to run it in your current terminal.
 
 The `--user $(id -u):$(id -g)` option tells docker to run the container as the current user.
 This prevents permissions issues at the moment of writing files to the output directory.
-You might need to skip this option on Windows.
+It is optional and you might need to skip it on Windows.
 
 After running this command, any new pair of UV and B files added/modified in `<WATCH_PATH>` will automatically be converted an irradiance spectrum saved in `<OUT_PATH>`
 
