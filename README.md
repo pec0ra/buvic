@@ -8,6 +8,8 @@ This repository contains a set of tools to calculate the cosine corrected irradi
    * [UV irradiance calculations](#uv-irradiance-calculations)
       * [Table of content](#table-of-content)
       * [Requirements](#requirements)
+         * [Directory structure](#directory-structure)
+         * [File formats](#file-formats)
       * [UV Web Application](#uv-web-application)
       * [Command Line App](#command-line-app)
          * [1. Calculate dates and brewer id](#1-calculate-dates-and-brewer-id)
@@ -24,7 +26,7 @@ This repository contains a set of tools to calculate the cosine corrected irradi
          * [2. Job creation / handling](#2-job-creation--handling)
          * [3. Calculations](#3-calculations)
 
-<!-- Added by: basile, at: Di Dez 10 10:26:23 CET 2019 -->
+<!-- Added by: basile, at: Mi Dez 11 10:16:30 CET 2019 -->
 
 <!--te-->
 
@@ -39,7 +41,7 @@ pip install -r requirements.txt
 The Docker images require docker
 
 
-#### Directory structure
+### Directory structure
 
 The following directory structure is required for your measurement files:
 ```
@@ -79,9 +81,9 @@ digits of the year (e.g. 19)
 Both directories `instr` and `uvdata` must be inside your input directory (e.g. [`data/`](data)).
 
 
-#### File formats
+### File formats
 
-**Parameter files:**
+#### Parameter files
 
 The parameter files are composed of multiple rows, where each row is composed of four values separated by a semicolon (`;`).
 
@@ -101,7 +103,7 @@ Here is an example of a parameter file content `19.par`:
 ```
 
 
-**Output files:**
+#### Output files
 
 The output files are in the qasume format.
 Their names have the following pattern: `<days><hour><minute>.<brewer_id>` and are placed in a subdirectory with the year of the measurement
