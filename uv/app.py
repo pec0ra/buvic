@@ -39,16 +39,13 @@ class UVApp(App):
         self._duration = 0
 
     def main(self):
-        self._main_container = gui.VBox(width="80%")
-        self._main_container.set_style("margin: 30px auto; padding: 40px 40px 10px 40px")
+        self._main_container = gui.VBox(width="80%", style="margin: 30px auto; padding: 40px 40px 10px 40px")
 
         title = Title(Level.H1, "Irradiance calculation")
 
-        self._forms = VBox()
-        self._forms.set_style("width: 100%")
+        self._forms = VBox(style="width: 100%")
 
-        form_selection_checkbox = gui.CheckBoxLabel("Manual mode")
-        form_selection_checkbox.set_style("align-self: flex-start; margin-bottom: 20px; height: 30px")
+        form_selection_checkbox = gui.CheckBoxLabel("Manual mode", style="align-self: flex-start; margin-bottom: 20px; height: 30px")
         form_selection_checkbox.onchange.do(self._on_form_selection_change)
         self._forms.append(form_selection_checkbox)
 
@@ -71,15 +68,13 @@ class UVApp(App):
         self._main_container.append(self._loader)
         self._main_container.append(self._forms)
 
-        self._error_label = gui.Label("")
-        self._error_label.set_style("color: #E00; font-size: 12pt; font-weight: bold")
+        self._error_label = gui.Label("", style="color: #E00; font-size: 12pt; font-weight: bold")
         hide(self._error_label)
         self._main_container.append(self._error_label)
 
         self._main_container.append(self._result_container)
 
-        version = gui.Label(f"UV Calculator {APP_VERSION}")
-        version.set_style("color: #999; align-self: flex-end; margin-top: 30px")
+        version = gui.Label(f"UV Calculator {APP_VERSION}", style="color: #999; align-self: flex-end; margin-top: 30px")
         self._main_container.append(version)
 
         # returning the root widget

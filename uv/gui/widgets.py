@@ -106,8 +106,7 @@ class ResultInfo(gui.HBox):
 
     def __init__(self, label: str, value: Any):
         super().__init__()
-        info_label = gui.Label(label + ":\t")
-        info_label.set_style("font-weight: bold; width: 110px")
+        info_label = gui.Label(label + ":\t", style="font-weight: bold; width: 110px")
         info_value = gui.Label(str(value))
         self.append(info_label)
         self.append(info_value)
@@ -162,9 +161,8 @@ class MainForm(VBox):
 
         self._init_elements()
 
-        self._calculate_button = Button("Calculate")
+        self._calculate_button = Button("Calculate", style="margin-bottom: 20px")
         self._calculate_button.set_enabled(False)
-        self._calculate_button.set_style("margin-bottom: 20px")
 
         self._calculate_button.onclick.do(
             lambda w: calculate(self.start_calculation))
@@ -207,8 +205,7 @@ class PathMainForm(MainForm):
 
     def _init_elements(self):
 
-        file_form = gui.HBox()
-        file_form.set_style("margin-bottom: 20px")
+        file_form = gui.HBox(style="margin-bottom: 20px")
         self._uv_file_selector = FileSelector("UV File:", handler=self._on_uv_file_change)
         self._calibration_file_selector = FileSelector("Calibration File:", handler=self._on_calibration_file_change)
         self._b_file_selector = FileSelector("B File:", handler=self._on_b_file_change)
@@ -289,8 +286,7 @@ class SimpleMainForm(MainForm):
         self._date_start = date(2019, 6, 24)
         self._date_end = date(2019, 6, 27)
 
-        file_form = gui.HBox()
-        file_form.set_style("margin-bottom: 20px")
+        file_form = gui.HBox(style="margin-bottom: 20px")
 
         brewer_dd = gui.DropDown()
         for bid in brewer_infos.keys():
@@ -364,8 +360,7 @@ class Input(VBox):
     """
 
     def __init__(self, label: str, input_widget: gui.Widget):
-        super().__init__()
-        self.set_style("width: 280px; padding-left: 10px; padding-right: 10px")
+        super().__init__(style="width: 280px; padding-left: 10px; padding-right: 10px")
         lw = gui.Label(label + ":")
         self.append(lw)
         self.append(input_widget)
@@ -378,8 +373,7 @@ class ResultWidget(VBox):
     """
 
     def __init__(self):
-        super().__init__()
-        self.set_style("margin-bottom: 20px; width: 100%")
+        super().__init__(style="margin-bottom: 20px; width: 100%")
         hide(self)
         self.result_title = Title(Level.H2, "Results")
         self._results = None
@@ -413,8 +407,7 @@ class ResultWidget(VBox):
 
     @staticmethod
     def _create_result_overview(files: Dict[str, List[Result]], duration: float) -> VBox:
-        vbox = VBox()
-        vbox.set_style("margin-bottom: 20px")
+        vbox = VBox(style="margin-bottom: 20px")
 
         # Convert the duration into something human readable
         duration = timedelta(seconds=duration)
@@ -450,8 +443,7 @@ class ResultWidget(VBox):
         :param results: the results for the given file
         :return: the GUI's widget
         """
-        vbox = VBox()
-        vbox.set_style("margin-bottom: 20px")
+        vbox = VBox(style="margin-bottom: 20px")
 
         result_title = Title(Level.H3, f"Input file '{path.basename(file)}'")
         vbox.append(result_title)
@@ -459,26 +451,15 @@ class ResultWidget(VBox):
         info = ResultInfo("Sections", len(results))
         vbox.append(info)
 
-        info_label = gui.Label("Output files:")
-        info_label.set_style("font-weight: bold")
+        info_label = gui.Label("Output files:", style="font-weight: bold")
         vbox.append(info_label)
 
         for result in results:
-            download_button = gui.FileDownloader(result.get_name(), path.join(OUTPUT_DIR, result.get_name()), width=330)
-            download_button.set_style("margin-top: 5px; color: rgb(4, 90, 188)")
+            download_button = gui.FileDownloader(result.get_name(), path.join(OUTPUT_DIR, result.get_name()), width=330,
+                                                 style="margin-top: 5px; color: rgb(4, 90, 188)")
             vbox.append(download_button)
 
         return vbox
-
-
-class ImagePlot(gui.Image):
-    """
-    An image from the `plots` resource
-    """
-
-    def __init__(self, filename: str):
-        super().__init__("/plots:" + filename)
-        self.set_style("width: 50%")
 
 
 class ExtraParamForm(gui.HBox):
@@ -494,8 +475,7 @@ class ExtraParamForm(gui.HBox):
     _no_coscor: bool = False
 
     def __init__(self):
-        super().__init__()
-        self.set_style("margin-bottom: 15px")
+        super().__init__(style="margin-bottom: 15px")
 
         # Albedo field
         albedo_spin = gui.SpinBox(DEFAULT_ALBEDO_VALUE, 0, 1, 0.01)
@@ -504,20 +484,15 @@ class ExtraParamForm(gui.HBox):
         self.append(albedo_input)
 
         # Aerosol dual field
-        aerosol = gui.HBox()
-        aerosol.set_style("justify-content: stretch; width: 100%")
-        alpha_spin = gui.SpinBox(DEFAULT_ALPHA_VALUE, 0, 2, 0.01)
-        alpha_spin.set_style("width: 120px; height: 25px")
+        aerosol = gui.HBox(style="justify-content: stretch; width: 100%")
+        alpha_spin = gui.SpinBox(DEFAULT_ALPHA_VALUE, 0, 2, 0.01, style="width: 120px; height: 25px")
         alpha_spin.onchange.do(self._on_alpha_change)
-        beta_spin = gui.SpinBox(DEFAULT_BETA_VALUE, 0, 1.5, 0.01)
-        beta_spin.set_style("width: 120px; height: 25px")
+        beta_spin = gui.SpinBox(DEFAULT_BETA_VALUE, 0, 1.5, 0.01, style="width: 120px; height: 25px")
         beta_spin.onchange.do(self._on_beta_change)
-        alpha_label = gui.Label("α:")
-        alpha_label.set_style("flex-grow: 1")
+        alpha_label = gui.Label("α:", style="flex-grow: 1")
         aerosol.append(alpha_label)
         aerosol.append(alpha_spin)
-        beta_label = gui.Label("β:")
-        beta_label.set_style("margin-left: 8px; flex-grow: 1")
+        beta_label = gui.Label("β:", style="margin-left: 8px; flex-grow: 1")
         aerosol.append(beta_label)
         aerosol.append(beta_spin)
         aerosol_input = Input("Aerosol", aerosol)
@@ -529,8 +504,7 @@ class ExtraParamForm(gui.HBox):
         ozone_input = Input("Ozone (Used if no value found in B file)", ozone_spin)
         self.append(ozone_input)
 
-        no_coscor_checkbox = gui.CheckBoxLabel("Skip cos correction")
-        no_coscor_checkbox.set_style("align-self: flex-end; height: 30px")
+        no_coscor_checkbox = gui.CheckBoxLabel("Skip cos correction", style="align-self: flex-end; height: 30px")
         no_coscor_checkbox.onchange.do(self._on_no_coscor_change)
         self.append(no_coscor_checkbox)
 
