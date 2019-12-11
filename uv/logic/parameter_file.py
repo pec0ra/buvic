@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from collections import namedtuple
 from dataclasses import dataclass
 from logging import getLogger

@@ -7,7 +7,7 @@ from concurrent.futures.thread import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import date
 from logging import getLogger
-from os import path, makedirs, listdir
+from os import path, listdir
 from typing import Callable, List, Any, TypeVar, Generic
 
 from watchdog.observers import Observer

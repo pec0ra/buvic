@@ -1,5 +1,4 @@
 import os
-from logging import getLogger
 
 TMP_FILE_DIR = "tmp/"
 OUTPUT_DIR = "out/"
