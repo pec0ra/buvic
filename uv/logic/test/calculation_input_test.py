@@ -14,7 +14,7 @@ class UVFileReaderTestCase(unittest.TestCase):
             InputParameters(0, 0, 0),
             "dummy",
             "dummy",
-            "calibration_example",
+            "uv/logic/test/calibration_example",
             "dummy",
         )
 

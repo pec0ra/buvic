@@ -34,8 +34,12 @@ def read_parameter_file(file_name: str or None) -> Parameters:
             albedos = []
             aerosols = []
             for raw_line in file:
-                # Each line consists of 4 values separated by one space
-                line_values = re.split("\s", raw_line)
+                # Each line consists of 4 values separated by one semicolon
+                line_values = raw_line.strip().split(";")
+
+                if len(line_values) != 4:
+                    raise ValueError("Each line of the parameter file must contain 4 values")
+
                 days.append(int(line_values[0]))
 
                 new_albedo = line_values[1]

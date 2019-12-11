@@ -25,17 +25,17 @@ class UVFileReaderTestCase(unittest.TestCase):
         self.assertEqual(0.5, parameters.interpolated_albedo(15, 0))
         self.assertEqual(0.5, parameters.interpolated_albedo(100, 0))
 
-        self.assertEqual(1, parameters.interpolated_aerosols(10, Angstrom(0, 0)).alpha)
-        self.assertEqual(1, parameters.interpolated_aerosols(9, Angstrom(0, 0)).alpha)
-        self.assertEqual(1, parameters.interpolated_aerosols(11, Angstrom(0, 0)).alpha)
-        self.assertEqual(1, parameters.interpolated_aerosols(0, Angstrom(0, 0)).alpha)
+        self.assertEqual(1, parameters.interpolated_aerosol(10, Angstrom(0, 0)).alpha)
+        self.assertEqual(1, parameters.interpolated_aerosol(9, Angstrom(0, 0)).alpha)
+        self.assertEqual(1, parameters.interpolated_aerosol(11, Angstrom(0, 0)).alpha)
+        self.assertEqual(1, parameters.interpolated_aerosol(0, Angstrom(0, 0)).alpha)
 
-        self.assertEqual(1.2, parameters.interpolated_aerosols(12, Angstrom(0, 0)).alpha)
-        self.assertEqual(1.2, parameters.interpolated_aerosols(13, Angstrom(0, 0)).alpha)
+        self.assertEqual(1.2, parameters.interpolated_aerosol(12, Angstrom(0, 0)).alpha)
+        self.assertEqual(1.2, parameters.interpolated_aerosol(13, Angstrom(0, 0)).alpha)
 
-        self.assertEqual(1.5, parameters.interpolated_aerosols(14, Angstrom(0, 0)).alpha)
-        self.assertEqual(1.5, parameters.interpolated_aerosols(15, Angstrom(0, 0)).alpha)
-        self.assertEqual(1.5, parameters.interpolated_aerosols(100, Angstrom(0, 0)).alpha)
+        self.assertEqual(1.5, parameters.interpolated_aerosol(14, Angstrom(0, 0)).alpha)
+        self.assertEqual(1.5, parameters.interpolated_aerosol(15, Angstrom(0, 0)).alpha)
+        self.assertEqual(1.5, parameters.interpolated_aerosol(100, Angstrom(0, 0)).alpha)
 
         parameters = Parameters(
             [],
@@ -48,13 +48,13 @@ class UVFileReaderTestCase(unittest.TestCase):
         self.assertEqual(0, parameters.interpolated_albedo(100, 0))
         self.assertEqual(0, parameters.interpolated_albedo(1000, 0))
 
-        self.assertEqual(0, parameters.interpolated_aerosols(0, Angstrom(0, 0)).alpha)
-        self.assertEqual(0, parameters.interpolated_aerosols(10, Angstrom(0, 0)).alpha)
-        self.assertEqual(0, parameters.interpolated_aerosols(100, Angstrom(0, 0)).alpha)
-        self.assertEqual(0, parameters.interpolated_aerosols(1000, Angstrom(0, 0)).alpha)
+        self.assertEqual(0, parameters.interpolated_aerosol(0, Angstrom(0, 0)).alpha)
+        self.assertEqual(0, parameters.interpolated_aerosol(10, Angstrom(0, 0)).alpha)
+        self.assertEqual(0, parameters.interpolated_aerosol(100, Angstrom(0, 0)).alpha)
+        self.assertEqual(0, parameters.interpolated_aerosol(1000, Angstrom(0, 0)).alpha)
 
     def test_file_loading(self):
-        parameters = read_parameter_file("parameter_example")
+        parameters = read_parameter_file("uv/logic/test/parameter_example")
 
         self.assertEqual(0.1, parameters.interpolated_albedo(10, 0))
         self.assertEqual(0.1, parameters.interpolated_albedo(9, 0))
@@ -68,21 +68,21 @@ class UVFileReaderTestCase(unittest.TestCase):
         self.assertEqual(0.5, parameters.interpolated_albedo(15, 0))
         self.assertEqual(0.5, parameters.interpolated_albedo(100, 0))
 
-        self.assertEqual(1, parameters.interpolated_aerosols(10, Angstrom(0, 0)).alpha)
-        self.assertEqual(1, parameters.interpolated_aerosols(9, Angstrom(0, 0)).alpha)
-        self.assertEqual(1, parameters.interpolated_aerosols(0, Angstrom(0, 0)).alpha)
+        self.assertEqual(1, parameters.interpolated_aerosol(10, Angstrom(0, 0)).alpha)
+        self.assertEqual(1, parameters.interpolated_aerosol(9, Angstrom(0, 0)).alpha)
+        self.assertEqual(1, parameters.interpolated_aerosol(0, Angstrom(0, 0)).alpha)
 
-        self.assertEqual(1.2, parameters.interpolated_aerosols(11, Angstrom(0, 0)).alpha)
-        self.assertEqual(1.2, parameters.interpolated_aerosols(12, Angstrom(0, 0)).alpha)
-        self.assertEqual(1.2, parameters.interpolated_aerosols(13, Angstrom(0, 0)).alpha)
+        self.assertEqual(1.2, parameters.interpolated_aerosol(11, Angstrom(0, 0)).alpha)
+        self.assertEqual(1.2, parameters.interpolated_aerosol(12, Angstrom(0, 0)).alpha)
+        self.assertEqual(1.2, parameters.interpolated_aerosol(13, Angstrom(0, 0)).alpha)
 
-        self.assertEqual(1.5, parameters.interpolated_aerosols(14, Angstrom(0, 0)).alpha)
-        self.assertEqual(1.5, parameters.interpolated_aerosols(15, Angstrom(0, 0)).alpha)
-        self.assertEqual(1.5, parameters.interpolated_aerosols(100, Angstrom(0, 0)).alpha)
+        self.assertEqual(1.5, parameters.interpolated_aerosol(14, Angstrom(0, 0)).alpha)
+        self.assertEqual(1.5, parameters.interpolated_aerosol(15, Angstrom(0, 0)).alpha)
+        self.assertEqual(1.5, parameters.interpolated_aerosol(100, Angstrom(0, 0)).alpha)
 
     def test_file_failures(self):
         with self.assertRaises(ParameterFileParsingError):
-            read_parameter_file("parameter_example_failure_1")
+            read_parameter_file("uv/logic/test/parameter_example_failure_1")
 
         with self.assertRaises(ParameterFileParsingError):
-            read_parameter_file("parameter_example_failure_2")
+            read_parameter_file("uv/logic/test/parameter_example_failure_2")

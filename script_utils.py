@@ -27,22 +27,6 @@ def check_yes_no():
         return True
 
 
-def input_check(check_value, error_message=None, default_value=None, none_default=False):
-    while True:
-        print(Colors.OKBLUE, end='')
-        value = input()
-        print(Colors.ENDC, end='')
-        if not value and (default_value is not None or none_default):
-            return default_value
-        try:
-            return check_value(value)
-        except Exception as e:
-            if error_message is None:
-                p(str(e), Colors.WARNING)
-            else:
-                p(error_message, Colors.WARNING)
-
-
 def run_command(command, show_std_err=False, pipe_stdout=True):
     print(Colors.LIGHTGRAY, end='', flush=True)
     stderr = None if show_std_err else FNULL

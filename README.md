@@ -79,6 +79,65 @@ digits of the year (e.g. 19)
 Both directories `instr` and `uvdata` must be inside your input directory (e.g. [`data/`](data)).
 
 
+#### File formats
+
+**Parameter files:**
+
+The parameter files are composed of multiple rows, where each row is composed of four values separated by a semicolon (`;`).
+
+The first value of each row is the day since new year, the second value is the albedo and the third and fourth values are the angstrom's
+alpha and beta of the aerosol.
+
+In the first line, all values are required and cannot be empty.
+For the following lines, the albedo, alpha and beta values can be omitted. If this is the case, the value of last line with non empty value
+is used.
+
+Here is an example of a parameter file content `19.par`:
+```
+10;0.1;1;0.1
+11;;1.2;0.2
+12;0.3;;
+14;0.5;1.5;0.5
+```
+
+
+**Output files:**
+
+The output files are in the qasume format.
+Their names have the following pattern: `<days><hour><minute>.<brewer_id>` and are placed in a subdirectory with the year of the measurement
+as name. In the name pattern, *days* is the number of days since new year and *hour* and *minute* is the time of the measurement.
+
+Each qasume file begins with three header lines, each beginning with `% `.
+The first header line contains the place of the measurement with its name, latitude and longitude.
+The second line gives information about the parameter used for calculation. Each info has the format `<name>=<value>` and infos are
+separated by a tabulation.
+The third line contains the headers for the three columns of data.
+
+After the header, the following rows contain the data. Each row contains three values separated by white spaces: the wavelength, the spectral
+irradiance and the time of the measurement (see the third line of the header for more details).
+
+Here is an example of a (truncated) qasume file `1751130G.117`:
+```
+% El Arenosillo 37.1N 6.73W
+% type=ua	coscor=clear_sky	tempcor=false	o3=312.1DU	albedo=0.04	alpha=1.3	beta=0.1
+% wavelength(nm)	spectral_irradiance(W m-2 nm-1)	time_hour_UTC
+290.0	 0.000001157	   11.50033
+290.5	 0.000000000	   11.50133
+291.0	 0.000000000	   11.50217
+291.5	 0.000001131	   11.50300
+292.0	 0.000008208	   11.50383
+292.5	 0.000051625	   11.50467
+293.0	 0.000050769	   11.50550
+293.5	 0.000090523	   11.50633
+294.0	 0.000153403	   11.50717
+294.5	 0.000206659	   11.50800
+295.0	 0.000307826	   11.50883
+...
+```
+
+
+
+
 ## UV Web Application
 
 UV Web Application is a small application running in the browser to facilitate the execution of irradiance calculation.

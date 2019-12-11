@@ -5,7 +5,7 @@ import sys
 import urllib.request
 from subprocess import call, run, PIPE
 
-from script_utils import Colors, p, check_yes_no, input_check, check_command
+from script_utils import Colors, p, check_yes_no, check_command
 
 PORT_KEY = "port"
 INPUT_PATH_KEY = "input_dir"
@@ -47,6 +47,22 @@ def load_config():
             return config
     else:
         return {}
+
+
+def input_check(check_value, error_message=None, default_value=None, none_default=False):
+    while True:
+        print(Colors.OKBLUE, end='')
+        value = input()
+        print(Colors.ENDC, end='')
+        if not value and (default_value is not None or none_default):
+            return default_value
+        try:
+            return check_value(value)
+        except Exception as e:
+            if error_message is None:
+                p(str(e), Colors.WARNING)
+            else:
+                p(error_message, Colors.WARNING)
 
 
 def check_container_name(name):
