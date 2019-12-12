@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import concurrent
+import os
 import re
 import time
 from concurrent.futures.process import ProcessPoolExecutor
@@ -283,7 +284,7 @@ class CalculationUtils:
         future_result = []
 
         # Create the thread pool and the process pool
-        with ThreadPoolExecutor() as thread_pool, ProcessPoolExecutor() as process_pool:
+        with ThreadPoolExecutor(min(20, os.cpu_count() + 4)) as thread_pool, ProcessPoolExecutor() as process_pool:
 
             # Submit the jobs to the thread pool
             for job in jobs:
