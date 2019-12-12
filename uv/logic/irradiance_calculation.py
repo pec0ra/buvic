@@ -7,6 +7,8 @@ from typing import List
 from numpy import multiply, divide, sin, add, pi, mean, exp, maximum, linspace, trapz, cos, isnan, ones
 from scipy.interpolate import UnivariateSpline
 
+from uv.logic.b_file import BFile
+from uv.logic.calibration_file import Calibration
 from .arf_file import ARF
 from .calculation_input import CalculationInput, CosCorrection
 from .libradtran import Libradtran, LibradtranInput, LibradtranResult
@@ -51,7 +53,7 @@ class IrradianceCalculation:
             uv_file_entry: UVFileEntry = self._calculation_input.uv_file_entries[index]
 
             libradtran_result = self._execute_libradtran(uv_file_entry)
-            calibrated_spectrum = self._to_calibrated_spectrum(uv_file_entry, self._calculation_input.calibration)
+            calibrated_spectrum = self._to_calibrated_spectrum(uv_file_entry, self._calculation_input.calibration, self._calculation_input.b_file)
 
             minutes = uv_file_entry.raw_values[0].time
             cos_cor_to_apply = self._calculation_input.cos_correction_to_apply(minutes)
@@ -94,7 +96,7 @@ class IrradianceCalculation:
             raise e
 
     @staticmethod
-    def _to_calibrated_spectrum(uv_file_entry, calibration) -> List[float]:
+    def _to_calibrated_spectrum(uv_file_entry: UVFileEntry, calibration: Calibration, b_file: BFile) -> List[float]:
         """
         Convert raw (count) measures to a calibrated spectrum
         :param uv_file_entry: the entry from which to get raw values
@@ -108,7 +110,8 @@ class IrradianceCalculation:
         raw_values = [v.events for v in uv_file_entry.raw_values]
         corrected_values = [v - uv_file_header.dark for v in raw_values]
 
-        if not uv_file_entry.brewer_info.dual:
+        if b_file.straylight_correction:
+            LOG.debug("Applying straylight correction") # TODO: use debug
             # Remove straylight
             below_292 = list(filter(lambda x: x.wavelength < 292, uv_file_entry.raw_values))
             if len(below_292) > 0:
@@ -174,9 +177,9 @@ class IrradianceCalculation:
         libradtran.add_input(LibradtranInput.SPLINE,
                              [uv_file_entry.wavelengths[0], uv_file_entry.wavelengths[-1], step])
 
-        ozone = self._calculation_input.ozone
+        b_file: BFile = self._calculation_input.b_file
         libradtran.add_input(LibradtranInput.OZONE,
-                             [ozone.interpolated_value(minutes, self._calculation_input.input_parameters.default_ozone)])
+                             [b_file.interpolated_ozone(minutes, self._calculation_input.input_parameters.default_ozone)])
 
         libradtran.add_input(LibradtranInput.TIME, [
             uv_file_header.date.year,

@@ -86,7 +86,7 @@ class CalculationUtils:
 
         # Create an extra plot of the correction factor against the szas
         if not self._no_plots:
-            create_sza_plot(output_dir, result_list, self._file_type)
+            create_sza_plot(self._output_dir, result_list, self._file_type)
 
         duration = time.time() - start
         if self._finish_progress is not None:
@@ -96,7 +96,8 @@ class CalculationUtils:
                  calculation_input.arf_file_name, duration)
         return result_list
 
-    def calculate_for_all_between(self, start_date: date, end_date: date, brewer_id, parameters: InputParameters) -> List[Result]:
+    def calculate_for_all_between(self, start_date: date, end_date: date, brewer_id, parameters: InputParameters,
+                                  uvr_file: str or None = None) -> List[Result]:
         """
         Calculate irradiance and create plots and csv for all UV Files found for between a start date and an end date for a given brewer id.
 
@@ -104,6 +105,7 @@ class CalculationUtils:
         :param end_date: the dates' upper bound (inclusive) for the measurements
         :param brewer_id: the id of the brewer instrument
         :param parameters: the parameters to use for the calculation
+        :param uvr_file: the uvr file to use for the calculation or None to use the default
         :return: the calculation results
         """
 
@@ -113,7 +115,7 @@ class CalculationUtils:
             days = date_to_days(d)
 
             LOG.debug("Creating input for date %s as days %d and year %d", d.isoformat(), days, year)
-            calculation_input = self._input_from_files(f"{days:03}", f"{year:02}", brewer_id, parameters)
+            calculation_input = self._input_from_files(f"{days:03}", f"{year:02}", brewer_id, parameters, uvr_file)
             if calculation_input is not None:
                 input_list.append(calculation_input)
 
@@ -214,17 +216,20 @@ class CalculationUtils:
             if calculation_input is not None:
                 self.calculate_for_input(calculation_input)
 
-    def _input_from_files(self, days: str, year: str, brewer_id: str, parameters: InputParameters):
+    def _input_from_files(self, days: str, year: str, brewer_id: str, parameters: InputParameters, uvr_file: str or None = None):
         uv_file = "UV" + days + year + "." + brewer_id
         b_file = "B" + days + year + "." + brewer_id
+        arf_file = "arf_" + brewer_id + ".dat"
         info = get_brewer_info(brewer_id)
-        calibration_file = info.uvr_file_name
-        arf_file = info.arf_file_name
+        if uvr_file is not None:
+            calibration_file = uvr_file
+        else:
+            calibration_file = info.uvr_file_name
         parameter_file = year + ".par"
 
         uv_file_path = path.join(self._input_dir, UV_FILES_SUBDIR, uv_file)
         if not path.exists(uv_file_path):
-            LOG.info("Corresponding UV file '" + str(uv_file_path) + "' not found for B file '" + b_file + "', skipping")
+            LOG.info("UV file '" + str(uv_file_path) + "' not found, skipping")
             return None
 
         b_file_path = path.join(self._input_dir, B_FILES_SUBDIR, b_file)

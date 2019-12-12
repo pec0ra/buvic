@@ -24,7 +24,7 @@ class Result:
         """
         minutes = self.uv_file_entry.raw_values[0].time
         days = date_to_days(self.uv_file_entry.header.date)
-        ozone = self.calculation_input.ozone.interpolated_value(minutes, self.calculation_input.input_parameters.default_ozone)
+        ozone = self.calculation_input.b_file.interpolated_ozone(minutes, self.calculation_input.input_parameters.default_ozone)
         albedo = self.calculation_input.parameters.interpolated_albedo(days, self.calculation_input.input_parameters.default_albedo)
         aerosol = self.calculation_input.parameters.interpolated_aerosol(days, self.calculation_input.input_parameters.default_aerosol)
         cos_cor_to_apply = self.calculation_input.cos_correction_to_apply(minutes)
@@ -41,6 +41,7 @@ class Result:
             "type": self.uv_file_entry.header.type,
             "coscor": f"{cos_cor_to_apply.value}{cloud_cover_value}",
             "tempcor": "false",
+            "straylightcor": "true" if self.calculation_input.b_file.straylight_correction else "false",
             "o3": f"{ozone}DU",
             "albedo": str(albedo),
             "alpha": str(aerosol.alpha),
@@ -63,7 +64,7 @@ class Result:
         :param suffix: the suffix to add to the file name
         :return: the created file name
         """
-        bid = self.uv_file_entry.brewer_info.id
+        bid = self.uv_file_entry.brewer_id
         days = date_to_days(self.uv_file_entry.header.date)
         time = minutes_to_time(self.spectrum.measurement_times[0])
 

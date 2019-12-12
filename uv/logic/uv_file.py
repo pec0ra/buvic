@@ -83,7 +83,7 @@ class UVFileReader(object):
 
             # Create the resulting entry and add it to the result
             entry = UVFileEntry(
-                get_brewer_info(self.__get_brewer_id()),
+                self.__get_brewer_id(),
                 header,
                 values
             )
@@ -223,7 +223,7 @@ class RawUVValue:
 
 @dataclass
 class UVFileEntry:
-    brewer_info: BrewerInfo
+    brewer_id: str
     header: UVFileHeader
     raw_values: List[RawUVValue]
 

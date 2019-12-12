@@ -11,6 +11,7 @@ from remi.gui import VBox
 
 from uv.logic.calculation_input import CalculationInput
 from uv.logic.calculation_utils import CalculationUtils
+from uv.logic.file_utils import FileUtils
 from uv.logic.result import Result
 from .const import OUTPUT_DIR, DATA_DIR, APP_VERSION
 from .gui.utils import show, hide
@@ -18,6 +19,7 @@ from .gui.widgets import Title, Level, Loader, PathMainForm, SimpleMainForm, Res
 
 
 class UVApp(App):
+    _file_utils: FileUtils
     _main_container: VBox
     _forms: VBox
     _extra_param_form: ExtraParamForm
@@ -39,6 +41,8 @@ class UVApp(App):
         self._duration = 0
 
     def main(self):
+        self._file_utils = FileUtils(DATA_DIR)
+
         self._main_container = gui.VBox(width="80%", style="margin: 30px auto; padding: 40px 40px 10px 40px")
 
         title = Title(Level.H1, "Irradiance calculation")
@@ -52,7 +56,7 @@ class UVApp(App):
         self._extra_param_form = ExtraParamForm()
         self._forms.append(self._extra_param_form)
 
-        self._main_form = SimpleMainForm(self._calculate)
+        self._main_form = SimpleMainForm(self._calculate, self._file_utils)
         self._secondary_form = PathMainForm(self._calculate)
         hide(self._secondary_form)
         self._forms.append(self._main_form)

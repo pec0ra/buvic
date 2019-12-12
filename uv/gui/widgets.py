@@ -6,9 +6,9 @@ from typing import Any, Callable, List, Dict
 
 import remi.gui as gui
 
+from uv.logic.file_utils import FileUtils
 from uv.logic.result import Result
 from .utils import show, hide
-from ..brewer_infos import brewer_infos
 from ..const import TMP_FILE_DIR, OUTPUT_DIR, DEFAULT_BETA_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_ALBEDO_VALUE, DEFAULT_OZONE_VALUE
 from ..logic.calculation_input import CalculationInput, Angstrom, InputParameters
 from ..logic.calculation_utils import CalculationUtils
@@ -273,41 +273,102 @@ class PathMainForm(MainForm):
 
 
 class SimpleMainForm(MainForm):
+    _file_utils: FileUtils
     _brewer_id: str = None
     _date_start: date or None = None
     _date_end: date or None = None
+    _uvr_file: str or None = None
 
-    def __init__(self, calculate: Callable[[Callable[[CalculationUtils], List[Result]]], None]):
+    def __init__(self, calculate: Callable[[Callable[[CalculationUtils], List[Result]]], None], file_utils: FileUtils):
+        self._file_utils = file_utils
         super().__init__(calculate)
         self.check_fields()
 
     def _init_elements(self):
-        self._brewer_id = list(brewer_infos.keys())[0]
         self._date_start = date(2019, 6, 24)
-        self._date_end = date(2019, 6, 27)
+        self._date_end = date.today()
 
         file_form = gui.HBox(style="margin-bottom: 20px")
 
-        brewer_dd = gui.DropDown()
-        for bid in brewer_infos.keys():
-            item = gui.DropDownItem(bid)
-            brewer_dd.append(item)
-        brewer_dd.onchange.do(self._on_bid_change)
-        self._brewer_input = Input("Brewer id", brewer_dd)
+        self._brewer_dd = gui.DropDown()
+        self._update_brewer_ids()
+        self._brewer_dd.onchange.do(self._on_bid_change)
+        self._brewer_input = Input("Brewer id", self._brewer_dd)
 
-        date_start_selector = gui.Date(default_value="2019-06-24")
-        date_start_selector.onchange.do(self._on_date_start_change)
-        self._date_start_input = Input("Start date", date_start_selector)
+        self._uvr_dd = gui.DropDown()
+        self._update_uvr_files()
+        self._uvr_dd.onchange.do(self._on_uvr_change)
+        self._uvr_input = Input("UVR file", self._uvr_dd)
 
-        date_end_selector = gui.Date(default_value="2019-06-27")
-        date_end_selector.onchange.do(self._on_date_end_change)
-        self._date_end_input = Input("End date", date_end_selector)
+        self._date_start_selector = gui.Date(default_value="2019-06-24")
+        self._date_start_selector.onchange.do(self._on_date_start_change)
+        self._date_start_input = Input("Start date", self._date_start_selector)
+
+        self._date_end_selector = gui.Date(default_value="2019-06-27")
+        self._date_end_selector.onchange.do(self._on_date_end_change)
+        self._date_end_input = Input("End date", self._date_end_selector)
+
+        self._update_date_range()
 
         file_form.append(self._brewer_input)
+        file_form.append(self._uvr_input)
         file_form.append(self._date_start_input)
         file_form.append(self._date_end_input)
 
         self.append(file_form)
+
+        self._refresh_button = Button("Refresh", style="margin-bottom: 10px")
+        self._refresh_button.onclick.do(self._refresh)
+
+        self.append(self._refresh_button)
+
+    def _update_brewer_ids(self):
+        brewer_ids = self._file_utils.get_brewer_ids()
+        self._brewer_dd.empty()
+        for bid in self._file_utils.get_brewer_ids():
+            item = gui.DropDownItem(bid)
+            self._brewer_dd.append(item)
+
+        if self._brewer_id not in brewer_ids:
+            self._brewer_id = brewer_ids[0]
+        self._brewer_dd.set_value(self._brewer_id)
+
+    def _update_uvr_files(self):
+        uvr_files = self._file_utils.get_uvr_files(self._brewer_id)
+
+        self._uvr_dd.empty()
+        for uvr_file in uvr_files:
+            item = gui.DropDownItem(uvr_file)
+            self._uvr_dd.append(item)
+
+        if self._uvr_file not in uvr_files and len(uvr_files) > 0:
+            self._uvr_file = uvr_files[0]
+        elif self._uvr_file not in uvr_files:
+            self._uvr_file = None
+        self._uvr_dd.set_value(self._uvr_file)
+
+    def _update_date_range(self):
+        date_range = self._file_utils.get_date_range(self._brewer_id)
+        if self._date_start < date_range[0] or self._date_start > date_range[1]:
+            self._date_start = date_range[0]
+            self._date_start_selector.set_value(self._date_start)
+        if self._date_end > date_range[1] or self._date_start < date_range[0]:
+            self._date_end = date_range[1]
+            self._date_end_selector.set_value(self._date_end)
+
+        self._date_start_selector.attributes["min"] = date_range[0].isoformat()
+        self._date_start_selector.attributes["max"] = date_range[1].isoformat()
+
+        self._date_end_selector.attributes["min"] = date_range[0].isoformat()
+        self._date_end_selector.attributes["max"] = date_range[1].isoformat()
+
+    def _refresh(self, widget: gui.Widget):
+        del widget  # remove unused parameter
+        self._file_utils.refresh()
+        self._update_brewer_ids()
+        self._update_date_range()
+        self._update_uvr_files()
+
 
     @property
     def brewer_id(self):
@@ -324,6 +385,13 @@ class SimpleMainForm(MainForm):
     def _on_bid_change(self, widget: gui.Widget, value: str):
         del widget  # remove unused parameter
         self._brewer_id = value
+        self._update_date_range()
+        self._update_uvr_files()
+        self.check_fields()
+
+    def _on_uvr_change(self, widget: gui.Widget, value: str):
+        del widget  # remove unused parameter
+        self._uvr_file = value
         self.check_fields()
 
     def _on_date_start_change(self, widget: gui.Widget, value: str):

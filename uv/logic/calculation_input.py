@@ -6,7 +6,7 @@ from typing import List
 
 from cached_property import threaded_cached_property
 
-from uv.logic.b_file import read_ozone_from_b_file, Ozone
+from uv.logic.b_file import read_b_file, BFile
 from uv.logic.calibration_file import read_calibration_file, Calibration
 from uv.logic.darksky import get_cloud_cover, CloudCover, ParameterCloudCover
 from uv.logic.parameter_file import Parameters, read_parameter_file, Angstrom
@@ -34,8 +34,8 @@ class CalculationInput:
         return uv_file_reader.get_uv_file_entries()
 
     @threaded_cached_property
-    def ozone(self) -> Ozone:
-        return read_ozone_from_b_file(self.b_file_name)
+    def b_file(self) -> BFile:
+        return read_b_file(self.b_file_name)
 
     @threaded_cached_property
     def calibration(self) -> Calibration:
