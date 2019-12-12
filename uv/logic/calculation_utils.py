@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import concurrent
 import re
 import time
 from concurrent.futures.process import ProcessPoolExecutor
@@ -290,22 +291,26 @@ class CalculationUtils:
 
             future_output = []
 
-            for future in future_result:
-                # Wait for each job to finish and produce a result
-                result: Result = future.result()
+            try:
+                for future in future_result:
+                    # Wait for each job to finish and produce a result
+                    result: Result = future.result(timeout=20)
 
-                # Notify the progress bar
-                self._make_progress()
-                if self._no_plots:
                     # Notify the progress bar
                     self._make_progress()
+                    if self._no_plots:
+                        # Notify the progress bar
+                        self._make_progress()
 
-                # Schedule the creation of plots and csv
-                future_output.append(
-                    process_pool.submit(self._create_output, result, self._output_dir, self._no_plots, self._file_type))
+                    # Schedule the creation of plots and csv
+                    future_output.append(
+                        process_pool.submit(self._create_output, result, self._output_dir, self._no_plots, self._file_type))
 
-                # Add the result to the return list
-                result_list.append(result)
+                    # Add the result to the return list
+                    result_list.append(result)
+
+            except concurrent.futures.TimeoutError as e:
+                raise ExecutionError("One of the threads took too long to do its calculations.")
 
             # At this point, we have finished waiting for all future_results (irradiance calculation)
             LOG.debug("Finished irradiance calculation for '%s'", result_list[0].calculation_input.uv_file_name)
@@ -399,3 +404,7 @@ class Job(Generic[INPUT, RETURN]):
         :return: the job's return value
         """
         return self._fn(self._args)
+
+
+class ExecutionError(Exception):
+    pass
