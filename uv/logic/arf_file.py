@@ -30,7 +30,10 @@ def read_arf_file(file_name: str, direction: Direction) -> ARF:
                 # Each line consists of at least five values separated by spaces
                 line_values = re.split("\s+", line.strip())
                 szas.append(float(line_values[0]))
-                values.append(float(line_values[direction.value]))
+                if len(line_values) == 2:
+                    values.append(float(line_values[1]))
+                else:
+                    values.append(float(line_values[direction.value]))
             szas.append(90)
             values.append(0)
 

@@ -31,7 +31,7 @@ class UVApp(App):
     _lock = multiprocessing.Manager().Lock()
 
     def __init__(self, *args):
-        super(UVApp, self).__init__(*args, static_file_path={'plots': OUTPUT_DIR})
+        super(UVApp, self).__init__(*args, static_file_path={'plots': OUTPUT_DIR, 'res': 'assets/'})
 
         # Some tweaking for matplotlib
         rcParams.update({'figure.autolayout': True})
@@ -43,9 +43,10 @@ class UVApp(App):
     def main(self):
         self._file_utils = FileUtils(DATA_DIR)
 
-        self._main_container = gui.VBox(width="80%", style="margin: 30px auto; padding: 40px 40px 10px 40px")
+        self._main_container = gui.VBox(width="80%", style="margin: 30px auto; padding: 20px 40px 10px 40px")
 
-        title = Title(Level.H1, "Irradiance calculation")
+        header_picture = gui.Image("/res:pmodwrc_logo.png", width=200, style="align-self: flex-start")
+        title = Title(Level.H1, "Brewer UV Irradiance Calculator")
 
         self._forms = VBox(style="width: 100%")
 
@@ -68,6 +69,7 @@ class UVApp(App):
 
         self._result_container = ResultWidget()
 
+        self._main_container.append(header_picture)
         self._main_container.append(title)
         self._main_container.append(self._loader)
         self._main_container.append(self._forms)
@@ -78,7 +80,7 @@ class UVApp(App):
 
         self._main_container.append(self._result_container)
 
-        version = gui.Link("https://github.com/pec0ra/uv", f"UV Calculator {APP_VERSION}",
+        version = gui.Link("https://github.com/pec0ra/buvic", f"BUVIC {APP_VERSION}",
                            style="color: #999; align-self: flex-end; margin-top: 30px")
         self._main_container.append(version)
 

@@ -14,16 +14,6 @@ from ..logic.calculation_input import CalculationInput, Angstrom, InputParameter
 from ..logic.calculation_utils import CalculationUtils
 
 
-class Button(gui.Button):
-    """
-    A button with corrected padding
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.set_style("padding-left: 18px; padding-right: 18px")
-
-
 class VBox(gui.VBox):
     """
     A Vertical Box with left alignment
@@ -74,7 +64,7 @@ class FileSelector(VBox):
         self.label = gui.Label(title)
         self.file_selector = gui.FileUploader("tmp/")
         self.file_selector.ondata.do(self._on_file_changed)
-        self.change_file_button = Button("Change")
+        self.change_file_button = gui.Button("Change")
         hide(self.change_file_button)
         self.change_file_button.onclick.do(self._on_change_file_button_click)
         self.append(self.label)
@@ -122,6 +112,7 @@ class Loader(VBox):
         hide(self)
         self._label = gui.Label("Calculating...")
         self._bar = gui.Progress(0, 100, width=400)
+        print(self._bar.children)
         self.append(self._label)
         self.append(self._bar)
         self._current_value = 0
@@ -161,7 +152,7 @@ class MainForm(VBox):
 
         self._init_elements()
 
-        self._calculate_button = Button("Calculate", style="margin-bottom: 20px")
+        self._calculate_button = gui.Button("Calculate", style="margin-bottom: 20px")
         self._calculate_button.set_enabled(False)
 
         self._calculate_button.onclick.do(
@@ -198,10 +189,10 @@ class MainForm(VBox):
 
 class PathMainForm(MainForm):
     _calculation_input: CalculationInput or None = None
-    _uv_file: str = None
-    _calibration_file: str = None
-    _b_file: str = None
-    _arf_file: str = None
+    _uv_file: str or None = None
+    _calibration_file: str or None = None
+    _b_file: str or None = None
+    _arf_file: str or None = None
 
     def _init_elements(self):
 
@@ -223,7 +214,10 @@ class PathMainForm(MainForm):
         UV file upload handler
         """
         del file_uploader, file_data  # remove unused parameters
-        self._uv_file = TMP_FILE_DIR + file_name
+        if file_name is not None:
+            self._uv_file = path.join(TMP_FILE_DIR, file_name)
+        else:
+            self._uv_file = None
         self.check_fields()
 
     def _on_calibration_file_change(self, file_uploader: gui.Widget, file_data: bytes, file_name):
@@ -231,7 +225,10 @@ class PathMainForm(MainForm):
         Calibration (UVR) file upload handler
         """
         del file_uploader, file_data  # remove unused parameters
-        self._calibration_file = TMP_FILE_DIR + file_name
+        if file_name is not None:
+            self._calibration_file = path.join(TMP_FILE_DIR, file_name)
+        else:
+            self._calibration_file = None
         self.check_fields()
 
     def _on_b_file_change(self, file_uploader: gui.Widget, file_data: bytes, file_name):
@@ -239,7 +236,10 @@ class PathMainForm(MainForm):
         B file upload handler
         """
         del file_uploader, file_data  # remove unused parameters
-        self._b_file = TMP_FILE_DIR + file_name
+        if file_name is not None:
+            self._b_file = path.join(TMP_FILE_DIR, file_name)
+        else:
+            self._b_file = None
         self.check_fields()
 
     def _on_arf_file_change(self, file_uploader: gui.Widget, file_data: bytes, file_name):
@@ -247,7 +247,10 @@ class PathMainForm(MainForm):
         ARF file upload handler
         """
         del file_uploader, file_data  # remove unused parameters
-        self._arf_file = TMP_FILE_DIR + file_name
+        if file_name is not None:
+            self._arf_file = path.join(TMP_FILE_DIR, file_name)
+        else:
+            self._arf_file = None
         self.check_fields()
 
     def check_fields(self):
@@ -317,7 +320,7 @@ class SimpleMainForm(MainForm):
 
         self.append(file_form)
 
-        self._refresh_button = Button("Refresh", style="margin-bottom: 10px")
+        self._refresh_button = gui.Button("Refresh", style="margin-bottom: 10px")
         self._refresh_button.onclick.do(self._refresh)
 
         self.append(self._refresh_button)
@@ -527,7 +530,7 @@ class ResultWidget(VBox):
 
         for result in results:
             download_button = gui.FileDownloader(result.get_name(), path.join(OUTPUT_DIR, result.get_name()), width=330,
-                                                 style="margin-top: 5px; color: rgb(4, 90, 188)")
+                                                 style="margin-top: 5px")
             vbox.append(download_button)
 
         return vbox
