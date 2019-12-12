@@ -42,7 +42,11 @@ The Docker images require docker
 
 ### Directory structure
 
-The following directory structure is required for your measurement files:
+BUVIC needs access to two main directories:
+1. An input directory (e.g. `input_dir`)
+2. An output directory (e.g. `output_dir`)
+
+The input directory is where you put your instrument files and your measurement files. It must have the following structure:
 ```
 instr/
     arf_033.dat
@@ -68,7 +72,7 @@ uvdata/
 
 In the `instr` directory:
 * ARF files with the name pattern `arf_<brewer_id>.dat`
-* Calibration files with the name pattern `UVR17319.<brewer_id>` or `UVR17419.<brewer_id>` (TODO: the name will probably change)
+* Calibration files with the name pattern `UVRXXXXX.<brewer_id>`
 * Parameter files with the name patter `<year>.par` where *year* is the last two digits of the year (e.g. 19)
 
 In the `uvdata` directory:
@@ -77,7 +81,7 @@ digits of the year (e.g. 19)
 * UV files with the name pattern `UV<days><year>.<brewer_id>` where *days* is the number of days since new year and *year* is the last two
 digits of the year (e.g. 19)
 
-Both directories `instr` and `uvdata` must be inside your input directory (e.g. [`data/`](data)).
+The output directory is the place where BUVIC will write its output files. BUVIC will automatically create a structure to group files by year.
 
 
 ### File formats
@@ -89,8 +93,8 @@ The parameter files are composed of multiple rows, where each row is composed of
 The first value of each row is the day since new year, the second value is the albedo, the third and fourth values are the angstrom's
 alpha and beta of the aerosol and the fifth value is the cloud coverage (0 for no cloud and 1 for cloudy).
 
-In the first line, only the cloud coverage is optional. The other values cannot be empty.
-For the following lines, the albedo, alpha and beta values can be omitted. If this is the case, the value of last line with non empty value
+In the first line of the file, only the cloud coverage is optional. The other values cannot be empty.
+For the following lines, the albedo, alpha and beta values can be omitted. If this is the case, the value of the last line with non empty value
 is used.
 If the cloud coverage is omitted in any line, the value will be retrieved from the [darksky](https://darksky.net/dev) api.
 
@@ -122,7 +126,7 @@ irradiance and the time of the measurement (see the third line of the header for
 Here is an example of a (truncated) qasume file `1751130G.117`:
 ```
 % El Arenosillo 37.1N 6.73W
-% type=ua	coscor=clear_sky(0.67)	tempcor=false	o3=312.1DU	albedo=0.04	alpha=1.3	beta=0.1
+% type=ua	coscor=clear_sky(0.67)	tempcor=false	straylightcor=false	o3=312.1DU	albedo=0.04	alpha=1.3	beta=0.1
 % wavelength(nm)	spectral_irradiance(W m-2 nm-1)	time_hour_UTC
 290.0	 0.000001157	   11.50033
 290.5	 0.000000000	   11.50133
@@ -137,7 +141,6 @@ Here is an example of a (truncated) qasume file `1751130G.117`:
 295.0	 0.000307826	   11.50883
 ...
 ```
-
 
 
 
@@ -341,7 +344,7 @@ docker build -f Dockerfile.server . -t pmodwrc/buvic
 Note that the tag `pmodwrc/buvic` can be replaced with another custom tag
 
 
-To start a docker container, run:
+The simplest way to start a docker container with buvic is to run:
 ```
 docker run -d -p <PORT>:80 --name buvic pmodwrc/buvic
 ```
@@ -349,24 +352,32 @@ Where `<PORT>` is the port on which the web app will listen (e.g. 8080).
 
 The flag `-d` tells docker to run this container as a daemon (in the background). It may be omitted if you want to run it in your current terminal.
 
-After running this command, you can access the web app in your browser at `http://localhost:<PORT>`
+After running this command, you can access the web app in your browser at `http://localhost:<PORT>`.
+This instance of BUVIC however only uses some demo measurement files as input.
 
-If you want [darksky](https://darksky.net/dev) to be used, you will need to create an account and give your api key as environment variable.
-This can be done by adding the parameter `-e DARKSKY_TOKEN=your_darksky_token`.
-Example:
+To use BUVIC correctly, you will need to map an input directory and an output directory to your docker container.
+In the docker image, the input directory is at `/data` and the output directory is at `/out`.
+We need to map these two directories to two directories on your computer.
+We use docker volumes (the option `-v`) to map a host directory to a docker directory (it works similarly to links).
 ```
-docker run -d -p <PORT>:80 -e DARKSKY_TOKEN=your_darksky_token --name buvic pmodwrc/buvic
+docker run -d -p <PORT>:80 -v <INPUT_DIRECTORY>:/data -v <OUTPUT_DIRECTORY>:/out --user $(id -u):$(id -g) --name buvic pmodwrc/buvic
 ```
-
-If you want to use a custom directory as a source for measurement files and/or for output files, you can mount the container's `/data` and `/out` as volumes:
-```
-docker run -d -p <PORT>:80 -v <MEASUREMENT_PATH>:/data -v <OUT_PATH>:/out --user $(id -u):$(id -g) --name buvic pmodwrc/buvic
-```
-where `<MEASUREMENT_PATH>` is the *absolute* path to your measurement and `<OUT_PATH>` is the *absolute* path to the directory you want to save the outputs in.
+where `<INPUT_DIRECTORY>` is the *absolute* path to your input directory (e.g. `D:\buvic\input_dir` on Windows or `/home/user/buvic/input_dir`
+on Linux) and `<OUTPUT_DIRECTORY>` is the *absolute* path to the directory you want to save the outputs in.
 
 The `--user $(id -u):$(id -g)` option tells docker to run the container as the current user.
 This prevents permissions issues at the moment of writing files to the output directory.
 It is optional and you might need to skip it on Windows.
+
+
+If you want [darksky](https://darksky.net/dev) to be used, you will need to create an account and give your api key as environment variable.
+Using this functionality is not required and the cloud coverage values can be manually entered in the parameter file instead.
+
+You can pass your darksky api token to BUVIC by adding the parameter `-e DARKSKY_TOKEN=your_darksky_token`.
+Example:
+```
+docker run -d -p <PORT>:80 -e DARKSKY_TOKEN=your_darksky_token --name buvic pmodwrc/buvic
+```
 
 
 ### 2. UV Watch
