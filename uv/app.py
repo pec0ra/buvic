@@ -13,7 +13,7 @@ from uv.logic.calculation_input import CalculationInput
 from uv.logic.calculation_utils import CalculationUtils
 from uv.logic.file_utils import FileUtils
 from uv.logic.result import Result
-from .const import OUTPUT_DIR, DATA_DIR, APP_VERSION
+from .const import OUTPUT_DIR, DATA_DIR, APP_VERSION, ASSETS_DIR
 from .gui.utils import show, hide
 from .gui.widgets import Title, Level, Loader, PathMainForm, SimpleMainForm, ResultWidget, ExtraParamForm
 
@@ -31,7 +31,7 @@ class UVApp(App):
     _lock = multiprocessing.Manager().Lock()
 
     def __init__(self, *args):
-        super(UVApp, self).__init__(*args, static_file_path={'plots': OUTPUT_DIR, 'res': 'assets/'})
+        super(UVApp, self).__init__(*args, static_file_path={'plots': OUTPUT_DIR, 'res': ASSETS_DIR})
 
         # Some tweaking for matplotlib
         rcParams.update({'figure.autolayout': True})
@@ -80,7 +80,7 @@ class UVApp(App):
 
         self._main_container.append(self._result_container)
 
-        version = gui.Link("https://github.com/pec0ra/buvic", f"BUVIC {APP_VERSION}",
+        version = gui.Link("https://hub.docker.com/repository/docker/pmodwrc/buvic", f"BUVIC {APP_VERSION}",
                            style="color: #999; align-self: flex-end; margin-top: 30px")
         self._main_container.append(version)
 

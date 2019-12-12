@@ -54,15 +54,8 @@ class FileUtils:
             if res is not None:
                 brewer_id = res.group("brewer_id")
                 if brewer_id not in self._file_dict:
-                    LOG.warning(f"No arf file exists for brewer id {brewer_id}, skipping")
-                    continue
+                    self._file_dict[brewer_id] = InstrumentFiles(None)
                 self._file_dict[brewer_id].uvr_files.append(file_name)
-
-        for brewer_id, instrument_files in list(self._file_dict.items()):
-            # Remove the instruments without UVR files
-            if len(instrument_files.uvr_files) == 0:
-                LOG.warning(f"No UVR file exists for brewer id {brewer_id}, skipping")
-                del self._file_dict[brewer_id]
 
         for file_name in listdir(self._uvdata_dir):
             # UV file names are like `UV12319.070`
@@ -72,8 +65,7 @@ class FileUtils:
                 year = res.group("year")
                 brewer_id = res.group("brewer_id")
                 if brewer_id not in self._file_dict:
-                    LOG.warning(f"No arf file exists for brewer id {brewer_id}, skipping")
-                    continue
+                    self._file_dict[brewer_id] = InstrumentFiles(None)
 
                 b_file = "B" + days + year + "." + brewer_id
                 b_file_path = join(self._uvdata_dir, b_file)
@@ -81,6 +73,16 @@ class FileUtils:
                     self._file_dict[brewer_id].uv_files_combinations.append(UVFileCombo(file_name, b_file))
                 else:
                     self._file_dict[brewer_id].uv_files_combinations.append(UVFileCombo(file_name, None))
+
+        for brewer_id, instrument_files in list(self._file_dict.items()):
+            if len(instrument_files.uvr_files) == 0:
+                # Remove the instruments without UVR files
+                LOG.warning(f"No UVR file exists for brewer id {brewer_id}, skipping")
+                del self._file_dict[brewer_id]
+            elif len(instrument_files.uv_files_combinations) == 0:
+                # Remove the instruments without UV files
+                LOG.warning(f"No UV file exists for brewer id {brewer_id}, skipping")
+                del self._file_dict[brewer_id]
 
     def get_brewer_ids(self) -> List[str]:
         return sorted(self._file_dict.keys())

@@ -42,7 +42,9 @@ class CalculationInput:
         return read_calibration_file(self.calibration_file_name)
 
     @threaded_cached_property
-    def arf(self) -> ARF:
+    def arf(self) -> ARF or None:
+        if self.arf_file_name is None:
+            return None
         return read_arf_file(self.arf_file_name, self.arf_direction)
 
     @threaded_cached_property
@@ -62,7 +64,7 @@ class CalculationInput:
             return get_cloud_cover(position.latitude, position.longitude, date)
 
     def cos_correction_to_apply(self, time: float) -> CosCorrection:
-        if self.input_parameters.no_coscor:
+        if self.input_parameters.no_coscor or self.arf is None:
             return CosCorrection.NONE
         elif self.cloud_cover.is_diffuse(time):
             return CosCorrection.DIFFUSE

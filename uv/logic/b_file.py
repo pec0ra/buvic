@@ -41,7 +41,6 @@ def read_b_file(file_name: str) -> BFile:
     """
 
     if file_name is None or not path.exists(file_name):
-        LOG.warning("B File not found. Using default ozone value and applying straylight correction.")
         return BFile([], [])
 
     LOG.debug("Parsing file: %s", file_name)

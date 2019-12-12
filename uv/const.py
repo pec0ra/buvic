@@ -3,6 +3,7 @@ import os
 TMP_FILE_DIR = "tmp/"
 OUTPUT_DIR = "out/"
 DATA_DIR = "data/"
+ASSETS_DIR = "assets/"
 
 UV_FILES_SUBDIR = "uvdata/"
 B_FILES_SUBDIR = "uvdata/"

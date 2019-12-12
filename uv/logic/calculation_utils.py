@@ -222,10 +222,10 @@ class CalculationUtils:
         uv_file = "UV" + days + year + "." + brewer_id
         b_file = "B" + days + year + "." + brewer_id
         arf_file = "arf_" + brewer_id + ".dat"
-        info = get_brewer_info(brewer_id)
         if uvr_file is not None:
             calibration_file = uvr_file
         else:
+            info = get_brewer_info(brewer_id)
             calibration_file = info.uvr_file_name
         parameter_file = year + ".par"
 
@@ -236,23 +236,22 @@ class CalculationUtils:
 
         b_file_path = path.join(self._input_dir, B_FILES_SUBDIR, b_file)
         if not path.exists(b_file_path):
-            LOG.debug(
-                "Corresponding B file '" + str(b_file_path) + "' not found for UV file '" + uv_file + "', will use default ozone values")
+            LOG.warning("Corresponding B file '" + str(b_file_path) + "' not found for UV file '" + uv_file + "', will use default ozone "
+                        "values and straylight correction will be applied as default")
 
         calibration_file_path = path.join(self._input_dir, CALIBRATION_FILES_SUBDIR, calibration_file)
         if not path.exists(calibration_file_path):
-            LOG.info("Corresponding UVR file '" + str(calibration_file_path) + "' not found for UV file '" + uv_file + "', skipping")
+            LOG.warning("Corresponding UVR file '" + str(calibration_file_path) + "' not found for UV file '" + uv_file + "', skipping")
             return None
 
         arf_file_path = path.join(self._input_dir, ARF_FILES_SUBDIR, arf_file)
         if not path.exists(arf_file_path):
-            LOG.info("Corresponding ARF file '" + str(arf_file_path) + "' not found for UV file '" + uv_file + "', skipping")
-            return None
+            LOG.warning("ARF file was not found for UV file '" + uv_file + "', cos correction will not be applied")
+            arf_file_path = None
 
         parameter_file_path = path.join(self._input_dir, PARAMETER_FILES_SUBDIR, parameter_file)
-        if not path.exists(arf_file_path):
-            LOG.info("Corresponding Parameter file '" + str(parameter_file_path) + "' not found for UV file '" + uv_file + "', skipping")
-            return None
+        if not path.exists(parameter_file_path):
+            parameter_file_path = None
 
         # If everything is ok, return a calculation input
         return CalculationInput(

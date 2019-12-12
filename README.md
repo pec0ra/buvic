@@ -1,16 +1,15 @@
-# UV irradiance calculations
+# Brewer UV Irradiance Calculation
 
-
-This repository contains a set of tools to calculate the cosine corrected irradiance from raw UV measurements.
+This repository contains a set of tools to calculate the cosine corrected irradiance from brewer raw UV measurements.
 
 ## Table of content
 <!--ts-->
-   * [UV irradiance calculations](#uv-irradiance-calculations)
+   * [Brewer UV Irradiance Calculation](#brewer-uv-irradiance-calculation)
       * [Table of content](#table-of-content)
       * [Requirements](#requirements)
          * [Directory structure](#directory-structure)
          * [File formats](#file-formats)
-      * [UV Web Application](#uv-web-application)
+      * [BUVIC Web Application](#buvic-web-application)
       * [Command Line App](#command-line-app)
          * [1. Calculate dates and brewer id](#1-calculate-dates-and-brewer-id)
          * [2. Calculate for given files](#2-calculate-for-given-files)
@@ -19,14 +18,14 @@ This repository contains a set of tools to calculate the cosine corrected irradi
       * [Installer](#installer)
       * [Releases](#releases)
       * [Docker](#docker)
-         * [1. UV Server](#1-uv-server)
+         * [1. BUVIC](#1-buvic)
          * [2. UV Watch](#2-uv-watch)
       * [Implementation](#implementation)
          * [1. User Interface](#1-user-interface)
          * [2. Job creation / handling](#2-job-creation--handling)
          * [3. Calculations](#3-calculations)
 
-<!-- Added by: basile, at: Mi Dez 11 10:16:30 CET 2019 -->
+<!-- Added by: basile, at: Do Dez 12 17:10:50 CET 2019 -->
 
 <!--te-->
 
@@ -142,9 +141,9 @@ Here is an example of a (truncated) qasume file `1751130G.117`:
 
 
 
-## UV Web Application
+## BUVIC Web Application
 
-UV Web Application is a small application running in the browser to facilitate the execution of irradiance calculation.
+BUVIC Web Application is a small application running in the browser to facilitate the execution of irradiance calculation.
 
 It offers the possibility to choose dates and a brewer id to automatically find the measurement files from a predefined set or to manually upload measurement files (manual mode).
 
@@ -158,7 +157,7 @@ python run.py
 ```
 The application should automatically open in the browser.
 
-Alternatively (and the recommended way), you can use the docker image as described in [the docker section](#1-uv-server).
+Alternatively (and the recommended way), you can use the docker image as described in [the docker section](#1-buvic).
 
 ## Command Line App
 
@@ -324,12 +323,12 @@ Alternatively, you can run the script `release.py` which will do these steps aut
 ## Docker
 
 Two docker images are available for calculations:
-1. `pec0ra/uv-server`: A small web app to help launching calculations
+1. `pmodwrc/buvic`: A small web app to help launching calculations
 2. `pec0ra/uv-watch`: A watchdog to automatically execute the calculations when files are changed in a directory
 
-### 1. UV Server
+### 1. BUVIC
 
-This docker image contains the [UV Web Application](#uv-web-application)
+This docker image contains the [UV Web Application](#buvic-web-application)
 
 **Instructions:**
 
@@ -337,14 +336,14 @@ See the [Installer section](#installer) for an easier way to run this docker ima
 
 To build this image, run:
 ```
-docker build -f Dockerfile.server . -t pec0ra/uv-server
+docker build -f Dockerfile.server . -t pmodwrc/buvic
 ```
-Note that the tag `pec0ra/uv-server` can be replaced with another custom tag
+Note that the tag `pmodwrc/buvic` can be replaced with another custom tag
 
 
 To start a docker container, run:
 ```
-docker run -d -p <PORT>:80 --name uv-server pec0ra/uv-server
+docker run -d -p <PORT>:80 --name buvic pmodwrc/buvic
 ```
 Where `<PORT>` is the port on which the web app will listen (e.g. 8080).
 
@@ -356,12 +355,12 @@ If you want [darksky](https://darksky.net/dev) to be used, you will need to crea
 This can be done by adding the parameter `-e DARKSKY_TOKEN=your_darksky_token`.
 Example:
 ```
-docker run -d -p <PORT>:80 -e DARKSKY_TOKEN=your_darksky_token --name uv-server pec0ra/uv-server
+docker run -d -p <PORT>:80 -e DARKSKY_TOKEN=your_darksky_token --name buvic pmodwrc/buvic
 ```
 
 If you want to use a custom directory as a source for measurement files and/or for output files, you can mount the container's `/data` and `/out` as volumes:
 ```
-docker run -d -p <PORT>:80 -v <MEASUREMENT_PATH>:/data -v <OUT_PATH>:/out --user $(id -u):$(id -g) --name uv-server pec0ra/uv-server
+docker run -d -p <PORT>:80 -v <MEASUREMENT_PATH>:/data -v <OUT_PATH>:/out --user $(id -u):$(id -g) --name buvic pmodwrc/buvic
 ```
 where `<MEASUREMENT_PATH>` is the *absolute* path to your measurement and `<OUT_PATH>` is the *absolute* path to the directory you want to save the outputs in.
 

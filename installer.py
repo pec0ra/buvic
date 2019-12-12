@@ -130,8 +130,8 @@ def run_installer():
         container_name = prev_config[CONTAINER_NAME_KEY]
         print(f" Using container name {container_name}")
     else:
-        print("* Docker container name (the local name for the container - Default: uv-server):")
-        container_name = input_check(check_container_name, default_value="uv-server")
+        print("* Docker container name (the local name for the container - Default: buvic):")
+        container_name = input_check(check_container_name, default_value="buvic")
         print()
 
     if INPUT_PATH_KEY in prev_config:
@@ -176,7 +176,7 @@ def run_installer():
         darksky_token = input_check(check_darksky_token, none_default=True)
     print()
 
-    link = "https://registry.hub.docker.com/v1/repositories/pec0ra/uv-server/tags"
+    link = "https://registry.hub.docker.com/v1/repositories/pmodwrc/buvic/tags"
     with urllib.request.urlopen(link) as url:
         data = json.loads(url.read().decode())
 
@@ -192,8 +192,8 @@ def run_installer():
 
     if version == ":latest":
         must_pull = True
-    elif not check_command(f"docker image inspect pec0ra/uv-server{version} >/dev/null 2>&1 || exit 1"):
-        print(f"* Docker image pec0ra/uv-server{version} does not exist locally")
+    elif not check_command(f"docker image inspect pmodwrc/buvic{version} >/dev/null 2>&1 || exit 1"):
+        print(f"* Docker image pmodwrc/buvic{version} does not exist locally")
         must_pull = True
     else:
         must_pull = False
@@ -201,7 +201,7 @@ def run_installer():
     if must_pull:
         print("* Pulling docker image")
         print(Colors.LIGHTGRAY, end='', flush=True)
-        result = call(["docker", "pull", f"pec0ra/uv-server{version}"])
+        result = call(["docker", "pull", f"pmodwrc/buvic{version}"])
         print(Colors.ENDC, end='', flush=True)
         if result != 0:
             p("ERROR: An error occurred while pulling image!", Colors.ERROR)
@@ -236,7 +236,7 @@ def run_installer():
     if darksky_token is not None:
         docker_command.extend([f"-e DARKSKY_TOKEN={darksky_token}"])
 
-    docker_command.extend(["-e PORT=4444", f"--name {container_name}", f"pec0ra/uv-server{version}"])
+    docker_command.extend(["-e PORT=4444", f"--name {container_name}", f"pmodwrc/buvic{version}"])
     print(" ".join(docker_command))
     print(Colors.LIGHTGRAY, end='', flush=True)
     result = run(" ".join(docker_command), shell=True)
