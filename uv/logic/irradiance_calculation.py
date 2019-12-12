@@ -53,7 +53,8 @@ class IrradianceCalculation:
             uv_file_entry: UVFileEntry = self._calculation_input.uv_file_entries[index]
 
             libradtran_result = self._execute_libradtran(uv_file_entry)
-            calibrated_spectrum = self._to_calibrated_spectrum(uv_file_entry, self._calculation_input.calibration, self._calculation_input.b_file)
+            calibrated_spectrum = self._to_calibrated_spectrum(uv_file_entry, self._calculation_input.calibration,
+                                                               self._calculation_input.b_file)
 
             minutes = uv_file_entry.raw_values[0].time
             cos_cor_to_apply = self._calculation_input.cos_correction_to_apply(minutes)
@@ -111,7 +112,7 @@ class IrradianceCalculation:
         corrected_values = [v - uv_file_header.dark for v in raw_values]
 
         if b_file.straylight_correction:
-            LOG.debug("Applying straylight correction") # TODO: use debug
+            LOG.debug("Applying straylight correction")
             # Remove straylight
             below_292 = list(filter(lambda x: x.wavelength < 292, uv_file_entry.raw_values))
             if len(below_292) > 0:

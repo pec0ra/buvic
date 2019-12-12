@@ -274,7 +274,7 @@ class PathMainForm(MainForm):
 
 class SimpleMainForm(MainForm):
     _file_utils: FileUtils
-    _brewer_id: str = None
+    _brewer_id: str or None = None
     _date_start: date or None = None
     _date_end: date or None = None
     _uvr_file: str or None = None
@@ -329,8 +329,10 @@ class SimpleMainForm(MainForm):
             item = gui.DropDownItem(bid)
             self._brewer_dd.append(item)
 
-        if self._brewer_id not in brewer_ids:
+        if self._brewer_id not in brewer_ids and len(brewer_ids) > 0:
             self._brewer_id = brewer_ids[0]
+        if self._brewer_id not in brewer_ids:
+            self._brewer_id = None
         self._brewer_dd.set_value(self._brewer_id)
 
     def _update_uvr_files(self):
@@ -368,7 +370,7 @@ class SimpleMainForm(MainForm):
         self._update_brewer_ids()
         self._update_date_range()
         self._update_uvr_files()
-
+        self.check_fields()
 
     @property
     def brewer_id(self):
@@ -419,7 +421,8 @@ class SimpleMainForm(MainForm):
             self._calculate_button.set_enabled(False)
 
     def start_calculation(self, calculation_utils: CalculationUtils) -> List[Result]:
-        return calculation_utils.calculate_for_all_between(self._date_start, self._date_end, self._brewer_id, self.parameters)
+        return calculation_utils.calculate_for_all_between(self._date_start, self._date_end, self._brewer_id, self.parameters,
+                                                           self._uvr_file)
 
 
 class Input(VBox):

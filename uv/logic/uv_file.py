@@ -10,8 +10,6 @@ from warnings import warn
 
 from numpy import divide, sqrt
 
-from uv.brewer_infos import get_brewer_info, BrewerInfo
-
 LOG = getLogger(__name__)
 
 

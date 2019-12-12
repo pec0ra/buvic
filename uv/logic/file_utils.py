@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass, field
 from datetime import date
 from logging import getLogger
-from os import listdir
+from os import listdir, makedirs
 from os.path import join, exists
 from pprint import PrettyPrinter
 from typing import Dict, List, Tuple
@@ -33,6 +33,11 @@ class FileUtils:
     def refresh(self):
 
         self._file_dict = {}
+
+        if not exists(self._instr_dir):
+            makedirs(self._instr_dir)
+        if not exists(self._uvdata_dir):
+            makedirs(self._uvdata_dir)
 
         for file_name in listdir(self._instr_dir):
             # ARF file names are like `arf_070.dat`
@@ -81,6 +86,8 @@ class FileUtils:
         return sorted(self._file_dict.keys())
 
     def get_uvr_files(self, brewer_id: str) -> List[str]:
+        if brewer_id is None:
+            return []
         if brewer_id not in self._file_dict:
             raise ValueError(f"No uvr file found for brewer id {brewer_id}.")
         return sorted(self._file_dict[brewer_id].uvr_files)
@@ -88,6 +95,10 @@ class FileUtils:
     def get_date_range(self, brewer_id: str) -> Tuple[date, date]:
         min_date: date or None = None
         max_date: date or None = None
+
+        if brewer_id is None:
+            return date(2000, 1, 1), date.today()
+
         if brewer_id not in self._file_dict:
             raise ValueError(f"Brewer with id {brewer_id} is not present in the list of files.")
 
