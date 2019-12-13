@@ -58,11 +58,11 @@ class FileSelector(VBox):
     """
 
     def __init__(self, title: str, handler=None):
-        super().__init__(width=300)
+        super().__init__(width=280)
         self.handler = handler
         self.title = title
         self.label = gui.Label(title)
-        self.file_selector = gui.FileUploader("tmp/")
+        self.file_selector = gui.FileUploader("tmp/", width=280)
         self.file_selector.ondata.do(self._on_file_changed)
         self.change_file_button = gui.Button("Change")
         hide(self.change_file_button)
@@ -148,7 +148,7 @@ class MainForm(VBox):
             DEFAULT_OZONE_VALUE
         )
 
-        self.set_style("align-items: flex-end")
+        self.set_style("align-items: flex-end; flex-wrap: wrap")
 
         self._init_elements()
 
@@ -196,7 +196,7 @@ class PathMainForm(MainForm):
 
     def _init_elements(self):
 
-        file_form = gui.HBox(style="margin-bottom: 20px")
+        file_form = gui.HBox(style="margin-bottom: 20px; flex-wrap: wrap")
         self._uv_file_selector = FileSelector("UV File:", handler=self._on_uv_file_change)
         self._calibration_file_selector = FileSelector("Calibration File:", handler=self._on_calibration_file_change)
         self._b_file_selector = FileSelector("B File:", handler=self._on_b_file_change)
@@ -291,7 +291,7 @@ class SimpleMainForm(MainForm):
         self._date_start = date(2019, 6, 24)
         self._date_end = date.today()
 
-        file_form = gui.HBox(style="margin-bottom: 20px")
+        file_form = gui.HBox(style="margin-bottom: 20px; flex-wrap: wrap")
 
         self._brewer_dd = gui.DropDown()
         self._update_brewer_ids()
@@ -434,7 +434,7 @@ class Input(VBox):
     """
 
     def __init__(self, label: str, input_widget: gui.Widget):
-        super().__init__(style="width: 280px; padding-left: 10px; padding-right: 10px")
+        super().__init__(style="width: 260px; padding-right: 20px")
         lw = gui.Label(label + ":")
         self.append(lw)
         self.append(input_widget)
@@ -549,7 +549,7 @@ class ExtraParamForm(gui.HBox):
     _no_coscor: bool = False
 
     def __init__(self):
-        super().__init__(style="margin-bottom: 15px")
+        super().__init__(style="margin-bottom: 20px; flex-wrap: wrap")
 
         # Albedo field
         albedo_spin = gui.SpinBox(DEFAULT_ALBEDO_VALUE, 0, 1, 0.01)
@@ -578,7 +578,8 @@ class ExtraParamForm(gui.HBox):
         ozone_input = Input("Ozone (Used if no value found in B file)", ozone_spin)
         self.append(ozone_input)
 
-        no_coscor_checkbox = gui.CheckBoxLabel("Skip cos correction", style="align-self: flex-end; height: 30px")
+        no_coscor_checkbox = gui.CheckBoxLabel("Skip cos correction", style="align-self: flex-end; height: 30px; width: 260px;"
+                                                                            "padding-right: 20px")
         no_coscor_checkbox.onchange.do(self._on_no_coscor_change)
         self.append(no_coscor_checkbox)
 

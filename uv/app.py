@@ -48,9 +48,10 @@ class UVApp(App):
         header_picture = gui.Image("/res:pmodwrc_logo.png", width=200, style="align-self: flex-start")
         title = Title(Level.H1, "Brewer UV Irradiance Calculator")
 
-        self._forms = VBox(style="width: 100%")
+        self._forms = VBox()
 
-        form_selection_checkbox = gui.CheckBoxLabel("Manual mode", style="align-self: flex-start; margin-bottom: 20px; height: 30px")
+        form_selection_checkbox = gui.CheckBoxLabel("Manual mode", style="align-self: flex-start; margin-bottom: 20px;"
+                                                                         "height: 30px")
         form_selection_checkbox.onchange.do(self._on_form_selection_change)
         self._forms.append(form_selection_checkbox)
 

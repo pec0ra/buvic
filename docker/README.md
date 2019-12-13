@@ -93,6 +93,7 @@ irradiance and the time of the measurement (see the third line of the header for
 
 Here is an example of a (truncated) qasume file `1751130G.117`:
 ```
+% Generated with Brewer UV Irradiance Calculation v2.1
 % El Arenosillo 37.1N 6.73W
 % type=ua	coscor=clear_sky(0.67)	tempcor=false	straylightcor=false	o3=312.1DU	albedo=0.04	alpha=1.3	beta=0.1
 % wavelength(nm)	spectral_irradiance(W m-2 nm-1)	time_hour_UTC
