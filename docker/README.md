@@ -81,7 +81,7 @@ Their names have the following pattern: `<days><hour><minute>.<brewer_id>` and a
 as name. In the name pattern, *days* is the number of days since new year and *hour* and *minute* is the time of the measurement.
 
 Each qasume file begins with four header lines, each beginning with `% `.
-The first header line contains information about this software
+The first header line contains information about the file generation.
 The second header line contains the place of the measurement with its name, latitude and longitude.
 The third line gives information about the parameter used for calculation. Each info has the format `<name>=<value>` and infos are
 separated by a tabulation.
@@ -93,7 +93,7 @@ irradiance and the time of the measurement (see the third line of the header for
 
 Here is an example of a (truncated) qasume file `1751130G.117`:
 ```
-% Generated with Brewer UV Irradiance Calculation v2.1
+% Generated with Brewer UV Irradiance Calculation v2.1 at 2019-12-13 12:48:17
 % El Arenosillo 37.1N 6.73W
 % type=ua	coscor=clear_sky(0.67)	tempcor=false	straylightcor=false	o3=312.1DU	albedo=0.04	alpha=1.3	beta=0.1
 % wavelength(nm)	spectral_irradiance(W m-2 nm-1)	time_hour_UTC

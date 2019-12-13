@@ -114,7 +114,7 @@ Their names have the following pattern: `<days><hour><minute>.<brewer_id>` and a
 as name. In the name pattern, *days* is the number of days since new year and *hour* and *minute* is the time of the measurement.
 
 Each qasume file begins with four header lines, each beginning with `% `.
-The first header line contains information about this software
+The first header line contains information about the file generation.
 The second header line contains the place of the measurement with its name, latitude and longitude.
 The third line gives information about the parameter used for calculation. Each info has the format `<name>=<value>` and infos are
 separated by a tabulation.
