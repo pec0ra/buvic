@@ -108,10 +108,10 @@ class Loader(VBox):
     """
 
     def __init__(self):
-        super().__init__()
+        super().__init__(style="width: 100%; max-width: 500px")
         hide(self)
         self._label = gui.Label("Calculating...")
-        self._bar = gui.Progress(0, 100, width=400)
+        self._bar = gui.Progress(0, 100, style="width:100%")
         print(self._bar.children)
         self.append(self._label)
         self.append(self._bar)
