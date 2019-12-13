@@ -113,12 +113,13 @@ The output files are in the qasume format.
 Their names have the following pattern: `<days><hour><minute>.<brewer_id>` and are placed in a subdirectory with the year of the measurement
 as name. In the name pattern, *days* is the number of days since new year and *hour* and *minute* is the time of the measurement.
 
-Each qasume file begins with three header lines, each beginning with `% `.
-The first header line contains the place of the measurement with its name, latitude and longitude.
-The second line gives information about the parameter used for calculation. Each info has the format `<name>=<value>` and infos are
+Each qasume file begins with four header lines, each beginning with `% `.
+The first header line contains information about this software
+The second header line contains the place of the measurement with its name, latitude and longitude.
+The third line gives information about the parameter used for calculation. Each info has the format `<name>=<value>` and infos are
 separated by a tabulation.
 The value for `coscor` is followed by the cloud coverage in parenthesis if this value was taken from [darksky](https://darksky.net/dev).
-The third line contains the headers for the three columns of data.
+The fourth line contains the headers for the three columns of data.
 
 After the header, the following rows contain the data. Each row contains three values separated by white spaces: the wavelength, the spectral
 irradiance and the time of the measurement (see the third line of the header for more details).
@@ -310,8 +311,7 @@ Then follow the instructions on terminal
 
 Releases have a version in the form `vMAJOR.MINOR` (e.g `v1.2`).
 
-To create a new release, change the version in the [version file](version).
-Then, create a new tag with the version as a name:
+To create a new release, create a new tag with the version as a name:
 ```
 git tag v1.2 -a -m "UV Server v1.2"
 ```

@@ -8,6 +8,7 @@ from uv.logic.darksky import DarkskyCloudCover
 from uv.logic.utils import date_to_days, minutes_to_time
 from .calculation_input import CalculationInput, CosCorrection
 from .uv_file import UVFileEntry
+from ..const import APP_VERSION
 
 
 @dataclass
@@ -33,6 +34,8 @@ class Result:
         cloud_cover_value = ""
         if isinstance(self.calculation_input.cloud_cover, DarkskyCloudCover) and cos_cor_to_apply != CosCorrection.NONE:
             cloud_cover_value = f"({self.calculation_input.cloud_cover.darksky_value(minutes)})"
+
+        file.write(f"% Generated with Brewer UV Irradiance Calculation {APP_VERSION}\n")
 
         file.write(f"% {self.uv_file_entry.header.place} {self.uv_file_entry.header.position.latitude}N "
                    f"{self.uv_file_entry.header.position.longitude}W\n")

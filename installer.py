@@ -15,7 +15,7 @@ CONTAINER_NAME_KEY = "container_name"
 PERSIST_KEY = "persist"
 DARKSKY_TOKEN_KEY = "darksky_token"
 
-CONFIG_FILE_PATH = os.path.join(os.path.expanduser("~"), '.uv-server.conf')
+CONFIG_FILE_PATH = os.path.join(os.path.expanduser("~"), '.buvic.conf')
 FNULL = open(os.devnull, 'w')
 
 
