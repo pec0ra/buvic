@@ -2,4 +2,4 @@
 
 echo $DOCKERFILE_PATH
 echo $(pwd)
-docker build -t $IMAGE_NAME -f ../$DOCKERFILE_PATH --build-arg DOCKER_TAG=$DOCKER_TAG ..
+docker build -t $IMAGE_NAME -f ../docker/$DOCKERFILE_PATH --build-arg DOCKER_TAG=$DOCKER_TAG ..
