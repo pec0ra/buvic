@@ -321,7 +321,7 @@ git push --tags
 ```
 Docker hub will automatically build the corresponding docker image (Note: it can take a few hours until the images are built).
 
-Alternatively, you can run the script `release.py` which will do these steps automatically.
+Alternatively, you can run the script `release.py <version>` which will do this automatically.
 
 ## Docker
 
