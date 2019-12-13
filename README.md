@@ -189,7 +189,7 @@ usage: run_cmd.py [-h]
                   (--dates-and-brewer-id DATE_START DATE_END BREWER_ID | --paths UV_FILE B_FILE UVR_FILE ARF_FILE | --all | --watch)
                   [--input-dir INPUT_DIR] [--output-dir OUTPUT_DIR]
                   [--albedo ALBEDO] [--aerosol ALPHA BETA] [--ozone OZONE]
-                  [--no-coscor] [--no-plots]
+                  [--no-coscor]
 
 Calculate irradiance spectra
 
@@ -220,11 +220,10 @@ optional arguments:
                         The ozone value in DU to use for the calculations if
                         no value is found in a B file
   --no-coscor, -c       Don't apply cos correction
-  --no-plots, -q        Don't generate plots but only qasume files
 ```
 The options `--days-and-brewer-id`, `--paths`, `--all` and `--watch` correspond to the 4 different ways to run the tool and only one can be used at a time.
 
-The options `--input-dir`, `--output-dir`, `--albedo`, `--aerosol` , `--ozone`, `--no-coscor` and `--no-plots` are optional parameters and can be used with any of the 4 options cited above. If not specified, default values will be used.
+The options `--input-dir`, `--output-dir`, `--albedo`, `--aerosol` , `--ozone` and `--no-coscor` are optional parameters and can be used with any of the 4 options cited above. If not specified, default values will be used.
 
 ### 1. Calculate dates and brewer id
 
@@ -238,9 +237,9 @@ Run the calculation for brewer `070` on June 24th, 25th and 26th and write the o
 python run_cmd.py --days-and-brewer-id 2019-06-24 2019-06-26 070 --output-dir brewer177/
 ```
 
-Run the calculation for brewer `186` on June 25th and 26th with an albedo of 0.1 and angström's alpha of 1.3 and beta of 0.1 as aerosol (using shortcuts flags `-d`, `-a` and `-e` instead of their full versions). The `-c` parameter (or `--only-csv`) tells that we don't want to generate plots but only csv files
+Run the calculation for brewer `186` on June 25th and 26th with an albedo of 0.1 and angström's alpha of 1.3 and beta of 0.1 as aerosol (using shortcuts flags `-d`, `-a` and `-e` instead of their full versions).
 ```
-python run_cmd.py -d 2019-06-25 2019-06-26 186 -a 0.1 -e 1.3 0.1 -c
+python run_cmd.py -d 2019-06-25 2019-06-26 186 -a 0.1 -e 1.3 0.1
 ```
 Note that if `--input-dir` is not specified, the measurement files will be taken from `data/`.
 
@@ -260,9 +259,9 @@ python run_cmd.py --input-dir my_measurement_files/ --paths UV17519.070 B17519.0
 ```
 Note that if `--input-dir` is not specified, the file paths are relative to the working directory.
 
-Run the calculation for the four files with an albedo of 0.1 and angström's alpha of 1.3 and beta of 0.1 as aerosol (using shortcuts flags `-p`, `-a` and `-e` instead of their full versions). The `-c` parameter (or `--only-csv`) tells that we don't want to generate plots but only csv files
+Run the calculation for the four files with an albedo of 0.1 and angström's alpha of 1.3 and beta of 0.1 as aerosol (using shortcuts flags `-p`, `-a` and `-e` instead of their full versions).
 ```
-python run_cmd.py -p data/UV17519.070 data/B17519.070 data/UVR17319.070 data/arf_070.dat -a 0.1 -e 1.3 0.1 -c
+python run_cmd.py -p data/UV17519.070 data/B17519.070 data/UVR17319.070 data/arf_070.dat -a 0.1 -e 1.3 0.1
 ```
 
 ### 3. Calculate for all files of a given directory
@@ -472,7 +471,6 @@ The difference between way 1. (and 4.) and ways 2. and 3. is that way 1 only cre
 Ways 2. and 3. make calculation for multiple days and therefore create Jobs for multiple `CalculationInput` objects.
 
 All the Jobs are then scheduled on a `ThreadPoolExecutor` and will run in parallel.
-Their results will then be scheduled on a `ProcessPoolExecutor` for the generation of qasume and plot files.
 
 
 ### 3. Calculations
@@ -506,3 +504,5 @@ A call to LibRadtran is also made with the infos from the measurement and parame
 Finally, the results from LibRadtran and from the darksky.net api call are used to apply the cos correction to the calibrated
 spectrum.
 This information as well as the input parameters used is returned from the `calculate` method as a `Result` object.
+
+This `Result` object will later be converted to output files.

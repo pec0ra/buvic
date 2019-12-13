@@ -5,7 +5,6 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import List, Callable
 
 import remi.gui as gui
-from matplotlib import rcParams
 from remi import App, Label
 from remi.gui import VBox
 
@@ -32,10 +31,6 @@ class UVApp(App):
 
     def __init__(self, *args):
         super(UVApp, self).__init__(*args, static_file_path={'plots': OUTPUT_DIR, 'res': ASSETS_DIR})
-
-        # Some tweaking for matplotlib
-        rcParams.update({'figure.autolayout': True})
-        rcParams['figure.figsize'] = 9, 6
 
         self._executor = ThreadPoolExecutor(1)
         self._duration = 0
@@ -111,7 +106,7 @@ class UVApp(App):
         """
         try:
             job_utils = CalculationUtils(DATA_DIR, OUTPUT_DIR, init_progress=self._init_progress, progress_handler=self._make_progress,
-                                         finish_progress=self._finish_progress, no_plots=True)
+                                         finish_progress=self._finish_progress)
             results = calculation(job_utils)
             self._show_result(results)
         except Exception as e:
@@ -121,7 +116,8 @@ class UVApp(App):
         hide(self._error_label)
         self._error_label.set_text("")
 
-    def _init_progress(self, total: int):
+    def _init_progress(self, total: int, text: str = "Calculating..."):
+        self._loader.set_label(text)
         self._loader.init(total)
 
     def _finish_progress(self, duration: float):

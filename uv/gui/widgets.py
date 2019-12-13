@@ -121,7 +121,12 @@ class Loader(VBox):
         self._current_value = 0
         self._bar.set_value(0)
 
+    def set_label(self, label: str):
+        self._label.set_text(label)
+
     def init(self, total: int):
+        self._current_value = 0
+        self._bar.set_value(0)
         self._bar.set_max(total)
 
     def progress(self, value: float):

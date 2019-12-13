@@ -16,7 +16,7 @@ from watchdog.observers import Observer
 
 from uv.const import CALIBRATION_FILES_SUBDIR, ARF_FILES_SUBDIR, UV_FILES_SUBDIR, B_FILES_SUBDIR, PARAMETER_FILES_SUBDIR
 from uv.logic.calculation_event_handler import CalculationEventHandler
-from uv.logic.output_utils import create_csv, create_spectrum_plots, create_sza_plot
+from uv.logic.output_utils import create_csv
 from uv.logic.result import Result
 from uv.logic.utils import date_range, date_to_days
 from .calculation_input import CalculationInput, InputParameters
@@ -35,36 +35,30 @@ class CalculationUtils:
             self,
             input_dir: str,
             output_dir: str,
-            no_plots: bool = True,
-            init_progress: Callable[[int], None] = None,
+            init_progress: Callable[[int, str], None] = None,
             finish_progress: Callable[[float], None] = None,
             progress_handler: Callable[[float], None] = None,
-            file_type: str = "png"
     ):
         """
         Create an instance of JobUtils with the given parameters
         :param input_dir: the directory to get the files from
-        :param output_dir: the directory to save the plots and csv in
-        :param no_plots: whether to only create csv files (no plots)
+        :param output_dir: the directory to save the csv in
         :param init_progress: will be called at the beginning of the calculation with the total number of calculations
                               as parameter
         :param finish_progress: will be called at the end of the calculation
         :param progress_handler: will be called every time progress is made with the amount of progress given as
                                  parameter
-        :param file_type: the file extension of the plots
         """
 
         self._input_dir = input_dir
         self._output_dir = output_dir
-        self._no_plots = no_plots
         self._init_progress = init_progress
         self._finish_progress = finish_progress
         self._progress_handler = progress_handler
-        self._file_type = file_type
 
     def calculate_for_input(self, calculation_input: CalculationInput) -> List[Result]:
         """
-        Calculate irradiance and create plots and csv for a given calculation input
+        Calculate irradiance and create csv for a given calculation input
 
         :param calculation_input: the input for the calculation
         :return: the results of the calculation
@@ -73,6 +67,8 @@ class CalculationUtils:
         LOG.info("Starting calculation for '%s', '%s', '%s' and '%s'", calculation_input.uv_file_name,
                  calculation_input.b_file_name, calculation_input.calibration_file_name,
                  calculation_input.arf_file_name)
+
+        calculation_input.init_properties()
 
         # Create `IrradianceCalculation` Jobs
         calculation_jobs = self._create_jobs(calculation_input)
@@ -86,10 +82,6 @@ class CalculationUtils:
         # Execute the jobs
         result_list = self._execute_jobs(calculation_jobs)
 
-        # Create an extra plot of the correction factor against the szas
-        if not self._no_plots:
-            create_sza_plot(self._output_dir, result_list, self._file_type)
-
         duration = time.time() - start
         if self._finish_progress is not None:
             self._finish_progress(duration)
@@ -101,7 +93,7 @@ class CalculationUtils:
     def calculate_for_all_between(self, start_date: date, end_date: date, brewer_id, parameters: InputParameters,
                                   uvr_file: str or None = None) -> List[Result]:
         """
-        Calculate irradiance and create plots and csv for all UV Files found for between a start date and an end date for a given brewer id.
+        Calculate irradiance and create csv for all UV Files found for between a start date and an end date for a given brewer id.
 
         :param start_date: the dates' lower bound (inclusive) for the measurements
         :param end_date: the dates' upper bound (inclusive) for the measurements
@@ -125,11 +117,11 @@ class CalculationUtils:
 
     def calculate_for_all(self, parameters: InputParameters) -> None:
         """
-        Calculate irradiance and create plots and csv for all UV Files in a the input directory.
+        Calculate irradiance and create csv for all UV Files in a the input directory.
 
         This will loop through all files of `input_dir` and find all UV files. For each UV file, it will look if
         corresponding B file, UVR file and ARF file exist.
-        If they exist, it will call IrradianceCalculation to create a result and it will then create plots and csv from
+        If they exist, it will call IrradianceCalculation to create a result and it will then create csv from
         this result
 
         :param parameters: the parameters to use for calculation
@@ -157,7 +149,7 @@ class CalculationUtils:
         Watch a directory for new UV or B files.
 
         This will create a watchdog on the input directory. Every time a UV file or a B file (recognized by their names) is modified, it
-        will calculate the irradiance and generate the corresponding output (plots/csv).
+        will calculate the irradiance and generate the corresponding output (csv).
 
         This method will run until interrupted by the user
 
@@ -178,7 +170,7 @@ class CalculationUtils:
 
     def _calculate_for_inputs(self, calculation_inputs: List[CalculationInput]) -> List[Result]:
         """
-        Calculate irradiance and create plots and csv for a given list of calculation inputs
+        Calculate irradiance and create csv for a given list of calculation inputs
 
         :param calculation_inputs: the inputs for the calculation
         :return: the results of the calculation
@@ -188,16 +180,22 @@ class CalculationUtils:
         if len(calculation_inputs) == 0:
             return self._handle_empty_input()
 
+        # Initialize the progress bar
+        if self._init_progress is not None:
+            self._init_progress(len(calculation_inputs), "Reading files...")
         job_list = []
         for calculation_input in calculation_inputs:
+            calculation_input.init_properties()
+
             # Create `IrradianceCalculation` Jobs
             calculation_jobs = self._create_jobs(calculation_input)
             job_list.extend(calculation_jobs)
+            self._make_progress()
 
         LOG.info("Starting calculation of %d file sections in %d files", len(job_list), len(calculation_inputs))
         # Init progress bar
         if self._init_progress is not None:
-            self._init_progress(len(job_list))
+            self._init_progress(len(job_list), "Calculating...")
 
         # Execute the jobs
         ret = self._execute_jobs(job_list)
@@ -237,7 +235,7 @@ class CalculationUtils:
         b_file_path = path.join(self._input_dir, B_FILES_SUBDIR, b_file)
         if not path.exists(b_file_path):
             LOG.warning("Corresponding B file '" + str(b_file_path) + "' not found for UV file '" + uv_file + "', will use default ozone "
-                        "values and straylight correction will be applied as default")
+                                                                                                              "values and straylight correction will be applied as default")
 
         calibration_file_path = path.join(self._input_dir, CALIBRATION_FILES_SUBDIR, calibration_file)
         if not path.exists(calibration_file_path):
@@ -265,15 +263,13 @@ class CalculationUtils:
 
     def _execute_jobs(self, jobs: List[Job[Any, Result]]) -> List[Result]:
         """
-        Execute given jobs and create output plots and csv for them.
+        Execute given jobs and create output qasume files for them.
 
         For each one of the given jobs, two things are done:
-            1. The job is scheduled on a thread pool to asynchronously produce a Result
-            2. For the result of step 1, the generation of plots and csv is scheduled on a process pool
+            1. The irradiance is calculated
+            2. Qasume files are created and written to the output directory
 
         We use a ThreadPoolExecutor to schedule the jobs since calling LibRadtran already creates a new process.
-        For the generation of plots, we have to use a ProcessPoolExecutor since matplotlib can't run in parallel threads
-        but only in different processes.
 
         :param jobs: The job to execute
         :return: the results of the jobs.
@@ -283,7 +279,7 @@ class CalculationUtils:
         future_result = []
 
         # Create the thread pool and the process pool
-        with ThreadPoolExecutor(min(20, os.cpu_count() + 4)) as thread_pool, ProcessPoolExecutor() as process_pool:
+        with ThreadPoolExecutor(min(20, os.cpu_count() + 4)) as thread_pool:
 
             # Submit the jobs to the thread pool
             for job in jobs:
@@ -294,42 +290,23 @@ class CalculationUtils:
             try:
                 for future in future_result:
                     # Wait for each job to finish and produce a result
-                    result: Result = future.result(timeout=20)
+                    result: Result = future.result(timeout=40)
 
                     # Notify the progress bar
                     self._make_progress()
-                    if self._no_plots:
-                        # Notify the progress bar
-                        self._make_progress()
-
-                    # Schedule the creation of plots and csv
-                    future_output.append(
-                        process_pool.submit(self._create_output, result, self._output_dir, self._no_plots, self._file_type))
 
                     # Add the result to the return list
                     result_list.append(result)
 
-            except concurrent.futures.TimeoutError as e:
+            except concurrent.futures.TimeoutError:
                 raise ExecutionError("One of the threads took too long to do its calculations.")
 
             # At this point, we have finished waiting for all future_results (irradiance calculation)
             LOG.debug("Finished irradiance calculation for '%s'", result_list[0].calculation_input.uv_file_name)
 
-            for future in future_output:
-                # Wait for each plots/csv creation to finish
-                future.result()
-
-                if not self._no_plots:
-                    # Notify the progress bar
-                    self._make_progress()
-
-            # At this point, we have finished waiting for all future_outputs (plot/csv creations)
-            LOG.debug("Finished creating output for '%s'", result_list[0].calculation_input.uv_file_name)
-
             return result_list
 
-    @staticmethod
-    def _create_jobs(calculation_input: CalculationInput) -> List[Job[int, Result]]:
+    def _create_jobs(self, calculation_input: CalculationInput) -> List[Job[int, Result]]:
         """
         Create a list of irradiance calculation `Job` that can be scheduled on a thread pool or process pool.
         Each of the job of the list will do the calculation for one of the section of the UV File.
@@ -347,16 +324,21 @@ class CalculationUtils:
         job_list = []
         for entry_index in range(len(calculation_input.uv_file_entries)):
             job_list.append(
-                Job(ie.calculate, entry_index)
+                Job(self._job_task, (ie, entry_index))
             )
 
         return job_list
 
+    def _job_task(self, ie: IrradianceCalculation, entry_index: int) -> Result:
+        result = ie.calculate(entry_index)
+        self._create_output(result, self._output_dir)
+        return result
+
     @staticmethod
-    def _create_output(result: Result, output_dir: str, no_plots: bool, file_type: str) -> None:
+    def _create_output(result: Result, output_dir: str) -> None:
         """
-        Create the plots and csv for a given result.
-        The created plots and csv will be saved as files.
+        Create the csv for a given result.
+        The created csv will be saved as file.
         :param result: the result for which to create the output
         """
 
@@ -364,17 +346,13 @@ class CalculationUtils:
                   result.calculation_input.uv_file_name)
 
         create_csv(output_dir, result)
-        if not no_plots:
-            create_spectrum_plots(output_dir, result, file_type)
 
     def _make_progress(self) -> None:
         """
         Notify the progressbar of progress.
-
-        Since we perform two steps for each of the jobs, we increment the progress by 0.5 for each step.
         """
         if self._progress_handler is not None:
-            self._progress_handler(0.5)
+            self._progress_handler(1)
 
     def _handle_empty_input(self) -> List[Result]:
         # Init progress bar
@@ -403,7 +381,7 @@ class Job(Generic[INPUT, RETURN]):
         Execute the job
         :return: the job's return value
         """
-        return self._fn(self._args)
+        return self._fn(*self._args)
 
 
 class ExecutionError(Exception):

@@ -48,7 +48,6 @@ parser.add_argument("--aerosol", "-e", type=float, nargs=2, metavar=("ALPHA", "B
 parser.add_argument("--ozone", "-z", type=float, help="The ozone value in DU to use for the calculations if no value is found in a B file",
                     default=DEFAULT_OZONE_VALUE)
 parser.add_argument("--no-coscor", "-c", help="Don't apply cos correction", action="store_true")
-parser.add_argument("--no-plots", "-q", help="Don't generate plots but only qasume files", action="store_true")
 
 args = parser.parse_args()
 pp.pprint(vars(args))
@@ -62,7 +61,6 @@ aerosol = Angstrom(args.aerosol[0], args.aerosol[1])
 ozone = args.ozone
 output_dir = args.output_dir
 input_dir = args.input_dir
-no_plots = args.no_plots
 no_coscor = args.no_coscor
 
 if not os.path.exists(TMP_FILE_DIR):
@@ -81,7 +79,8 @@ m = multiprocessing.Manager()
 lock = m.Lock()
 
 
-def init_progress(total: int):
+def init_progress(total: int, text: str):
+    del text  # Remove unused variable
     progress.start(total)
     progress.update(0)
 
@@ -105,7 +104,7 @@ parameters = InputParameters(
     ozone,
     no_coscor
 )
-cmd = CalculationUtils(input_dir, output_dir, no_plots, init_progress=init_progress, progress_handler=show_progress,
+cmd = CalculationUtils(input_dir, output_dir, init_progress=init_progress, progress_handler=show_progress,
                        finish_progress=finish_progress)
 
 if dates_and_brewer_id is not None:
