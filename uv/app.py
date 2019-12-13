@@ -76,7 +76,7 @@ class UVApp(App):
 
         self._main_container.append(self._result_container)
 
-        version = gui.Link("https://hub.docker.com/repository/docker/pmodwrc/buvic", f"BUVIC {APP_VERSION}",
+        version = gui.Link("https://hub.docker.com/r/pmodwrc/buvic", f"BUVIC {APP_VERSION}",
                            style="color: #999; align-self: flex-end; margin-top: 30px")
         self._main_container.append(version)
 
