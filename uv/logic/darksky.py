@@ -58,7 +58,7 @@ class CloudCover:
         :param t: the time to get the value for
         :return: True iff the sky is cloudy
         """
-        raise NotImplementedError
+        raise NotImplementedError("CloudCover should not be used directly. Use one of its descendent class instead")
 
     def is_value_diffuse(self, value) -> bool:
         return value >= self.DIFFUSE_THRESHOLD

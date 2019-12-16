@@ -1,7 +1,7 @@
 import multiprocessing
 import os
-import traceback
 from concurrent.futures import ThreadPoolExecutor
+from logging import getLogger
 from typing import List, Callable
 
 import remi.gui as gui
@@ -15,6 +15,8 @@ from uv.logic.result import Result
 from .const import OUTPUT_DIR, DATA_DIR, APP_VERSION, ASSETS_DIR
 from .gui.utils import show, hide
 from .gui.widgets import Title, Level, Loader, PathMainForm, SimpleMainForm, ResultWidget, ExtraParamForm
+
+LOG = getLogger(__name__)
 
 
 class UVApp(App):
@@ -140,7 +142,7 @@ class UVApp(App):
         show(self._result_container)
 
     def _handle_error(self, e: Exception):
-        traceback.print_tb(e.__traceback__)
+        LOG.error("An error occurred during calculation: ", exc_info=True)
         self._show_error(str(e))
 
     def _show_error(self, error: str):

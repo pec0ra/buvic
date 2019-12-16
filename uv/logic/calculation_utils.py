@@ -281,30 +281,34 @@ class CalculationUtils:
         # Create the thread pool and the process pool
         with ThreadPoolExecutor(min(20, os.cpu_count() + 4)) as thread_pool:
 
-            # Submit the jobs to the thread pool
-            for job in jobs:
-                future_result.append(thread_pool.submit(job.run))
-
-            future_output = []
-
             try:
+                # Submit the jobs to the thread pool
+                for job in jobs:
+                    future_result.append(thread_pool.submit(job.run))
+
+                try:
+                    for future in future_result:
+                        # Wait for each job to finish and produce a result
+                        result: Result = future.result(timeout=40)
+
+                        # Notify the progress bar
+                        self._make_progress()
+
+                        # Add the result to the return list
+                        result_list.append(result)
+
+                except concurrent.futures.TimeoutError as e:
+                    raise ExecutionError("One of the threads took too long to do its calculations.") from e
+
+                # At this point, we have finished waiting for all future_results (irradiance calculation)
+                LOG.debug("Finished irradiance calculation for '%s'", result_list[0].calculation_input.uv_file_name)
+
+                return result_list
+            except Exception as e:
+                LOG.info("Exception caught in child thread, cancelling all remaining tasks")
                 for future in future_result:
-                    # Wait for each job to finish and produce a result
-                    result: Result = future.result(timeout=40)
-
-                    # Notify the progress bar
-                    self._make_progress()
-
-                    # Add the result to the return list
-                    result_list.append(result)
-
-            except concurrent.futures.TimeoutError:
-                raise ExecutionError("One of the threads took too long to do its calculations.")
-
-            # At this point, we have finished waiting for all future_results (irradiance calculation)
-            LOG.debug("Finished irradiance calculation for '%s'", result_list[0].calculation_input.uv_file_name)
-
-            return result_list
+                    future.cancel()
+                raise e
 
     def _create_jobs(self, calculation_input: CalculationInput) -> List[Job[int, Result]]:
         """

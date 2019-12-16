@@ -77,7 +77,7 @@ def read_parameter_file(file_name: str or None) -> Parameters:
                 cloud_covers
             )
         except Exception as e:
-            raise ParameterFileParsingError(str(e))
+            raise ParameterFileParsingError("An error occurred while parsing the parameter File") from e
 
 
 @dataclass

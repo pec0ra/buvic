@@ -78,7 +78,7 @@ def read_b_file(file_name: str) -> BFile:
                 correct_straylight(brewer_type)
             )
         except Exception as e:
-            raise BFileParsingError(str(e))
+            raise BFileParsingError("An error occurred while parsing the B File") from e
 
 
 @dataclass
@@ -91,6 +91,9 @@ class BFile:
         if len(self.values) == 0:
             LOG.debug("Ozone object has no value. Using default")
             return default_value
+        if len(self.values) == 1:
+            LOG.debug("Ozone object has only one value. Using it")
+            return self.values[0]
         interpolator = interp1d(self.times, self.values, kind='nearest', fill_value='extrapolate')
         return interpolator(time)
 
