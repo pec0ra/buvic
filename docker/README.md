@@ -40,13 +40,15 @@ uvdata/
 In the `instr` directory:
 * ARF files with the name pattern `arf_<brewer_id>.dat`
 * Calibration files with the name pattern `UVRXXXXX.<brewer_id>`
-* Parameter files with the name patter `<year>.par` where *year* is the last two digits of the year (e.g. 19)
+* Parameter files with the name pattern `<year>.par` where *year* is the last two digits of the year (e.g. 19)
 
 In the `uvdata` directory:
 * B files with the name pattern `B<days><year>.<brewer_id>` where *days* is the number of days since new year and *year* is the last two
 digits of the year (e.g. 19)
 * UV files with the name pattern `UV<days><year>.<brewer_id>` where *days* is the number of days since new year and *year* is the last two
 digits of the year (e.g. 19)
+
+Optionally, the UV files and B files can be put in a subdirectory with the brewer id as its name (e.g. `uvdata/070/UV17019.070`)
 
 The output directory is the place where BUVIC will write its output files. BUVIC will automatically create a structure to group files by year.
 

@@ -182,7 +182,8 @@ class CalculationUtils:
 
         # Initialize the progress bar
         if self._init_progress is not None:
-            self._init_progress(len(calculation_inputs), "Reading files...")
+            self._init_progress(len(calculation_inputs), f"Reading {len(calculation_inputs)} "
+                                                         f"file{'s' if len(calculation_inputs) > 1 else ''}...")
         job_list = []
         for calculation_input in calculation_inputs:
             calculation_input.init_properties()
@@ -195,7 +196,9 @@ class CalculationUtils:
         LOG.info("Starting calculation of %d file sections in %d files", len(job_list), len(calculation_inputs))
         # Init progress bar
         if self._init_progress is not None:
-            self._init_progress(len(job_list), "Calculating...")
+            self._init_progress(len(job_list), f"Calculating irradiance for {len(job_list)} "
+                                               f"section{'s' if len(job_list) > 1 else ''} in {len(calculation_inputs)} "
+                                               f"file{'s' if len(calculation_inputs) > 1 else ''}...")
 
         # Execute the jobs
         ret = self._execute_jobs(job_list)
@@ -228,14 +231,20 @@ class CalculationUtils:
         parameter_file = year + ".par"
 
         uv_file_path = path.join(self._input_dir, UV_FILES_SUBDIR, uv_file)
-        if not path.exists(uv_file_path):
+        if not path.exists(uv_file_path) and not path.exists(path.join(self._input_dir, UV_FILES_SUBDIR, brewer_id, uv_file)):
             LOG.info("UV file '" + str(uv_file_path) + "' not found, skipping")
             return None
+        elif not path.exists(uv_file_path):
+            # If the file is not at the root, then it is in a subdirectory
+            uv_file_path = path.join(self._input_dir, UV_FILES_SUBDIR, brewer_id, uv_file)
 
         b_file_path = path.join(self._input_dir, B_FILES_SUBDIR, b_file)
-        if not path.exists(b_file_path):
-            LOG.warning("Corresponding B file '" + str(b_file_path) + "' not found for UV file '" + uv_file + "', will use default ozone "
-                                                                                                              "values and straylight correction will be applied as default")
+        if not path.exists(b_file_path) and not path.exists(path.join(self._input_dir, B_FILES_SUBDIR, brewer_id, b_file)):
+            LOG.warning(f"Corresponding B file '{b_file_path}' not found for UV file '{uv_file}', will use default ozone "
+                        "values and straylight correction will be applied as default")
+        elif not path.exists(b_file_path):
+            # If the file is not at the root, then it is in a subdirectory
+            b_file_path = path.join(self._input_dir, B_FILES_SUBDIR, brewer_id, b_file)
 
         calibration_file_path = path.join(self._input_dir, CALIBRATION_FILES_SUBDIR, calibration_file)
         if not path.exists(calibration_file_path):

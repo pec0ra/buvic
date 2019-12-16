@@ -93,6 +93,8 @@ class UVApp(App):
 
         self._reset_errors()
         self._loader.reset()
+        self._loader.set_label("Loading")
+        self._loader.reset()
         show(self._loader)
         hide(self._forms)
         hide(self._result_container)
@@ -155,7 +157,7 @@ class UVApp(App):
         if error is not None:
             self._error_label.set_text(error)
         else:
-            print("Error is None")
+            LOG.warning("Trying to show an error with no message")
 
     def _on_form_selection_change(self, widget: gui.Widget, value: bool) -> None:
         """

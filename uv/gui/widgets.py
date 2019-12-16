@@ -112,7 +112,6 @@ class Loader(VBox):
         hide(self)
         self._label = gui.Label("Calculating...")
         self._bar = gui.Progress(0, 100, style="width:100%")
-        print(self._bar.children)
         self.append(self._label)
         self.append(self._bar)
         self._current_value = 0

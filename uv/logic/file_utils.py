@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from datetime import date
 from logging import getLogger
 from os import listdir, makedirs
-from os.path import join, exists
+from os.path import join, exists, isdir
 from pprint import PrettyPrinter
 from typing import Dict, List, Tuple
 
@@ -17,9 +17,9 @@ pp = PrettyPrinter(indent=2)
 
 
 class FileUtils:
-    UV_FILE_NAME_REGEX = re.compile("UV(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d+)")
-    ARF_FILE_NAME_REGEX = re.compile("arf_(?P<brewer_id>\d+)\.dat")
-    UVR_FILE_NAME_REGEX = re.compile("UVR\S+\.(?P<brewer_id>\d+)")
+    UV_FILE_NAME_REGEX = re.compile("UV(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d+)$")
+    ARF_FILE_NAME_REGEX = re.compile("arf_[a-zA-Z](?P<brewer_id>\d+)\.dat")
+    UVR_FILE_NAME_REGEX = re.compile("(:?UVR|uvr)\S+\.(?P<brewer_id>\d+)")
 
     _instr_dir: str
     _uvdata_dir: str
@@ -57,22 +57,12 @@ class FileUtils:
                     self._file_dict[brewer_id] = InstrumentFiles(None)
                 self._file_dict[brewer_id].uvr_files.append(file_name)
 
-        for file_name in listdir(self._uvdata_dir):
-            # UV file names are like `UV12319.070`
-            res = re.match(self.UV_FILE_NAME_REGEX, file_name)
-            if res is not None:
-                days = res.group("days")
-                year = res.group("year")
-                brewer_id = res.group("brewer_id")
-                if brewer_id not in self._file_dict:
-                    self._file_dict[brewer_id] = InstrumentFiles(None)
-
-                b_file = "B" + days + year + "." + brewer_id
-                b_file_path = join(self._uvdata_dir, b_file)
-                if exists(b_file_path):
-                    self._file_dict[brewer_id].uv_files_combinations.append(UVFileCombo(file_name, b_file))
-                else:
-                    self._file_dict[brewer_id].uv_files_combinations.append(UVFileCombo(file_name, None))
+        for dir_name in listdir(self._uvdata_dir):
+            if not isdir(join(self._uvdata_dir, dir_name)):
+                self.match_uv_file(dir_name)
+            else:
+                for file_name in listdir(join(self._uvdata_dir, dir_name)):
+                    self.match_uv_file(file_name, dir_name)
 
         for brewer_id, instrument_files in list(self._file_dict.items()):
             if len(instrument_files.uvr_files) == 0:
@@ -83,6 +73,30 @@ class FileUtils:
                 # Remove the instruments without UV files
                 LOG.warning(f"No UV file exists for brewer id {brewer_id}, skipping")
                 del self._file_dict[brewer_id]
+
+    def match_uv_file(self, file_name, dir_name=None):
+        # UV file names are like `UV12319.070`
+        res = re.match(self.UV_FILE_NAME_REGEX, file_name)
+        if res is not None:
+            days = res.group("days")
+            year = res.group("year")
+            brewer_id = res.group("brewer_id")
+
+            if dir_name is not None and brewer_id != dir_name:
+                LOG.warning(f"UV File {file_name} is in directory {dir_name} but is meant for brewer {brewer_id}")
+
+            if brewer_id not in self._file_dict:
+                self._file_dict[brewer_id] = InstrumentFiles(None)
+
+            b_file = "B" + days + year + "." + brewer_id
+            if dir_name is not None:
+                b_file = join(dir_name, b_file)
+                file_name = join(dir_name, file_name)
+            b_file_path = join(self._uvdata_dir, b_file)
+            if exists(b_file_path):
+                self._file_dict[brewer_id].uv_files_combinations.append(UVFileCombo(file_name, b_file))
+            else:
+                self._file_dict[brewer_id].uv_files_combinations.append(UVFileCombo(file_name, None))
 
     def get_brewer_ids(self) -> List[str]:
         return sorted(self._file_dict.keys())
@@ -105,7 +119,7 @@ class FileUtils:
             raise ValueError(f"Brewer with id {brewer_id} is not present in the list of files.")
 
         for comb in self._file_dict[brewer_id].uv_files_combinations:
-            res = re.match(self.UV_FILE_NAME_REGEX, comb.uv_file)
+            res = re.search(self.UV_FILE_NAME_REGEX, comb.uv_file)
             if res is None:
                 raise ValueError("Invalid UV file format found")
 
