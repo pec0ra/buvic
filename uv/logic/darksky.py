@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime, time, date
 from logging import getLogger
 from typing import List, Callable
+from urllib.error import HTTPError
 
 from scipy.interpolate import interp1d
 
@@ -23,8 +24,11 @@ def get_cloud_cover(latitude: float, longitude: float, d: date) -> CloudCover:
     t = datetime.combine(d, time(0, 0, 0, 0)).isoformat()
     url_string = f"https://api.darksky.net/forecast/{DARKSKY_TOKEN}/{latitude},{-longitude},{t}?exclude=minutely,currently,daily&units=si"
     LOG.debug("Retrieved weather data from %s", url_string)
-    with urllib.request.urlopen(url_string) as url:
-        data = json.loads(url.read().decode())
+    try:
+        with urllib.request.urlopen(url_string) as url:
+            data = json.loads(url.read().decode())
+    except HTTPError as e:
+        raise Exception("Error while trying to access darksky. Your quota might be exceeded.") from e
 
     # Display a warning if madis isn't in the data sources
     if "madis" not in data["flags"]["sources"]:

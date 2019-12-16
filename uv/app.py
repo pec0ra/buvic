@@ -98,6 +98,7 @@ class UVApp(App):
         show(self._loader)
         hide(self._forms)
         hide(self._result_container)
+        self.do_gui_update()
 
         self._executor.submit(self._start_calculation, calculation)
 
@@ -142,6 +143,7 @@ class UVApp(App):
         hide(self._loader)
         show(self._forms)
         show(self._result_container)
+        self.do_gui_update()
 
     def _handle_error(self, e: Exception):
         LOG.error("An error occurred during calculation: ", exc_info=True)
