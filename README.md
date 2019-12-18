@@ -25,7 +25,7 @@ This repository contains a set of tools to calculate the cosine corrected irradi
          * [2. Job creation / handling](#2-job-creation--handling)
          * [3. Calculations](#3-calculations)
 
-<!-- Added by: basile, at: Do Dez 12 17:10:50 CET 2019 -->
+<!-- Added by: basile, at: Mi Dez 18 12:52:54 CET 2019 -->
 
 <!--te-->
 
@@ -42,11 +42,12 @@ The Docker images require docker
 
 ### Directory structure
 
-BUVIC needs access to two main directories:
-1. An input directory (e.g. `input_dir`)
-2. An output directory (e.g. `output_dir`)
+BUVIC needs access to three main directories:
+1. An instrument directory (e.g. `instr`)
+2. A uv data directory (e.g. `uvdata`)
+3. An output directory (e.g. `output_dir`)
 
-The input directory is where you put your instrument files and your measurement files. It must have the following structure:
+The instrument directory is where you put your instrument files. 
 ```
 instr/
     arf_033.dat
@@ -56,7 +57,17 @@ instr/
     UVR17319.117
     UVR17419.033
     ...
+    18.par
     19.par
+```
+It contains:
+* ARF files with the name pattern `arf_<brewer_id>.dat`
+* Calibration files with the name pattern `UVRXXXXX.<brewer_id>`
+* Parameter files with the name pattern `<year>.par` where *year* is the last two digits of the year (e.g. 19)
+
+
+The uv data directory is where you put your measurement files.
+```
 uvdata/
     B17019.033
     B17019.070
@@ -69,19 +80,54 @@ uvdata/
     UV17119.070
     ...
 ```
-
-In the `instr` directory:
-* ARF files with the name pattern `arf_<brewer_id>.dat`
-* Calibration files with the name pattern `UVRXXXXX.<brewer_id>`
-* Parameter files with the name pattern `<year>.par` where *year* is the last two digits of the year (e.g. 19)
-
-In the `uvdata` directory:
+It contains:
 * B files with the name pattern `B<days><year>.<brewer_id>` where *days* is the number of days since new year and *year* is the last two
 digits of the year (e.g. 19)
 * UV files with the name pattern `UV<days><year>.<brewer_id>` where *days* is the number of days since new year and *year* is the last two
 digits of the year (e.g. 19)
 
-Optionally, the UV files and B files can be put in a subdirectory with the brewer id as its name (e.g. `uvdata/070/UV17019.070`)
+Inside the instrument and uv data directories, you may use any directory structure that you want.
+The files will be searched recursively into this structure.
+
+Example of more complex structure:
+```
+instr/
+    033/
+        arf_033.dat
+        UVR17419.033
+    070/
+        arf_070.dat
+        UVR17019.070
+        UVR17319.070
+    18.par
+    19.par
+    ...
+
+uvdata/
+    033/
+        2018/
+            B17018.033
+            UV17018.033
+            ...
+        2019/
+            B17019.033
+            B17119.033
+            UV17019.033
+            UV17119.033
+            ...
+    070/
+        2018/
+            B17018.070
+            UV17018.070
+            ...
+        2019/
+            B17019.070
+            B17119.070
+            UV17019.070
+            UV17119.070
+            ...
+    ...
+```
 
 The output directory is the place where BUVIC will write its output files. BUVIC will automatically create a structure to group files by year.
 
@@ -112,8 +158,8 @@ Here is an example of a parameter file content `19.par`:
 #### Output files
 
 The output files are in the qasume format.
-Their names have the following pattern: `<days><hour><minute>.<brewer_id>` and are placed in a subdirectory with the year of the measurement
-as name. In the name pattern, *days* is the number of days since new year and *hour* and *minute* is the time of the measurement.
+Their names have the following pattern: `<days><hour><minute>.<brewer_id>` and are placed in subdirectories with instrument id and year as
+names. In the file name pattern, *days* is the number of days since new year and *hour* and *minute* is the time of the measurement.
 
 Each qasume file begins with four header lines, each beginning with `% `.
 The first header line contains information about the file generation.
@@ -335,42 +381,64 @@ Two docker images are available for calculations:
 
 This docker image contains the [UV Web Application](#buvic-web-application)
 
-**Instructions:**
-
-See the [Installer section](#installer) for an easier way to run this docker image.
-
-To build this image, run:
-```
-docker build -f Dockerfile.server . -t pmodwrc/buvic
-```
-Note that the tag `pmodwrc/buvic` can be replaced with another custom tag
-
+#### Demo command
 
 The simplest way to start a docker container with buvic is to run:
 ```
-docker run -d -p <PORT>:80 --name buvic pmodwrc/buvic
+docker run -d -p <HOST_PORT>:80 --name buvic pmodwrc/buvic
 ```
-Where `<PORT>` is the port on which the web app will listen (e.g. 8080).
+Where `<HOST_PORT>` is the port on which the web app will listen (e.g. 8080).
 
 The flag `-d` tells docker to run this container as a daemon (in the background). It may be omitted if you want to run it in your current terminal.
 
-After running this command, you can access the web app in your browser at `http://localhost:<PORT>`.
+After running this command, you can access the web app in your browser at `http://localhost:<HOST_PORT>`.
 This instance of BUVIC however only uses some demo measurement files as input.
 
-To use BUVIC correctly, you will need to map an input directory and an output directory to your docker container.
-In the docker image, the input directory is at `/data` and the output directory is at `/out`.
-We need to map these two directories to two directories on your computer.
-We use docker volumes (the option `-v`) to map a host directory to a docker directory (it works similarly to links).
-```
-docker run -d -p <PORT>:80 -v <INPUT_DIRECTORY>:/data -v <OUTPUT_DIRECTORY>:/out --user $(id -u):$(id -g) --name buvic pmodwrc/buvic
-```
-where `<INPUT_DIRECTORY>` is the *absolute* path to your input directory (e.g. `D:\buvic\input_dir` on Windows or `/home/user/buvic/input_dir`
-on Linux) and `<OUTPUT_DIRECTORY>` is the *absolute* path to the directory you want to save the outputs in.
 
-The `--user $(id -u):$(id -g)` option tells docker to run the container as the current user.
-This prevents permissions issues at the moment of writing files to the output directory.
-It is optional and you might need to skip it on Windows.
+#### Mapping directories
 
+To use BUVIC correctly, you will need to map input and output directories of your host machine to your docker container.
+
+There are three relevant directories that need to be mapped (see [Directory structure](#directory-structure) for more details):
+1. `/instr`
+2. `/uvdata`
+3. `/out`
+
+Each of these directories needs to be mapped to a directory on your host computer.
+We use docker volumes (the option `-v`) to map a host directory to a docker directory.
+When mapping a host directory (e.g. `/home/user/buvic_data`) to a docker directory (e.g. `/path/in/docker/buvic_data`), the directory inside
+the docker container will share the contents of the host directory.
+
+Here is an example of command which maps host directories to `/instr`, `/uvdata` and `/out`:
+```
+docker run -d -p <HOST_PORT>:80 -v <INSTR_DIRECTORY>:/instr -v <UVDATA_DIRECTORY>:/uvdata -v <OUTPUT_DIRECTORY>:/out --name buvic pmodwrc/buvic
+```
+where `<INSTR_DIRECTORY>` is the *absolute* path to the instrument directory on the host (e.g. `D:\buvic\instr` on Windows or
+`/home/user/buvic/instr` on Linux), `<UVDATA_DIRECTORY>` is the *absolute* path to the uv data directory on the host and `<OUTPUT_DIRECTORY>`
+is the *absolute* path to the directory you want to save the outputs in.
+
+
+#### Permissions
+
+On linux machines, you may want to specify which user/group runs the docker container to avoid permission issues when writing to the output
+directory.
+This can be done with the parameter `--user <user_id>:<group_id>` or simply `--user $(id -u):$(id -g)` to use the current user and group.
+
+Note that if you use another user than root, you will not get permission to listen to port 80 (the default port for buvic inside the
+container).
+A workaround for this is to specify on which port buvic will listen with the environment variable `PORT`. This is done by adding the
+following parameter to your docker run command 
+```-e PORT=<PORT_NUMBER>```
+where `<PORT_NUMBER>` is the port number to use (must be greater than 1024 for non root users).
+
+Example:
+```
+docker run -d -p <HOST_PORT>:4444 --user 1000:1000 -e PORT=4444 --name buvic pmodwrc/buvic
+```
+Notice that for the `-p` option, we don't use 80 anymore but the port specified with the `PORT` environment variable (4444 in this example).
+
+
+#### Darksky
 
 If you want [darksky](https://darksky.net/dev) to be used, you will need to create an account and give your api key as environment variable.
 Using this functionality is not required and the cloud coverage values can be manually entered in the parameter file instead.
@@ -378,7 +446,7 @@ Using this functionality is not required and the cloud coverage values can be ma
 You can pass your darksky api token to BUVIC by adding the parameter `-e DARKSKY_TOKEN=your_darksky_token`.
 Example:
 ```
-docker run -d -p <PORT>:80 -e DARKSKY_TOKEN=your_darksky_token --name buvic pmodwrc/buvic
+docker run -d -p <HOST_PORT>:80 -e DARKSKY_TOKEN=your_darksky_token --name buvic pmodwrc/buvic
 ```
 
 
