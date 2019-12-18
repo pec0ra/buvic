@@ -10,12 +10,12 @@ from pprint import PrettyPrinter
 import progressbar
 from matplotlib import rcParams
 
-from uv.const import DEFAULT_ALBEDO_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE, TMP_FILE_DIR, DEFAULT_OZONE_VALUE
-from uv.logic.calculation_input import CalculationInput, InputParameters, Angstrom
-from uv.logic.calculation_utils import CalculationUtils
-from uv.logic.file import File
-from uv.logic.file_utils import FileUtils
-from uv.logutils import init_logging
+from buvic.const import DEFAULT_ALBEDO_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE, TMP_FILE_DIR, DEFAULT_OZONE_VALUE
+from buvic.logic.calculation_input import CalculationInput, InputParameters, Angstrom
+from buvic.logic.calculation_utils import CalculationUtils
+from buvic.logic.file import File
+from buvic.logic.file_utils import FileUtils
+from buvic.logutils import init_logging
 
 rcParams.update({'figure.autolayout': True})
 rcParams['figure.figsize'] = 10, 7

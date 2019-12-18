@@ -5,8 +5,8 @@ from datetime import datetime
 from os import path
 from typing import TextIO, List
 
-from uv.logic.darksky import DarkskyCloudCover
-from uv.logic.utils import date_to_days, minutes_to_time
+from buvic.logic.darksky import DarkskyCloudCover
+from buvic.logic.utils import date_to_days, minutes_to_time
 from .calculation_input import CalculationInput, CosCorrection
 from .uv_file import UVFileEntry
 from ..const import APP_VERSION

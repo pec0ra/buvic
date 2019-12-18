@@ -4,7 +4,7 @@ from typing import Callable
 
 from watchdog.events import FileSystemEventHandler, FileSystemMovedEvent, FileSystemEvent
 
-from uv.logic.calculation_input import InputParameters
+from buvic.logic.calculation_input import InputParameters
 
 LOG = getLogger(__name__)
 

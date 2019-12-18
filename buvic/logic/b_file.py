@@ -9,8 +9,8 @@ from typing import List, Optional
 
 from scipy.interpolate import interp1d
 
-from uv.brewer_infos import correct_straylight
-from uv.logic.file import File
+from buvic.brewer_infos import correct_straylight
+from buvic.logic.file import File
 
 LOG = getLogger(__name__)
 

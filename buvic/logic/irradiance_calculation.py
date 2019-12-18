@@ -7,8 +7,8 @@ from typing import List
 from numpy import multiply, divide, sin, add, pi, mean, exp, maximum, linspace, trapz, cos, isnan, ones
 from scipy.interpolate import UnivariateSpline
 
-from uv.logic.b_file import BFile
-from uv.logic.calibration_file import Calibration
+from buvic.logic.b_file import BFile
+from buvic.logic.calibration_file import Calibration
 from .arf_file import ARF
 from .calculation_input import CalculationInput, CosCorrection
 from .libradtran import Libradtran, LibradtranInput, LibradtranResult

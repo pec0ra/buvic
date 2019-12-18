@@ -9,9 +9,9 @@ from os.path import join, exists, isdir
 from pprint import PrettyPrinter
 from typing import Dict, List, Tuple, Callable, Pattern, Match, Optional
 
-from uv.logic.calculation_input import InputParameters, CalculationInput
-from uv.logic.file import File
-from uv.logic.utils import days_to_date, date_range, date_to_days
+from buvic.logic.calculation_input import InputParameters, CalculationInput
+from buvic.logic.file import File
+from buvic.logic.utils import days_to_date, date_range, date_to_days
 
 LOG = getLogger(__name__)
 

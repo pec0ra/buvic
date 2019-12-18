@@ -12,11 +12,11 @@ from typing import Callable, List, Any, TypeVar, Generic, Optional, Tuple
 
 from watchdog.observers import Observer
 
-from uv.const import ARF_FILES_SUBDIR, UV_FILES_SUBDIR, B_FILES_SUBDIR, PARAMETER_FILES_SUBDIR
-from uv.logic.calculation_event_handler import CalculationEventHandler
-from uv.logic.file import File
-from uv.logic.output_utils import create_csv
-from uv.logic.result import Result
+from buvic.const import ARF_FILES_SUBDIR, UV_FILES_SUBDIR, B_FILES_SUBDIR, PARAMETER_FILES_SUBDIR
+from buvic.logic.calculation_event_handler import CalculationEventHandler
+from buvic.logic.file import File
+from buvic.logic.output_utils import create_csv
+from buvic.logic.result import Result
 from .calculation_input import CalculationInput, InputParameters
 from .irradiance_calculation import IrradianceCalculation
 

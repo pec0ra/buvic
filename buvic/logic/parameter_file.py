@@ -8,7 +8,7 @@ from typing import List, Optional
 
 from scipy.interpolate import interp1d
 
-from uv.logic.file import File
+from buvic.logic.file import File
 
 LOG = getLogger(__name__)
 

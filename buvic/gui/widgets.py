@@ -6,9 +6,9 @@ from typing import Any, Callable, List, Dict, Optional
 
 import remi.gui as gui
 
-from uv.logic.file import File
-from uv.logic.file_utils import FileUtils
-from uv.logic.result import Result
+from buvic.logic.file import File
+from buvic.logic.file_utils import FileUtils
+from buvic.logic.result import Result
 from .utils import show, hide
 from ..const import TMP_FILE_DIR, OUTPUT_DIR, DEFAULT_BETA_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_ALBEDO_VALUE, DEFAULT_OZONE_VALUE
 from ..logic.calculation_input import CalculationInput, Angstrom, InputParameters

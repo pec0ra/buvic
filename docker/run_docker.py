@@ -3,9 +3,9 @@ import os
 
 from remi import start
 
-from uv.app import UVApp
-from uv.const import TMP_FILE_DIR, OUTPUT_DIR
-from uv.logutils import init_logging
+from buvic.app import UVApp
+from buvic.const import TMP_FILE_DIR, OUTPUT_DIR
+from buvic.logutils import init_logging
 
 if not os.path.exists(TMP_FILE_DIR):
     os.makedirs(TMP_FILE_DIR)

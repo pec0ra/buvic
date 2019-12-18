@@ -8,7 +8,7 @@ from enum import Enum
 from subprocess import PIPE, run
 from typing import List, Dict, Any
 
-from uv.libradtran_command import LIBRADTRAN_COMMAND
+from buvic.libradtran_command import LIBRADTRAN_COMMAND
 from ..const import TMP_FILE_DIR
 
 

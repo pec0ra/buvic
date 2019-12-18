@@ -510,8 +510,8 @@ Once the arguments are parsed, their values are passed to the `CalculationUtils`
 
 The second interface's implementation is more complex and consists of the following three files:
 1. [`run.py`](run.py) (or [`docker/run_docker.py`](docker/run_docker.py) for the docker image) which serves as an entry point to start the UVApp.
-2. [`uv/app.py`](uv/app.py) which contains the UVApp class.
-3. [`uv/gui/widgets.py`](uv/gui/widgets.py) which contains the implementation of some of the more complex interface's widgets.
+2. [`buvic/app.py`](buvic/app.py) which contains the UVApp class.
+3. [`buvic/gui/widgets.py`](buvic/gui/widgets.py) which contains the implementation of some of the more complex interface's widgets.
 
 The UVApp class is the core of the GUI and uses the [remi library](https://github.com/dddomodossola/remi).
 The class initializes the widgets in its `main` method and adds them to its main container.
@@ -523,7 +523,7 @@ and brewer id as input). They keep track of the values of their fields and of th
 
 ### 2. Job creation / handling
 
-Job creation and handling is done in the class [`CalculationUtils`](uv/logic/calculation_utils.py).
+Job creation and handling is done in the class [`CalculationUtils`](buvic/logic/calculation_utils.py).
 
 Before creating the jobs, all the information required for the Jobs is written in a `CalculationInput` object.
 Each `CalculationInput` corresponds to one UV file (measurements for one day). Since multiple measurements are done each day (in each UV
@@ -546,7 +546,7 @@ All the Jobs are then scheduled on a `ThreadPoolExecutor` and will run in parall
 ### 3. Calculations
 
 The calculations executed in each Job from the [previous section](#2-job-creation--handling) are mostly implemented in
-[`IrradianceCalculation`](uv/logic/irradiance_calculation.py).
+[`IrradianceCalculation`](buvic/logic/irradiance_calculation.py).
 The entry point in this class for the calculations is the method `calculate` as explained in the [previous section](#2-job-creation--handling),
 this method has access to a `CalculationInput` object for infos about the measurement files and extra parameters as well as the index of the
 section to do the calculations for.
@@ -554,9 +554,9 @@ section to do the calculations for.
 ![Calculation workflow](assets/technical_detail_2.png)
 
 The first part of the calculations is to parse the measurement files to get the data from. Each file type has its own file parser. Their
-implementations can be found in the files [`uv/logic/uv_file.py`](uv/logic/uv_file.py), [`uv/logic/b_file.py`](uv/logic/b_file.py),
-[`uv/logic/arf_file.py`](uv/logic/arf_file.py), [`uv/logic/calibration_file.py`](uv/logic/calibration_file.py) and
-[`uv/logic/parameter_file.py`](uv/logic/parameter_file.py).
+implementations can be found in the files [`uv/logic/uv_file.py`](buvic/logic/uv_file.py), [`uv/logic/b_file.py`](buvic/logic/b_file.py),
+[`uv/logic/arf_file.py`](buvic/logic/arf_file.py), [`uv/logic/calibration_file.py`](buvic/logic/calibration_file.py) and
+[`uv/logic/parameter_file.py`](buvic/logic/parameter_file.py).
 
 Note that the file parsing is triggered automatically (and cached) when calling one of the following property on the `CalculationInput`:
 * `uv_file_entries`: parses the uv file

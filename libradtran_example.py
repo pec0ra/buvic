@@ -1,4 +1,4 @@
-from uv.logic import Libradtran, LibradtranInput
+from buvic.logic.libradtran import Libradtran, LibradtranInput
 
 libradtran = Libradtran()
 libradtran.add_input(LibradtranInput.WAVELENGTH, [290, 360])
@@ -10,6 +10,6 @@ libradtran.add_output("lambda")
 libradtran.add_output("edir")
 libradtran.add_output("eglo")
 libradtran.add_output("sza")
-libradtran_result = libradtran._calculate()
+libradtran_result = libradtran.calculate()
 
 print(libradtran_result.columns["sza"])

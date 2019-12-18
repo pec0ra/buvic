@@ -7,13 +7,13 @@ from typing import List, Optional
 
 from cached_property import cached_property
 
-from uv.logic.b_file import read_b_file, BFile
-from uv.logic.calibration_file import read_calibration_file, Calibration
-from uv.logic.darksky import get_cloud_cover, CloudCover, ParameterCloudCover
-from uv.logic.file import File
-from uv.logic.parameter_file import Parameters, read_parameter_file, Angstrom
-from uv.logic.utils import date_to_days
-from uv.logic.uv_file import UVFileReader, UVFileEntry
+from buvic.logic.b_file import read_b_file, BFile
+from buvic.logic.calibration_file import read_calibration_file, Calibration
+from buvic.logic.darksky import get_cloud_cover, CloudCover, ParameterCloudCover
+from buvic.logic.file import File
+from buvic.logic.parameter_file import Parameters, read_parameter_file, Angstrom
+from buvic.logic.utils import date_to_days
+from buvic.logic.uv_file import UVFileReader, UVFileEntry
 from .arf_file import Direction, read_arf_file, ARF
 
 LOG = getLogger(__name__)

@@ -1,7 +1,7 @@
 from os import path, makedirs
 from pathlib import Path
 
-from uv.logic.result import Result
+from buvic.logic.result import Result
 
 
 def create_csv(saving_dir: str, result: Result) -> str:
