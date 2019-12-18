@@ -15,10 +15,10 @@ class UVFileReaderTestCase(unittest.TestCase):
 
         calculation_input = CalculationInput(
             InputParameters(0, Angstrom(0, 0), 0),
-            File("dummy", ""),
-            File("dummy", ""),
-            File("uv/logic/test/calibration_example", ""),
-            File("dummy", ""),
+            File("dummy"),
+            File("dummy"),
+            File("uv/logic/test/calibration_example"),
+            File("dummy"),
         )
 
         c = calculation_input.calibration
@@ -32,11 +32,11 @@ class UVFileReaderTestCase(unittest.TestCase):
 
         calculation_input = CalculationInput(
             InputParameters(0, Angstrom(0, 0), 0),
-            File("uv/logic/test/uv_example", ""),
-            File("dummy", ""),
-            File("dummy", ""),
-            File("dummy", ""),
-            parameter_file_name=File("uv/logic/test/parameter_example", ""),
+            File("uv/logic/test/uv_example"),
+            File("dummy"),
+            File("dummy"),
+            File("dummy"),
+            parameter_file_name=File("uv/logic/test/parameter_example"),
         )
 
         self.assertTrue(isinstance(calculation_input.cloud_cover, ParameterCloudCover))
@@ -46,10 +46,10 @@ class UVFileReaderTestCase(unittest.TestCase):
 
         calculation_input = CalculationInput(
             InputParameters(0, Angstrom(0, 0), 0),
-            File("uv/logic/test/uv_example", ""),
-            File("dummy", ""),
-            File("dummy", ""),
-            File("dummy", ""),
+            File("uv/logic/test/uv_example"),
+            File("dummy"),
+            File("dummy"),
+            File("dummy"),
             parameter_file_name=None,
         )
 
