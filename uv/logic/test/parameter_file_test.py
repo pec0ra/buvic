@@ -1,6 +1,7 @@
 import unittest
 
 from uv.logic.calculation_input import Angstrom
+from uv.logic.file import File
 from uv.logic.parameter_file import Parameters, read_parameter_file, ParameterFileParsingError
 
 
@@ -69,7 +70,7 @@ class UVFileReaderTestCase(unittest.TestCase):
         self.assertEqual(None, parameters.cloud_cover(1000))
 
     def test_file_loading(self):
-        parameters = read_parameter_file("uv/logic/test/parameter_example")
+        parameters = read_parameter_file(File("uv/logic/test/parameter_example", ""))
 
         self.assertEqual(0.1, parameters.interpolated_albedo(10, 0))
         self.assertEqual(0.1, parameters.interpolated_albedo(9, 0))
@@ -105,7 +106,7 @@ class UVFileReaderTestCase(unittest.TestCase):
 
     def test_file_failures(self):
         with self.assertRaises(ParameterFileParsingError):
-            read_parameter_file("uv/logic/test/parameter_example_failure_1")
+            read_parameter_file(File("uv/logic/test/parameter_example_failure_1", ""))
 
         with self.assertRaises(ParameterFileParsingError):
-            read_parameter_file("uv/logic/test/parameter_example_failure_2")
+            read_parameter_file(File("uv/logic/test/parameter_example_failure_2", ""))

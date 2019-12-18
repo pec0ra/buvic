@@ -260,16 +260,15 @@ class PathMainForm(MainForm):
 
     def check_fields(self):
         if (self._uv_file is not None and
-                self._calibration_file is not None and
-                self._arf_file is not None):
+                self._calibration_file is not None):
 
             # If all fields are valid, we initialize a CalculationInput and enable the button
             self._calculation_input = CalculationInput(
                 self.parameters,
-                self._uv_file,
-                self._b_file,
-                self._calibration_file,
-                self._arf_file
+                File(self._uv_file, ""),
+                File(self._b_file, "") if self._b_file is not None else None,
+                File(self._calibration_file, ""),
+                File(self._arf_file, "") if self._b_file is not None else None
             )
             self._calculate_button.set_enabled(True)
         else:

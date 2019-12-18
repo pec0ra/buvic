@@ -136,7 +136,7 @@ class FileUtils:
                 res = re.match(self.UV_FILE_NAME_REGEX, file.file_name)
                 if res is None:
                     raise ValueError(f"Unknown UV file name {file.file_name}")
-                year = int(res.group("year")) + 2000
+                year = int(res.group("year"))
                 days = res.group("days")
 
                 uvr_file = files.uvr_files[0].file_name

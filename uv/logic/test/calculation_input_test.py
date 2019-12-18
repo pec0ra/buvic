@@ -3,6 +3,7 @@ import unittest
 
 from uv.logic.calculation_input import CalculationInput, InputParameters
 from uv.logic.darksky import ParameterCloudCover, DefaultCloudCover
+from uv.logic.file import File
 from uv.logic.parameter_file import Angstrom
 from uv.logutils import init_logging
 
@@ -14,10 +15,10 @@ class UVFileReaderTestCase(unittest.TestCase):
 
         calculation_input = CalculationInput(
             InputParameters(0, Angstrom(0, 0), 0),
-            "dummy",
-            "dummy",
-            "uv/logic/test/calibration_example",
-            "dummy",
+            File("dummy", ""),
+            File("dummy", ""),
+            File("uv/logic/test/calibration_example", ""),
+            File("dummy", ""),
         )
 
         c = calculation_input.calibration
@@ -31,11 +32,11 @@ class UVFileReaderTestCase(unittest.TestCase):
 
         calculation_input = CalculationInput(
             InputParameters(0, Angstrom(0, 0), 0),
-            "uv/logic/test/uv_example",
-            "dummy",
-            "dummy",
-            "dummy",
-            parameter_file_name="uv/logic/test/parameter_example",
+            File("uv/logic/test/uv_example", ""),
+            File("dummy", ""),
+            File("dummy", ""),
+            File("dummy", ""),
+            parameter_file_name=File("uv/logic/test/parameter_example", ""),
         )
 
         self.assertTrue(isinstance(calculation_input.cloud_cover, ParameterCloudCover))
@@ -45,10 +46,10 @@ class UVFileReaderTestCase(unittest.TestCase):
 
         calculation_input = CalculationInput(
             InputParameters(0, Angstrom(0, 0), 0),
-            "uv/logic/test/uv_example",
-            "dummy",
-            "dummy",
-            "dummy",
+            File("uv/logic/test/uv_example", ""),
+            File("dummy", ""),
+            File("dummy", ""),
+            File("dummy", ""),
             parameter_file_name=None,
         )
 

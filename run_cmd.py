@@ -13,6 +13,7 @@ from matplotlib import rcParams
 from uv.const import DEFAULT_ALBEDO_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE, TMP_FILE_DIR, DEFAULT_OZONE_VALUE
 from uv.logic.calculation_input import CalculationInput, InputParameters, Angstrom
 from uv.logic.calculation_utils import CalculationUtils
+from uv.logic.file import File
 from uv.logic.file_utils import FileUtils
 from uv.logutils import init_logging
 
@@ -107,6 +108,7 @@ parameters = InputParameters(
 )
 cmd = CalculationUtils(input_dir, output_dir, init_progress=init_progress, progress_handler=show_progress,
                        finish_progress=finish_progress)
+
 file_utils = FileUtils(input_dir)
 
 if dates_and_brewer_id is not None:
@@ -126,10 +128,10 @@ elif paths is not None:
 
     calculation_input = CalculationInput(
         parameters,
-        input_dir + paths[0],
-        input_dir + paths[1],
-        input_dir + paths[2],
-        input_dir + paths[3]
+        File(input_dir + paths[0], input_dir),
+        File(input_dir + paths[1], input_dir),
+        File(input_dir + paths[2], input_dir),
+        File(input_dir + paths[3], input_dir),
     )
 
     cmd.calculate_for_input(calculation_input)
