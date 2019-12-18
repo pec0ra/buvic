@@ -38,8 +38,6 @@ RUN pip3 install -r requirements.txt
 
 # Copy code and data
 COPY docker/run_docker.py ./
-COPY buvic ./buvic
-COPY docker/libradtran_command.py ./buvic/
 COPY assets ./assets
 
 COPY data/instr ./instr
@@ -47,6 +45,9 @@ COPY data/uvdata ./uvdata
 RUN mkdir /data
 RUN ln -s /instr /data/instr
 RUN ln -s /uvdata /data/uvdata
+
+COPY buvic ./buvic
+COPY docker/libradtran_command.py ./buvic/
 
 ARG DOCKER_TAG
 ENV DOCKER_TAG $DOCKER_TAG

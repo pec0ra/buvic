@@ -10,6 +10,7 @@ from urllib.error import HTTPError
 
 from scipy.interpolate import interp1d
 
+from buvic.logic.utils import date_to_days
 from ..const import DARKSKY_TOKEN
 
 LOG = getLogger(__name__)
@@ -45,9 +46,18 @@ def get_cloud_cover(latitude: float, longitude: float, d: date) -> CloudCover:
     times = []
     values = []
     for hour_data in data["hourly"]["data"]:
+        if "cloudCover" not in hour_data:
+            LOG.warning("No cloud cover data found for hour %d at date %s (%d). Value will be interpolated.", i, d.isoformat(), date_to_days(d))
+            i += 1
+            continue
         times.append(float(i * 60))
         values.append(hour_data["cloudCover"])
         i += 1
+
+    if len(values) == 0:
+        LOG.warning("No cloud cover data found for date %s (%d). Default value will be used", d.isoformat(), date_to_days(d))
+        return DefaultCloudCover()
+
     return DarkskyCloudCover(times, values)
 
 
@@ -85,6 +95,8 @@ class DarkskyCloudCover(CloudCover):
         LOG.debug("Using darksky cloud cover")
         if len(self.values) == 0:
             raise ValueError("No cloud cover value found in DarkskyCloudCover")
+        if len(self.values) == 1:
+            return self.is_value_diffuse(self.values[0])
         interpolator = self._get_interpolator()
         return self.is_value_diffuse(interpolator(t))
 
