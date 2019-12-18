@@ -5,11 +5,12 @@ from dataclasses import dataclass
 from datetime import timedelta
 from logging import getLogger
 from os import path
-from typing import List
+from typing import List, Optional
 
 from scipy.interpolate import interp1d
 
 from uv.brewer_infos import correct_straylight
+from uv.logic.file import File
 
 LOG = getLogger(__name__)
 
@@ -33,24 +34,24 @@ INSTRUMENT_CONSTANTS_LINE_REGEX = re.compile(
 )
 
 
-def read_b_file(file_name: str) -> BFile:
+def read_b_file(file: Optional[File]) -> BFile:
     """
     Parse a given B file to read ozone values into a `Ozone` object.
-    :param file_name: the name of the file to parse
+    :param file: the file to parse
     :return: the ozone values
     """
 
-    if file_name is None or not path.exists(file_name):
+    if file is None or not path.exists(file.full_path):
         return BFile([], [])
 
-    LOG.debug("Parsing file: %s", file_name)
+    LOG.debug("Parsing file: %s", file.file_name)
 
-    with open(file_name, newline='\r\n') as file:
+    with open(file.full_path, newline='\r\n') as f:
         try:
             brewer_type = None
             times = []
             values = []
-            for raw_line in file:
+            for raw_line in f:
                 line = raw_line.replace('\r', ' ').replace('\n', '').strip()
                 res = re.match(SUMMARY_LINE_REGEX, line)
                 res_constants = re.match(INSTRUMENT_CONSTANTS_LINE_REGEX, line)
@@ -67,10 +68,10 @@ def read_b_file(file_name: str) -> BFile:
                 elif res_constants is not None:
                     brewer_type = res_constants.group("brewer_type")
 
-            LOG.debug("Finished parsing file: %s", file_name)
+            LOG.debug("Finished parsing file: %s", file.file_name)
 
             if brewer_type is None:
-                raise ValueError(f"No brewer type found in b file {file_name}")
+                raise ValueError(f"No brewer type found in b file {file.file_name}")
 
             return BFile(
                 times,

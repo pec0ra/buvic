@@ -6,7 +6,8 @@ import urllib.request
 from subprocess import call, run, PIPE
 
 PORT_KEY = "port"
-INPUT_PATH_KEY = "input_dir"
+INSTR_PATH_KEY = "instr_dir"
+UV_DATA_PATH_KEY = "uvdata_dir"
 OUTPUT_PATH_KEY = "output_dir"
 USER_KEY = "user"
 CONTAINER_NAME_KEY = "container_name"
@@ -30,10 +31,11 @@ def p(text, color):
     print(color + text + Colors.ENDC)
 
 
-def save_config(port, input_path, output_path, user, container_name, persist, darksky_token):
+def save_config(port, instr_path, uvdata_path, output_path, user, container_name, persist, darksky_token):
     config = {
         PORT_KEY: port,
-        INPUT_PATH_KEY: input_path,
+        INSTR_PATH_KEY: instr_path,
+        UV_DATA_PATH_KEY: uvdata_path,
         OUTPUT_PATH_KEY: output_path,
         USER_KEY: user,
         CONTAINER_NAME_KEY: container_name,
@@ -175,12 +177,20 @@ def run_installer():
         container_name = input_check(check_container_name, default_value="buvic")
         print()
 
-    if INPUT_PATH_KEY in prev_config:
-        input_path = prev_config[INPUT_PATH_KEY]
-        print(f" Using input path {input_path}")
+    if INSTR_PATH_KEY in prev_config:
+        instr_path = prev_config[INSTR_PATH_KEY]
+        print(f" Using instr path {instr_path}")
     else:
-        print("* Absolute path to the raw measurement files:")
-        input_path = input_check(check_path_exists)
+        print("* Absolute path to the instrument files (arf and uvr files):")
+        instr_path = input_check(check_path_exists)
+        print()
+
+    if UV_DATA_PATH_KEY in prev_config:
+        uvdata_path = prev_config[UV_DATA_PATH_KEY]
+        print(f" Using uvdata path {uvdata_path}")
+    else:
+        print("* Absolute path to the raw measurement files (uv and b files):")
+        uvdata_path = input_check(check_path_exists)
         print()
 
     if OUTPUT_PATH_KEY in prev_config:
@@ -267,7 +277,9 @@ def run_installer():
     print()
 
     print("* Starting server")
-    docker_command = ["docker", "run", "--init", "-d", f"-p {port}:4444", f"-v {input_path}:/data", f"-v {output_path}:/out"]
+    docker_command = ["docker", "run", "--init", "-d", f"-p {port}:4444", f"-v {instr_path}:/instr", f"-v {uvdata_path}:/uvdata",
+                      f"-v {output_path}:/out"]
+
     if user is not None:
         docker_command.extend(["--user", f"{user}"])
 
@@ -294,7 +306,7 @@ def run_installer():
     p("                                                                    ", Colors.HEADER)
     print()
 
-    save_config(port, input_path, output_path, user, container_name, persist, darksky_token)
+    save_config(port, instr_path, uvdata_path, output_path, user, container_name, persist, darksky_token)
 
 
 try:

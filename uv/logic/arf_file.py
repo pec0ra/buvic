@@ -30,8 +30,8 @@ def read_arf_file(file_name: str, direction: Direction) -> ARF:
                 # Each line consists of at least five values separated by spaces
                 line_values = re.split("\s+", line.strip())
                 szas.append(float(line_values[0]))
-                if len(line_values) <= 4: # TODO: Use the correct value for 2/3 columns files
-                    values.append(float(line_values[1]))
+                if len(line_values) <= 4:
+                    values.append(float(line_values[-1]))
                 else:
                     values.append(float(line_values[direction.value]))
             szas.append(90)

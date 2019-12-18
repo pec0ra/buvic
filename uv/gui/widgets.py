@@ -2,10 +2,11 @@ from datetime import date, timedelta
 from enum import Enum
 from os import path
 from threading import Lock
-from typing import Any, Callable, List, Dict
+from typing import Any, Callable, List, Dict, Optional
 
 import remi.gui as gui
 
+from uv.logic.file import File
 from uv.logic.file_utils import FileUtils
 from uv.logic.result import Result
 from .utils import show, hide
@@ -192,11 +193,11 @@ class MainForm(VBox):
 
 
 class PathMainForm(MainForm):
-    _calculation_input: CalculationInput or None = None
-    _uv_file: str or None = None
-    _calibration_file: str or None = None
-    _b_file: str or None = None
-    _arf_file: str or None = None
+    _calculation_input: Optional[CalculationInput] = None
+    _uv_file: Optional[str] = None
+    _calibration_file: Optional[str] = None
+    _b_file: Optional[str] = None
+    _arf_file: Optional[str] = None
 
     def _init_elements(self):
 
@@ -276,15 +277,17 @@ class PathMainForm(MainForm):
             self._calculation_input = None
 
     def start_calculation(self, calculation_utils: CalculationUtils) -> List[Result]:
+        if self._calculation_input is None:
+            raise Exception("It should not be possible to start calculation with a calculation_input which is None")
         return calculation_utils.calculate_for_input(self._calculation_input)
 
 
 class SimpleMainForm(MainForm):
     _file_utils: FileUtils
-    _brewer_id: str or None = None
-    _date_start: date or None = None
-    _date_end: date or None = None
-    _uvr_file: str or None = None
+    _brewer_id: Optional[str] = None
+    _date_start: Optional[date] = None
+    _date_end: Optional[date] = None
+    _uvr_file: Optional[str] = None
 
     def __init__(self, calculate: Callable[[Callable[[CalculationUtils], List[Result]]], None], file_utils: FileUtils):
         self._file_utils = file_utils
@@ -347,11 +350,11 @@ class SimpleMainForm(MainForm):
 
         self._uvr_dd.empty()
         for uvr_file in uvr_files:
-            item = gui.DropDownItem(uvr_file)
+            item = gui.DropDownItem(uvr_file.file_name)
             self._uvr_dd.append(item)
 
         if self._uvr_file not in uvr_files and len(uvr_files) > 0:
-            self._uvr_file = uvr_files[0]
+            self._uvr_file = uvr_files[0].file_name
         elif self._uvr_file not in uvr_files:
             self._uvr_file = None
         self._uvr_dd.set_value(self._uvr_file)
@@ -428,8 +431,12 @@ class SimpleMainForm(MainForm):
             self._calculate_button.set_enabled(False)
 
     def start_calculation(self, calculation_utils: CalculationUtils) -> List[Result]:
-        return calculation_utils.calculate_for_all_between(self._date_start, self._date_end, self._brewer_id, self.parameters,
-                                                           self._uvr_file)
+        if self._brewer_id is None or self._date_start is None or self._date_end is None:
+            raise Exception("Calculation should not be available with None values")
+        calculation_inputs = self._file_utils.get_calculation_inputs_between(self._date_start, self._date_end, self._brewer_id,
+                                                                             self.parameters,
+                                                                             self._uvr_file)
+        return calculation_utils.calculate_for_inputs(calculation_inputs)
 
 
 class Input(VBox):
@@ -470,7 +477,7 @@ class ResultWidget(VBox):
         self.empty()
         self.append(self.result_title)
 
-        files: Dict[str, List[Result]] = {}
+        files: Dict[File, List[Result]] = {}
         for result in results:
             if result.calculation_input.uv_file_name not in files:
                 files[result.calculation_input.uv_file_name] = []
@@ -484,12 +491,12 @@ class ResultWidget(VBox):
             self.append(file_gui)
 
     @staticmethod
-    def _create_result_overview(files: Dict[str, List[Result]], duration: float) -> VBox:
+    def _create_result_overview(files: Dict[File, List[Result]], duration: float) -> VBox:
         vbox = VBox(style="margin-bottom: 20px")
 
         # Convert the duration into something human readable
-        duration = timedelta(seconds=duration)
-        hours, rem = divmod(duration.seconds, 3600)
+        td = timedelta(seconds=duration)
+        hours, rem = divmod(td.seconds, 3600)
         minutes, seconds = divmod(rem, 60)
 
         hours_str = ""
@@ -514,7 +521,7 @@ class ResultWidget(VBox):
         return vbox
 
     @staticmethod
-    def _create_result_gui(file: str, results: List[Result]) -> VBox:
+    def _create_result_gui(file: File, results: List[Result]) -> VBox:
         """
         Create a section's GUI with a title and a list of files
         :param file: the file for which to create the gui
@@ -523,7 +530,7 @@ class ResultWidget(VBox):
         """
         vbox = VBox(style="margin-bottom: 20px")
 
-        result_title = Title(Level.H3, f"Input file '{path.basename(file)}'")
+        result_title = Title(Level.H3, f"Input file '{path.basename(file.file_name)}'")
         vbox.append(result_title)
 
         info = ResultInfo("Sections", len(results))
@@ -544,7 +551,7 @@ class ExtraParamForm(gui.HBox):
     """
     The form for the extra parameters albedo and aerosol
     """
-    _handler: Callable[[InputParameters], None] = None
+    _handler: Optional[Callable[[InputParameters], None]] = None
 
     _albedo: float = DEFAULT_ALBEDO_VALUE
     _alpha: float = DEFAULT_ALPHA_VALUE
@@ -619,7 +626,8 @@ class ExtraParamForm(gui.HBox):
             self._default_ozone,
             self._no_coscor
         )
-        self._handler(parameters)
+        if self._handler is not None:
+            self._handler(parameters)
 
     def register_handler(self, handler: Callable[[InputParameters], None]) -> None:
         """

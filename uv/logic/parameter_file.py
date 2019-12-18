@@ -4,27 +4,29 @@ from collections import namedtuple
 from dataclasses import dataclass
 from logging import getLogger
 from os import path
-from typing import List
+from typing import List, Optional
 
 from scipy.interpolate import interp1d
+
+from uv.logic.file import File
 
 LOG = getLogger(__name__)
 
 
-def read_parameter_file(file_name: str or None) -> Parameters:
+def read_parameter_file(file: Optional[File]) -> Parameters:
     """
     Parse a given B file to read ozone values into a `Ozone` object.
-    :param file_name: the name of the file to parse
+    :param file: the file to parse
     :return: the ozone values
     """
 
-    if file_name is None or not path.exists(file_name):
+    if file is None or not path.exists(file.full_path):
         LOG.info("Parameter File not found. Using default parameter values")
         return Parameters([], [], [], [])
 
-    LOG.debug("Parsing file: %s", file_name)
+    LOG.debug("Parsing file: %s", file.file_name)
 
-    with open(file_name) as file:
+    with open(file.full_path) as f:
         try:
 
             prev_albedo = None
@@ -32,8 +34,8 @@ def read_parameter_file(file_name: str or None) -> Parameters:
             days = []
             albedos = []
             aerosols = []
-            cloud_covers = []
-            for raw_line in file:
+            cloud_covers: List[Optional[float]] = []
+            for raw_line in f:
                 # Each line consists of 5 values separated by one semicolon
                 line_values = raw_line.strip().split(";")
 
@@ -68,7 +70,7 @@ def read_parameter_file(file_name: str or None) -> Parameters:
                 else:
                     cloud_covers.append(None)
 
-            LOG.debug("Finished parsing file: %s", file_name)
+            LOG.debug("Finished parsing file: %s", file.file_name)
 
             return Parameters(
                 days,
@@ -85,7 +87,7 @@ class Parameters:
     days: List[int]
     albedos: List[float]
     aerosols: List[Angstrom]
-    cloud_covers: List[float or None]
+    cloud_covers: List[Optional[float]]
 
     def interpolated_albedo(self, day: int, default_value: float) -> float:
         if len(self.albedos) == 0:
@@ -103,7 +105,7 @@ class Parameters:
         beta_interpolator = interp1d(self.days, [a.beta for a in self.aerosols], kind='previous', fill_value='extrapolate')
         return Angstrom(alpha_interpolator(day), beta_interpolator(day))
 
-    def cloud_cover(self, day: int) -> float or None:
+    def cloud_cover(self, day: int) -> Optional[float]:
         if day not in self.days:
             return None
 

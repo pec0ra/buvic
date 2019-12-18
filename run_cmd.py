@@ -13,6 +13,7 @@ from matplotlib import rcParams
 from uv.const import DEFAULT_ALBEDO_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE, TMP_FILE_DIR, DEFAULT_OZONE_VALUE
 from uv.logic.calculation_input import CalculationInput, InputParameters, Angstrom
 from uv.logic.calculation_utils import CalculationUtils
+from uv.logic.file_utils import FileUtils
 from uv.logutils import init_logging
 
 rcParams.update({'figure.autolayout': True})
@@ -106,6 +107,7 @@ parameters = InputParameters(
 )
 cmd = CalculationUtils(input_dir, output_dir, init_progress=init_progress, progress_handler=show_progress,
                        finish_progress=finish_progress)
+file_utils = FileUtils(input_dir)
 
 if dates_and_brewer_id is not None:
     init_logging(logging.INFO)
@@ -114,7 +116,8 @@ if dates_and_brewer_id is not None:
     date_end = date.fromisoformat(dates_and_brewer_id[1])
     brewer_id = dates_and_brewer_id[2]
 
-    cmd.calculate_for_all_between(date_start, date_end, brewer_id, parameters)
+    inputs = file_utils.get_calculation_inputs_between(date_start, date_end, brewer_id, parameters)
+    cmd.calculate_for_inputs(inputs)
 
 elif paths is not None:
     init_logging(logging.WARN)
@@ -134,7 +137,8 @@ elif paths is not None:
 elif do_all:
     init_logging(logging.WARN)
 
-    cmd.calculate_for_all(parameters)
+    inputs = file_utils.get_calculation_inputs(parameters)
+    cmd.calculate_for_inputs(inputs)
 
 elif watch:
     init_logging(logging.INFO)

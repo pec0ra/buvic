@@ -1,5 +1,4 @@
 import multiprocessing
-import os
 from concurrent.futures import ThreadPoolExecutor
 from logging import getLogger
 from typing import List, Callable
@@ -8,7 +7,6 @@ import remi.gui as gui
 from remi import App, Label
 from remi.gui import VBox
 
-from uv.logic.calculation_input import CalculationInput
 from uv.logic.calculation_utils import CalculationUtils
 from uv.logic.file_utils import FileUtils
 from uv.logic.result import Result
@@ -174,35 +172,3 @@ class UVApp(App):
             show(self._main_form)
             hide(self._secondary_form)
             self._extra_param_form.register_handler(self._main_form.extra_param_change_callback)
-
-    @staticmethod
-    def _check_input(calculation_input: CalculationInput) -> None:
-        """
-        Check a given calculation input for consistency and throw a `ValueError` if any problem is found.
-        :param calculation_input: the calculation input to check
-        """
-
-        if calculation_input is None:
-            raise ValueError("Unexpected error: form data could not be read correctly. Please try again")
-        if calculation_input.input_parameters.default_albedo is None:
-            raise ValueError("Unexpected error: Albedo has not been correctly set")
-        if calculation_input.input_parameters.default_aerosol is None:
-            raise ValueError("Unexpected error: Aerosol has not been correctly set")
-
-        if calculation_input.uv_file_name is None:
-            raise ValueError("Unexpected error: UV File name could not be set correctly")
-        if calculation_input.calibration_file_name is None:
-            raise ValueError("Unexpected error: UVR File name could not be set correctly")
-        if calculation_input.b_file_name is None:
-            raise ValueError("Unexpected error: B File name could not be set correctly")
-        if calculation_input.arf_file_name is None:
-            raise ValueError("Unexpected error: ARF File name could not be set correctly")
-
-        if not os.path.exists(calculation_input.uv_file_name):
-            raise ValueError("UV File name could not be find for the given brewer id and date")
-        if not os.path.exists(calculation_input.calibration_file_name):
-            raise ValueError("UVR File name could not be find for the given brewer id")
-        if not os.path.exists(calculation_input.b_file_name):
-            raise ValueError("B File name could not be find for the given brewer id and date")
-        if not os.path.exists(calculation_input.arf_file_name):
-            raise ValueError("ARF File name could not be find for the given brewer id")

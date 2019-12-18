@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from os import path
 from typing import TextIO, List
-from datetime import datetime
 
 from uv.logic.darksky import DarkskyCloudCover
 from uv.logic.utils import date_to_days, minutes_to_time
@@ -73,7 +73,7 @@ class Result:
         time = minutes_to_time(self.spectrum.measurement_times[0])
 
         file_name = f"{prefix}{days:03}{time.hour:02}{time.minute:02}G.{bid}{suffix}"
-        file_path = path.join(f"{self.uv_file_entry.header.date.year}", file_name)
+        file_path = path.join(f"{self.uv_file_entry.brewer_id}", f"{self.uv_file_entry.header.date.year}", file_name)
 
         if self.calculation_input.input_parameters.no_coscor:
             return path.join("nocoscor", file_path)

@@ -45,7 +45,7 @@ def get_cloud_cover(latitude: float, longitude: float, d: date) -> CloudCover:
     times = []
     values = []
     for hour_data in data["hourly"]["data"]:
-        times.append(i * 60)
+        times.append(float(i * 60))
         values.append(hour_data["cloudCover"])
         i += 1
     return DarkskyCloudCover(times, values)

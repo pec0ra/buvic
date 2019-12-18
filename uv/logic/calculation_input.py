@@ -2,17 +2,21 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import List
+from logging import getLogger
+from typing import List, Optional
 
 from cached_property import cached_property
 
 from uv.logic.b_file import read_b_file, BFile
 from uv.logic.calibration_file import read_calibration_file, Calibration
 from uv.logic.darksky import get_cloud_cover, CloudCover, ParameterCloudCover
+from uv.logic.file import File
 from uv.logic.parameter_file import Parameters, read_parameter_file, Angstrom
 from uv.logic.utils import date_to_days
 from uv.logic.uv_file import UVFileReader, UVFileEntry
 from .arf_file import Direction, read_arf_file, ARF
+
+LOG = getLogger(__name__)
 
 
 @dataclass
@@ -21,16 +25,16 @@ class CalculationInput:
     An input for the `IrradianceCalculation`
     """
     input_parameters: InputParameters
-    uv_file_name: str
-    b_file_name: str
-    calibration_file_name: str
-    arf_file_name: str
+    uv_file_name: File
+    b_file_name: Optional[File]
+    calibration_file_name: File
+    arf_file_name: Optional[File]
     arf_direction: Direction = Direction.SOUTH
-    parameter_file_name: str or None = None
+    parameter_file_name: Optional[File] = None
 
     @cached_property
     def uv_file_entries(self) -> List[UVFileEntry]:
-        uv_file_reader = UVFileReader(self.uv_file_name)
+        uv_file_reader = UVFileReader(self.uv_file_name.full_path)
         return uv_file_reader.get_uv_file_entries()
 
     @cached_property
@@ -39,13 +43,14 @@ class CalculationInput:
 
     @cached_property
     def calibration(self) -> Calibration:
-        return read_calibration_file(self.calibration_file_name)
+        return read_calibration_file(self.calibration_file_name.full_path)
 
     @cached_property
-    def arf(self) -> ARF or None:
+    def arf(self) -> Optional[ARF]:
         if self.arf_file_name is None:
+            LOG.warning("No arf file specified. Cos correction will not be applied")
             return None
-        return read_arf_file(self.arf_file_name, self.arf_direction)
+        return read_arf_file(self.arf_file_name.full_path, self.arf_direction)
 
     @cached_property
     def parameters(self) -> Parameters:

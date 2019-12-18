@@ -2,26 +2,23 @@ from __future__ import annotations
 
 import concurrent
 import os
-import re
 import time
 from concurrent.futures.process import ProcessPoolExecutor
 from concurrent.futures.thread import ThreadPoolExecutor
 from dataclasses import dataclass
-from datetime import date
 from logging import getLogger
-from os import path, listdir
-from typing import Callable, List, Any, TypeVar, Generic
+from os import path
+from typing import Callable, List, Any, TypeVar, Generic, Optional, Tuple
 
 from watchdog.observers import Observer
 
-from uv.const import CALIBRATION_FILES_SUBDIR, ARF_FILES_SUBDIR, UV_FILES_SUBDIR, B_FILES_SUBDIR, PARAMETER_FILES_SUBDIR
+from uv.const import ARF_FILES_SUBDIR, UV_FILES_SUBDIR, B_FILES_SUBDIR, PARAMETER_FILES_SUBDIR
 from uv.logic.calculation_event_handler import CalculationEventHandler
+from uv.logic.file import File
 from uv.logic.output_utils import create_csv
 from uv.logic.result import Result
-from uv.logic.utils import date_range, date_to_days
 from .calculation_input import CalculationInput, InputParameters
 from .irradiance_calculation import IrradianceCalculation
-from ..brewer_infos import get_brewer_info
 
 LOG = getLogger(__name__)
 
@@ -77,7 +74,7 @@ class CalculationUtils:
 
         # Initialize the progress bar
         if self._init_progress is not None:
-            self._init_progress(len(calculation_jobs))
+            self._init_progress(len(calculation_jobs), "Calculating...")
 
         # Execute the jobs
         result_list = self._execute_jobs(calculation_jobs)
@@ -90,62 +87,9 @@ class CalculationUtils:
                  calculation_input.arf_file_name, duration)
         return result_list
 
-    def calculate_for_all_between(self, start_date: date, end_date: date, brewer_id, parameters: InputParameters,
-                                  uvr_file: str or None = None) -> List[Result]:
-        """
-        Calculate irradiance and create csv for all UV Files found for between a start date and an end date for a given brewer id.
-
-        :param start_date: the dates' lower bound (inclusive) for the measurements
-        :param end_date: the dates' upper bound (inclusive) for the measurements
-        :param brewer_id: the id of the brewer instrument
-        :param parameters: the parameters to use for the calculation
-        :param uvr_file: the uvr file to use for the calculation or None to use the default
-        :return: the calculation results
-        """
-
-        input_list = []
-        for d in date_range(start_date, end_date):
-            year = d.year - 2000
-            days = date_to_days(d)
-
-            LOG.debug("Creating input for date %s as days %d and year %d", d.isoformat(), days, year)
-            calculation_input = self._input_from_files(f"{days:03}", f"{year:02}", brewer_id, parameters, uvr_file)
-            if calculation_input is not None:
-                input_list.append(calculation_input)
-
-        return self._calculate_for_inputs(input_list)
-
-    def calculate_for_all(self, parameters: InputParameters) -> None:
-        """
-        Calculate irradiance and create csv for all UV Files in a the input directory.
-
-        This will loop through all files of `input_dir` and find all UV files. For each UV file, it will look if
-        corresponding B file, UVR file and ARF file exist.
-        If they exist, it will call IrradianceCalculation to create a result and it will then create csv from
-        this result
-
-        :param parameters: the parameters to use for calculation
-        """
-
-        input_list = []
-        for file_name in listdir(self._input_dir):
-            # UV file names are like `UV12319.070`
-            res = re.match(r'UV(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d+)', file_name)
-
-            # If `file_name` is a UV file
-            if res is not None:
-                days = res.group("days")
-                year = res.group("year")
-                brewer_id = res.group("brewer_id")
-
-                calculation_input = self._input_from_files(days, year, brewer_id, parameters)
-                if calculation_input is not None:
-                    input_list.append(calculation_input)
-
-        self._calculate_for_inputs(input_list)
-
     def watch(self, parameters: InputParameters) -> None:
         """
+        TODO: fix me
         Watch a directory for new UV or B files.
 
         This will create a watchdog on the input directory. Every time a UV file or a B file (recognized by their names) is modified, it
@@ -168,7 +112,7 @@ class CalculationUtils:
             observer.stop()
         observer.join()
 
-    def _calculate_for_inputs(self, calculation_inputs: List[CalculationInput]) -> List[Result]:
+    def calculate_for_inputs(self, calculation_inputs: List[CalculationInput]) -> List[Result]:
         """
         Calculate irradiance and create csv for a given list of calculation inputs
 
@@ -210,64 +154,61 @@ class CalculationUtils:
         return ret
 
     def _on_new_file(self, file_type: str, days: str, year: str, brewer_id: str, parameters: InputParameters) -> None:
+        """
+        TODO: fix me
+        """
         if file_type == "UV":
-            calculation_input = self._input_from_files(days, year, brewer_id, parameters)
+            calculation_input = self._input_from_files(days, year, brewer_id, parameters, File("TODO", "TODO"))
             if calculation_input is not None:
                 self.calculate_for_input(calculation_input)
         if file_type == "B":
-            calculation_input = self._input_from_files(days, year, brewer_id, parameters)
+            calculation_input = self._input_from_files(days, year, brewer_id, parameters, File("TODO", "TODO"))
             if calculation_input is not None:
                 self.calculate_for_input(calculation_input)
 
-    def _input_from_files(self, days: str, year: str, brewer_id: str, parameters: InputParameters, uvr_file: str or None = None):
-        uv_file = "UV" + days + year + "." + brewer_id
-        b_file = "B" + days + year + "." + brewer_id
-        arf_file = "arf_" + brewer_id + ".dat"
-        if uvr_file is not None:
-            calibration_file = uvr_file
-        else:
-            info = get_brewer_info(brewer_id)
-            calibration_file = info.uvr_file_name
-        parameter_file = year + ".par"
+    def _input_from_files(self, days: str, year: str, brewer_id: str, parameters: InputParameters, uvr_file: File):
+        """
+        TODO: deprecated
 
-        uv_file_path = path.join(self._input_dir, UV_FILES_SUBDIR, uv_file)
-        if not path.exists(uv_file_path) and not path.exists(path.join(self._input_dir, UV_FILES_SUBDIR, brewer_id, uv_file)):
-            LOG.info("UV file '" + str(uv_file_path) + "' not found, skipping")
+        use FileUtils._input_from_files instead
+        """
+        uv_file_name = "UV" + days + year + "." + brewer_id
+        b_file_name = "B" + days + year + "." + brewer_id
+        arf_file_name = "arf_" + brewer_id + ".dat"
+        parameter_file_name = year + ".par"
+
+        uv_file: File = File(path.join(self._input_dir, UV_FILES_SUBDIR, uv_file_name),
+                             path.join(self._input_dir, UV_FILES_SUBDIR))
+        if not path.exists(uv_file.full_path):
+            LOG.info("UV file '" + str(uv_file) + "' not found, skipping")
             return None
-        elif not path.exists(uv_file_path):
-            # If the file is not at the root, then it is in a subdirectory
-            uv_file_path = path.join(self._input_dir, UV_FILES_SUBDIR, brewer_id, uv_file)
 
-        b_file_path = path.join(self._input_dir, B_FILES_SUBDIR, b_file)
-        if not path.exists(b_file_path) and not path.exists(path.join(self._input_dir, B_FILES_SUBDIR, brewer_id, b_file)):
-            LOG.warning(f"Corresponding B file '{b_file_path}' not found for UV file '{uv_file}', will use default ozone "
+        b_file: Optional[File] = File(path.join(self._input_dir, B_FILES_SUBDIR, b_file_name),
+                                      path.join(self._input_dir, B_FILES_SUBDIR))
+        if b_file is not None and not path.exists(b_file.full_path):
+            LOG.warning(f"Corresponding B file '{b_file}' not found for UV file '{uv_file}', will use default ozone "
                         "values and straylight correction will be applied as default")
-        elif not path.exists(b_file_path):
-            # If the file is not at the root, then it is in a subdirectory
-            b_file_path = path.join(self._input_dir, B_FILES_SUBDIR, brewer_id, b_file)
+            b_file = None
 
-        calibration_file_path = path.join(self._input_dir, CALIBRATION_FILES_SUBDIR, calibration_file)
-        if not path.exists(calibration_file_path):
-            LOG.warning("Corresponding UVR file '" + str(calibration_file_path) + "' not found for UV file '" + uv_file + "', skipping")
-            return None
+        arf_file: Optional[File] = File(path.join(self._input_dir, ARF_FILES_SUBDIR, arf_file_name),
+                                        path.join(self._input_dir, ARF_FILES_SUBDIR))
+        if arf_file is not None and not path.exists(arf_file.full_path):
+            LOG.warning("ARF file was not found for UV file '" + uv_file.file_name + "', cos correction will not be applied")
+            arf_file = None
 
-        arf_file_path = path.join(self._input_dir, ARF_FILES_SUBDIR, arf_file)
-        if not path.exists(arf_file_path):
-            LOG.warning("ARF file was not found for UV file '" + uv_file + "', cos correction will not be applied")
-            arf_file_path = None
-
-        parameter_file_path = path.join(self._input_dir, PARAMETER_FILES_SUBDIR, parameter_file)
-        if not path.exists(parameter_file_path):
-            parameter_file_path = None
+        parameter_file: Optional[File] = File(path.join(self._input_dir, PARAMETER_FILES_SUBDIR, parameter_file_name),
+                                              path.join(self._input_dir, PARAMETER_FILES_SUBDIR))
+        if parameter_file is not None and not path.exists(parameter_file.full_path):
+            parameter_file = None
 
         # If everything is ok, return a calculation input
         return CalculationInput(
             parameters,
-            uv_file_path,
-            b_file_path,
-            calibration_file_path,
-            arf_file_path,
-            parameter_file_name=parameter_file_path
+            uv_file,
+            b_file,
+            uvr_file,
+            arf_file,
+            parameter_file_name=parameter_file
         )
 
     def _execute_jobs(self, jobs: List[Job[Any, Result]]) -> List[Result]:
@@ -287,8 +228,9 @@ class CalculationUtils:
         result_list: List[Result] = []
         future_result = []
 
+        cpu_count = os.cpu_count() if os.cpu_count() is not None else 2
         # Create the thread pool and the process pool
-        with ThreadPoolExecutor(min(20, os.cpu_count() + 4)) as thread_pool:
+        with ThreadPoolExecutor(min(20, (cpu_count if cpu_count is not None else 2) + 4)) as thread_pool:
 
             try:
                 # Submit the jobs to the thread pool
@@ -319,7 +261,7 @@ class CalculationUtils:
                     future.cancel()
                 raise e
 
-    def _create_jobs(self, calculation_input: CalculationInput) -> List[Job[int, Result]]:
+    def _create_jobs(self, calculation_input: CalculationInput) -> List[Job[Tuple[IrradianceCalculation, int], Result]]:
         """
         Create a list of irradiance calculation `Job` that can be scheduled on a thread pool or process pool.
         Each of the job of the list will do the calculation for one of the section of the UV File.
@@ -342,7 +284,9 @@ class CalculationUtils:
 
         return job_list
 
-    def _job_task(self, ie: IrradianceCalculation, entry_index: int) -> Result:
+    def _job_task(self, args: Tuple[IrradianceCalculation, int]) -> Result:
+        ie = args[0]
+        entry_index = args[1]
         result = ie.calculate(entry_index)
         self._create_output(result, self._output_dir)
         return result
@@ -370,7 +314,7 @@ class CalculationUtils:
     def _handle_empty_input(self) -> List[Result]:
         # Init progress bar
         if self._init_progress is not None:
-            self._init_progress(0)
+            self._init_progress(0, "Calculating...")
 
         if self._finish_progress is not None:
             self._finish_progress(0)
@@ -394,7 +338,7 @@ class Job(Generic[INPUT, RETURN]):
         Execute the job
         :return: the job's return value
         """
-        return self._fn(*self._args)
+        return self._fn(self._args)
 
 
 class ExecutionError(Exception):

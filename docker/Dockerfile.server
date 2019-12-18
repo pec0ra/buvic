@@ -40,8 +40,13 @@ RUN pip3 install -r requirements.txt
 COPY docker/run_docker.py ./
 COPY uv ./uv
 COPY docker/libradtran_command.py ./uv/
-COPY data ./data
 COPY assets ./assets
+
+COPY data/instr ./instr
+COPY data/uvdata ./uvdata
+RUN mkdir /data
+RUN ln -s /instr /data/instr
+RUN ln -s /uvdata /data/uvdata
 
 ARG DOCKER_TAG
 ENV DOCKER_TAG $DOCKER_TAG
