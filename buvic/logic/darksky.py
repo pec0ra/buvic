@@ -21,7 +21,7 @@ def get_cloud_cover(latitude: float, longitude: float, d: date) -> CloudCover:
     if DARKSKY_TOKEN is None:
         LOG.warning("DARKSKY_TOKEN environment variable is not defined. Functionality will be deactivated and 'clear_sky' will be used as "
                     "default")
-        warn(f"DARKSKY_TOKEN environment variable is not defined. Functionality will be deactivated and 'clear_sky' "
+        warn(f"DARKSKY_TOKEN environment variable is not defined. Functionality is deactivated and 'clear_sky' "
              f"is used as default for cos correction.")
         return DefaultCloudCover()
 
@@ -32,7 +32,7 @@ def get_cloud_cover(latitude: float, longitude: float, d: date) -> CloudCover:
         with urllib.request.urlopen(url_string) as url:
             data = json.loads(url.read().decode())
     except HTTPError as e:
-        raise Exception("Error while trying to access darksky. Your quota might be exceeded.") from e
+        raise Exception("Error while trying to access darksky. Please check your configuration and your quota.") from e
 
     # Display a warning if madis isn't in the data sources
     if "madis" not in data["flags"]["sources"]:

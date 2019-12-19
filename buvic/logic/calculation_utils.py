@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import concurrent
 import os
+import threading
 import time
 import warnings
 from concurrent.futures.process import ProcessPoolExecutor
@@ -29,6 +30,8 @@ class CalculationUtils:
     """
     A utility to create and schedule calculation jobs.
     """
+
+    warnings_lock = threading.RLock()
 
     def __init__(
             self,
@@ -67,7 +70,10 @@ class CalculationUtils:
                  calculation_input.b_file_name, calculation_input.calibration_file_name,
                  calculation_input.arf_file_name)
 
-        calculation_input.init_properties()
+        # We collect all warnings and add them to the calculation input
+        with self.warnings_lock, warnings.catch_warnings(record=True) as w:
+            calculation_input.init_properties()
+            calculation_input.add_warnings(w)
 
         # Create `IrradianceCalculation` Jobs
         calculation_jobs = self._create_jobs(calculation_input)
@@ -132,7 +138,8 @@ class CalculationUtils:
                                                          f"file{'s' if len(calculation_inputs) > 1 else ''}...")
         job_list = []
         for calculation_input in calculation_inputs:
-            with warnings.catch_warnings(record=True) as w:
+            # We collect all warnings and add them to the calculation input
+            with self.warnings_lock, warnings.catch_warnings(record=True) as w:
                 calculation_input.init_properties()
                 calculation_input.add_warnings(w)
 

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from logging import getLogger
 from os import path
 from typing import List, Optional
+from warnings import warn
 
 from scipy.interpolate import interp1d
 
@@ -21,7 +22,8 @@ def read_parameter_file(file: Optional[File]) -> Parameters:
     """
 
     if file is None or not path.exists(file.full_path):
-        LOG.info("Parameter File not found. Using default parameter values")
+        LOG.warning("Parameter File not found. Using default parameter values")
+        warn(f"Parameter File not found. Using default parameter values")
         return Parameters([], [], [], [])
 
     LOG.debug("Parsing file: %s", file.file_name)
