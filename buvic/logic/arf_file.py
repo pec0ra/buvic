@@ -29,7 +29,10 @@ def read_arf_file(file_name: str, direction: Direction) -> ARF:
                     continue
                 # Each line consists of at least five values separated by spaces
                 line_values = re.split("\s+", line.strip())
-                szas.append(float(line_values[0]))
+                sza = float(line_values[0])
+                if sza < 0 or sza > 90:
+                    raise ValueError(f"Invalid value found in the first column. Sza must be between 0 and 90. Found {sza}")
+                szas.append(sza)
                 if len(line_values) <= 4:
                     values.append(float(line_values[-1]))
                 else:
@@ -44,7 +47,7 @@ def read_arf_file(file_name: str, direction: Direction) -> ARF:
                 values
             )
         except Exception as e:
-            raise ARFFileParsingError("An error occurred while parsing the arf file") from e
+            raise ARFFileParsingError(f"An error occurred while parsing the arf file: {e}") from e
 
 
 @dataclass
