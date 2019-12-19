@@ -7,6 +7,7 @@ from datetime import datetime, time, date
 from logging import getLogger
 from typing import List, Callable
 from urllib.error import HTTPError
+from warnings import warn
 
 from scipy.interpolate import interp1d
 
@@ -20,6 +21,8 @@ def get_cloud_cover(latitude: float, longitude: float, d: date) -> CloudCover:
     if DARKSKY_TOKEN is None:
         LOG.warning("DARKSKY_TOKEN environment variable is not defined. Functionality will be deactivated and 'clear_sky' will be used as "
                     "default")
+        warn(f"DARKSKY_TOKEN environment variable is not defined. Functionality will be deactivated and 'clear_sky' "
+             f"is used as default for cos correction.")
         return DefaultCloudCover()
 
     t = datetime.combine(d, time(0, 0, 0, 0)).isoformat()
@@ -35,19 +38,25 @@ def get_cloud_cover(latitude: float, longitude: float, d: date) -> CloudCover:
     if "madis" not in data["flags"]["sources"]:
         LOG.warning("The data used as weather to choose between clear sky or diffuse correction might be imprecise. The data used came from"
                     "unknown sources: %s", " ".join(data["flags"]["sources"]))
+        warn(f"The data used as weather to choose between clear sky or diffuse correction might be imprecise. The data"
+             f" used came from unknown sources: {' '.join(data['flags']['sources'])}")
 
     # Display a warning if the nearest weather station used is too far away
     nearest_station_distance = data["flags"]["nearest-station"]
     if nearest_station_distance > 30:
         LOG.warning("The data used as weather to choose between clear sky or diffuse correction might be imprecise.\nThe nearest weather "
                     "station found was %f km away from UV measurement.", nearest_station_distance)
+        warn(f"The data used as weather to choose between clear sky or diffuse correction might be imprecise.\n"
+             f"The nearest weather station found was {nearest_station_distance} km away from UV measurement.")
 
     i = 0
     times = []
     values = []
     for hour_data in data["hourly"]["data"]:
         if "cloudCover" not in hour_data:
-            LOG.warning("No cloud cover data found for hour %d at date %s (%d). Value will be interpolated.", i, d.isoformat(), date_to_days(d))
+            LOG.warning("No cloud cover data found for hour %d at date %s (%d). Value will be interpolated.", i, d.isoformat(),
+                        date_to_days(d))
+            warn(f"No cloud cover data found for hour {i}. Value is be interpolated.")
             i += 1
             continue
         times.append(float(i * 60))
@@ -56,6 +65,7 @@ def get_cloud_cover(latitude: float, longitude: float, d: date) -> CloudCover:
 
     if len(values) == 0:
         LOG.warning("No cloud cover data found for date %s (%d). Default value will be used", d.isoformat(), date_to_days(d))
+        warn(f"No cloud cover data found for date {d.isoformat()} ({date_to_days(d)}). Default value is used.")
         return DefaultCloudCover()
 
     return DarkskyCloudCover(times, values)

@@ -6,6 +6,7 @@ from datetime import timedelta
 from logging import getLogger
 from os import path
 from typing import List, Optional
+from warnings import warn
 
 from scipy.interpolate import interp1d
 
@@ -42,6 +43,8 @@ def read_b_file(file: Optional[File]) -> BFile:
     """
 
     if file is None or not path.exists(file.full_path):
+        warn(f"Corresponding B file not found. default ozone value is used "
+             f"and straylight correction is applied.")
         return BFile([], [])
 
     LOG.debug("Parsing file: %s", file.file_name)

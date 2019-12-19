@@ -36,6 +36,9 @@ class UVApp(App):
         self._duration = 0
 
     def main(self):
+
+        head: gui.HEAD = self.page.get_child("head")
+        head.add_child("google_icons", '<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">')
         self._file_utils = FileUtils(DATA_DIR)
 
         self._main_container = gui.VBox(width="80%", style="margin: 30px auto; padding: 20px 40px 10px 40px")

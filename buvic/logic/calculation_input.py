@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from logging import getLogger
 from typing import List, Optional
+from warnings import warn, WarningMessage
 
 from cached_property import cached_property
 
@@ -31,6 +32,7 @@ class CalculationInput:
     arf_file_name: Optional[File]
     arf_direction: Direction = Direction.SOUTH
     parameter_file_name: Optional[File] = None
+    warnings: List[WarningMessage] = field(default_factory=list)
 
     @cached_property
     def uv_file_entries(self) -> List[UVFileEntry]:
@@ -49,6 +51,7 @@ class CalculationInput:
     def arf(self) -> Optional[ARF]:
         if self.arf_file_name is None:
             LOG.warning("No arf file specified. Cos correction will not be applied")
+            warn(f"ARF file was not found. Cos correction has not been applied")
             return None
         return read_arf_file(self.arf_file_name.full_path, self.arf_direction)
 
@@ -90,6 +93,9 @@ class CalculationInput:
         del calibration
         del arf
         del cloud_cover
+
+    def add_warnings(self, warnings: WarningMessage):
+        self.warnings.extend(warnings)
 
 
 @dataclass

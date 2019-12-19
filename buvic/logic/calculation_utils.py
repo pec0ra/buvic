@@ -3,12 +3,14 @@ from __future__ import annotations
 import concurrent
 import os
 import time
+import warnings
 from concurrent.futures.process import ProcessPoolExecutor
 from concurrent.futures.thread import ThreadPoolExecutor
 from dataclasses import dataclass
 from logging import getLogger
 from os import path
 from typing import Callable, List, Any, TypeVar, Generic, Optional, Tuple
+from warnings import warn
 
 from watchdog.observers import Observer
 
@@ -130,7 +132,9 @@ class CalculationUtils:
                                                          f"file{'s' if len(calculation_inputs) > 1 else ''}...")
         job_list = []
         for calculation_input in calculation_inputs:
-            calculation_input.init_properties()
+            with warnings.catch_warnings(record=True) as w:
+                calculation_input.init_properties()
+                calculation_input.add_warnings(w)
 
             # Create `IrradianceCalculation` Jobs
             calculation_jobs = self._create_jobs(calculation_input)
@@ -188,12 +192,15 @@ class CalculationUtils:
         if b_file is not None and not path.exists(b_file.full_path):
             LOG.warning(f"Corresponding B file '{b_file}' not found for UV file '{uv_file}', will use default ozone "
                         "values and straylight correction will be applied as default")
+            warn(f"Corresponding B file '{b_file}' not found for UV file '{uv_file}', default ozone value is used"
+                 f"and straylight correction is applied")
             b_file = None
 
         arf_file: Optional[File] = File(path.join(self._input_dir, ARF_FILES_SUBDIR, arf_file_name),
                                         path.join(self._input_dir, ARF_FILES_SUBDIR))
         if arf_file is not None and not path.exists(arf_file.full_path):
             LOG.warning("ARF file was not found for UV file '" + uv_file.file_name + "', cos correction will not be applied")
+            warn(f"ARF file was not found for UV file '{uv_file.file_name}', cos correction has not been applied")
             arf_file = None
 
         parameter_file: Optional[File] = File(path.join(self._input_dir, PARAMETER_FILES_SUBDIR, parameter_file_name),

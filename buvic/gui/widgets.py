@@ -155,6 +155,9 @@ class MainForm(VBox):
 
         self.set_style("align-items: flex-end; flex-wrap: wrap")
 
+        self._warning_box = VBox(style="align-self: flex-start; min-height: 24px")
+        self.append(self._warning_box)
+
         self._init_elements()
 
         self._calculate_button = gui.Button("Calculate", style="margin-bottom: 20px")
@@ -190,6 +193,16 @@ class MainForm(VBox):
         Check the fields' values and enable or disable the `Calculate` button accordingly
         """
         pass
+
+    def show_warning(self, text: str):
+        self.clean_warnings()
+
+        warning_label = IconLabel(text, "warning")
+        warning_label.attributes["class"] = "warning"
+        self._warning_box.append(warning_label)
+
+    def clean_warnings(self):
+        self._warning_box.empty()
 
 
 class PathMainForm(MainForm):
@@ -429,6 +442,15 @@ class SimpleMainForm(MainForm):
         else:
             self._calculate_button.set_enabled(False)
 
+        if self._brewer_id is not None:
+            arf = self._file_utils.get_arf_file(self._brewer_id)
+            if arf is None:
+                self.show_warning("No arf file exists for this brewer id. Cos correction will not be applied")
+            else:
+                self.clean_warnings()
+        else:
+            self.clean_warnings()
+
     def start_calculation(self, calculation_utils: CalculationUtils) -> List[Result]:
         if self._brewer_id is None or self._date_start is None or self._date_end is None:
             raise Exception("Calculation should not be available with None values")
@@ -531,6 +553,15 @@ class ResultWidget(VBox):
 
         result_title = Title(Level.H3, f"Input file '{path.basename(file.file_name)}'")
         vbox.append(result_title)
+
+        if len(results) > 0 and len(results[0].calculation_input.warnings) > 0:
+            warning_box = VBox(style="margin-bottom: 15px")
+            for warning in results[0].calculation_input.warnings:
+                warning_label = IconLabel(str(warning.message), "warning", style="margin-bottom: 5px")
+                warning_label.attributes["class"] = "warning"
+                warning_box.append(warning_label)
+
+            vbox.append(warning_box)
 
         info = ResultInfo("Sections", len(results))
         vbox.append(info)
@@ -637,3 +668,27 @@ class ExtraParamForm(gui.HBox):
 
         # Call the handler to update it with the current values
         self._on_value_change()
+
+
+class Icon(gui.Label):
+
+    def __init__(self, icon_name, *args, **kwargs):
+        """
+        Args:
+            icon_name (str): The string content that have to be displayed in the Label.
+            kwargs: See Container.__init__()
+        """
+        super(Icon, self).__init__(icon_name, *args, **kwargs)
+        self.type = 'i'
+        self.attributes["class"] = "material-icons"
+        self.set_text(icon_name)
+
+
+class IconLabel(gui.Label):
+    def __init__(self, text, icon_name, *args, **kwargs):
+        super().__init__(text, *args, **kwargs)
+        self.empty()
+        self.set_style("display: flex")
+        icon = Icon(icon_name, style="margin-right: 3px")
+        self.append(icon)
+        self.set_text(text)
