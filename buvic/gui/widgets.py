@@ -268,7 +268,7 @@ class PathMainForm(MainForm):
                 File(self._uv_file),
                 File(self._b_file) if self._b_file is not None else None,
                 File(self._calibration_file),
-                File(self._arf_file) if self._b_file is not None else None
+                File(self._arf_file) if self._arf_file is not None else None
             )
             self._calculate_button.set_enabled(True)
         else:
