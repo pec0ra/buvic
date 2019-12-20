@@ -2,16 +2,18 @@ from datetime import date, timedelta
 from enum import Enum
 from os import path
 from threading import Lock
-from typing import Any, Callable, List, Dict, Optional
+from typing import Any, Callable, List, Dict, Optional, Tuple
 
 import remi.gui as gui
 
 from buvic.logic.file import File
 from buvic.logic.file_utils import FileUtils
+from buvic.logic.parameter_file import Angstrom
 from buvic.logic.result import Result
+from buvic.logic.settings import Settings
 from .utils import show, hide
-from ..const import TMP_FILE_DIR, OUTPUT_DIR, DEFAULT_BETA_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_ALBEDO_VALUE, DEFAULT_OZONE_VALUE
-from ..logic.calculation_input import CalculationInput, Angstrom, InputParameters
+from ..const import TMP_FILE_DIR, OUTPUT_DIR
+from ..logic.calculation_input import CalculationInput
 from ..logic.calculation_utils import CalculationUtils
 
 
@@ -48,7 +50,7 @@ class Title(gui.Label):
             self.set_style(
                 "font-size: 15pt; margin-top: 10px; margin-bottom: 20px")
         else:
-            self.set_style("font-size: 10pt; margin-top: 5px; margin-bottom: 10px")
+            self.set_style("font-size: 12pt; margin-top: 5px; margin-bottom: 8px; font-weight: bold")
 
 
 class FileSelector(VBox):
@@ -135,9 +137,9 @@ class Loader(VBox):
 
 
 class MainForm(VBox):
-    parameters: InputParameters
+    settings: Settings
 
-    def __init__(self, calculate: Callable[[Callable[[CalculationUtils], List[Result]]], None]):
+    def __init__(self, calculate: Callable[[Callable[[CalculationUtils], List[Result]]], None], settings: Settings):
         """
         Initialize a main form.
 
@@ -145,13 +147,8 @@ class MainForm(VBox):
         the values of this form's fields
         :param calculate: the function to call on `Calculate` click
         """
-
         super().__init__()
-        self.parameters = InputParameters(
-            DEFAULT_ALBEDO_VALUE,
-            Angstrom(DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE),
-            DEFAULT_OZONE_VALUE
-        )
+        self.settings = settings
 
         self.set_style("align-items: flex-end; flex-wrap: wrap")
 
@@ -171,15 +168,15 @@ class MainForm(VBox):
     def start_calculation(self, calculation_utils: CalculationUtils) -> List[Result]:
         pass
 
-    def extra_param_change_callback(self, parameters: InputParameters) -> None:
+    def update_settings(self, settings: Settings) -> None:
         """
-        Update the inner representation of the extra params.
+        Update the inner representation of the settings.
 
-        This is supposed to be called from outside when the extra params are changed.
-        :param parameters: the new parameter values
+        This is supposed to be called from outside when the settings are changed.
+        :param settings: the new settings values
         """
 
-        self.parameters = parameters
+        self.settings = settings
         self.check_fields()
 
     def _init_elements(self) -> None:
@@ -277,7 +274,7 @@ class PathMainForm(MainForm):
 
             # If all fields are valid, we initialize a CalculationInput and enable the button
             self._calculation_input = CalculationInput(
-                self.parameters,
+                self.settings,
                 File(self._uv_file),
                 File(self._b_file) if self._b_file is not None else None,
                 File(self._calibration_file),
@@ -301,9 +298,9 @@ class SimpleMainForm(MainForm):
     _date_end: Optional[date] = None
     _uvr_file: Optional[str] = None
 
-    def __init__(self, calculate: Callable[[Callable[[CalculationUtils], List[Result]]], None], file_utils: FileUtils):
+    def __init__(self, calculate: Callable[[Callable[[CalculationUtils], List[Result]]], None], file_utils: FileUtils, settings: Settings):
         self._file_utils = file_utils
-        super().__init__(calculate)
+        super().__init__(calculate, settings)
         self.check_fields()
 
     def _init_elements(self):
@@ -315,20 +312,20 @@ class SimpleMainForm(MainForm):
         self._brewer_dd = gui.DropDown()
         self._update_brewer_ids()
         self._brewer_dd.onchange.do(self._on_bid_change)
-        self._brewer_input = Input("Brewer id", self._brewer_dd)
+        self._brewer_input = Input("Brewer id", self._brewer_dd, style="margin-right: 20px")
 
         self._uvr_dd = gui.DropDown()
         self._update_uvr_files()
         self._uvr_dd.onchange.do(self._on_uvr_change)
-        self._uvr_input = Input("UVR file", self._uvr_dd)
+        self._uvr_input = Input("UVR file", self._uvr_dd, style="margin-right: 20px")
 
         self._date_start_selector = gui.Date(default_value="2019-06-24")
         self._date_start_selector.onchange.do(self._on_date_start_change)
-        self._date_start_input = Input("Start date", self._date_start_selector)
+        self._date_start_input = Input("Start date", self._date_start_selector, style="margin-right: 20px")
 
         self._date_end_selector = gui.Date(default_value="2019-06-27")
         self._date_end_selector.onchange.do(self._on_date_end_change)
-        self._date_end_input = Input("End date", self._date_end_selector)
+        self._date_end_input = Input("End date", self._date_end_selector, style="margin-right: 20px")
 
         self._update_date_range()
 
@@ -455,7 +452,7 @@ class SimpleMainForm(MainForm):
         if self._brewer_id is None or self._date_start is None or self._date_end is None:
             raise Exception("Calculation should not be available with None values")
         calculation_inputs = self._file_utils.get_calculation_inputs_between(self._date_start, self._date_end, self._brewer_id,
-                                                                             self.parameters,
+                                                                             self.settings,
                                                                              self._uvr_file)
         return calculation_utils.calculate_for_inputs(calculation_inputs)
 
@@ -465,12 +462,12 @@ class Input(VBox):
     An input with a label above an input widget
     """
 
-    def __init__(self, label: str, input_widget: gui.Widget):
-        super().__init__(style="width: 260px; padding-right: 20px")
+    def __init__(self, label: str, input_widget: gui.Widget, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         lw = gui.Label(label + ":")
         self.append(lw)
         self.append(input_widget)
-        input_widget.set_style("height: 25px")
+        input_widget.set_style("width: 260px; height: 25px")
 
 
 class ResultWidget(VBox):
@@ -577,99 +574,6 @@ class ResultWidget(VBox):
         return vbox
 
 
-class ExtraParamForm(gui.HBox):
-    """
-    The form for the extra parameters albedo and aerosol
-    """
-    _handler: Optional[Callable[[InputParameters], None]] = None
-
-    _albedo: float = DEFAULT_ALBEDO_VALUE
-    _alpha: float = DEFAULT_ALPHA_VALUE
-    _beta: float = DEFAULT_BETA_VALUE
-    _default_ozone: float = DEFAULT_OZONE_VALUE
-    _no_coscor: bool = False
-
-    def __init__(self):
-        super().__init__(style="margin-bottom: 20px; flex-wrap: wrap")
-
-        # Albedo field
-        albedo_spin = gui.SpinBox(DEFAULT_ALBEDO_VALUE, 0, 1, 0.01)
-        albedo_spin.onchange.do(self._on_albedo_change)
-        albedo_input = Input("Albedo", albedo_spin)
-        self.append(albedo_input)
-
-        # Aerosol dual field
-        aerosol = gui.HBox(style="justify-content: stretch; width: 100%")
-        alpha_spin = gui.SpinBox(DEFAULT_ALPHA_VALUE, 0, 2, 0.01, style="width: 120px; height: 25px")
-        alpha_spin.onchange.do(self._on_alpha_change)
-        beta_spin = gui.SpinBox(DEFAULT_BETA_VALUE, 0, 1.5, 0.01, style="width: 120px; height: 25px")
-        beta_spin.onchange.do(self._on_beta_change)
-        alpha_label = gui.Label("α:", style="flex-grow: 1")
-        aerosol.append(alpha_label)
-        aerosol.append(alpha_spin)
-        beta_label = gui.Label("β:", style="margin-left: 8px; flex-grow: 1")
-        aerosol.append(beta_label)
-        aerosol.append(beta_spin)
-        aerosol_input = Input("Aerosol", aerosol)
-        self.append(aerosol_input)
-
-        # Ozone field
-        ozone_spin = gui.SpinBox(DEFAULT_OZONE_VALUE, 200, 600, 0.5)
-        ozone_spin.onchange.do(self._on_ozone_change)
-        ozone_input = Input("Ozone (Used if no value found in B file)", ozone_spin)
-        self.append(ozone_input)
-
-        no_coscor_checkbox = gui.CheckBoxLabel("Skip cos correction", style="align-self: flex-end; height: 30px; width: 260px;"
-                                                                            "padding-right: 20px")
-        no_coscor_checkbox.onchange.do(self._on_no_coscor_change)
-        self.append(no_coscor_checkbox)
-
-    def _on_albedo_change(self, widget: gui.Widget, value: float):
-        del widget  # remove unused parameter
-        self._albedo = value
-        self._on_value_change()
-
-    def _on_alpha_change(self, widget: gui.Widget, value: float):
-        del widget  # remove unused parameter
-        self._alpha = value
-        self._on_value_change()
-
-    def _on_beta_change(self, widget: gui.Widget, value: float):
-        del widget  # remove unused parameter
-        self._beta = value
-        self._on_value_change()
-
-    def _on_ozone_change(self, widget: gui.Widget, value: float):
-        del widget  # remove unused parameter
-        self._default_ozone = value
-        self._on_value_change()
-
-    def _on_no_coscor_change(self, widget: gui.Widget, value: bool):
-        del widget  # remove unused parameter
-        self._no_coscor = value
-        self._on_value_change()
-
-    def _on_value_change(self):
-        parameters = InputParameters(
-            self._albedo,
-            Angstrom(self._alpha, self._beta),
-            self._default_ozone,
-            self._no_coscor
-        )
-        if self._handler is not None:
-            self._handler(parameters)
-
-    def register_handler(self, handler: Callable[[InputParameters], None]) -> None:
-        """
-        Registers a given handler which will be called every time one of the values of the fields is changed
-        :param handler: the handler to register
-        """
-        self._handler = handler
-
-        # Call the handler to update it with the current values
-        self._on_value_change()
-
-
 class Icon(gui.Label):
 
     def __init__(self, icon_name, *args, **kwargs):
@@ -687,8 +591,176 @@ class Icon(gui.Label):
 class IconLabel(gui.Label):
     def __init__(self, text, icon_name, *args, **kwargs):
         super().__init__(text, *args, **kwargs)
-        self.empty()
         self.set_style("display: flex")
-        icon = Icon(icon_name, style="margin-right: 3px")
+        icon = Icon(icon_name, style="margin-right: 3px; order: -1")
         self.append(icon)
-        self.set_text(text)
+
+
+class IconButton(gui.Button):
+    def __init__(self, text, icon_name, *args, **kwargs):
+        super().__init__(text, *args, **kwargs)
+        self.set_style("display: flex")
+        icon = Icon(icon_name, style="margin-right: 3px; order: -1")
+        self.add_child("icon", icon)
+
+
+class Backdrop(gui.Widget):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.add_class("backdrop")
+
+
+class Modal(Backdrop):
+    _extra_buttons: Dict[str, gui.Button]
+    _is_closed: bool = False
+
+    def __init__(self, title: str, content: gui.Widget, extra_buttons: List[Tuple[str, Callable[[gui.Widget], None]]] = [], *args,
+                 **kwargs):
+        super().__init__(*args, **kwargs)
+        modal = VBox()
+        modal.add_class("modal")
+        title = Title(Level.H2, title, style="padding-left: 30px; padding-right: 30px")
+        modal.append(title)
+        wrapper = VBox(style="")
+        wrapper.add_class("modal_content_wrapper")
+        wrapper.append(content)
+        modal.append(wrapper)
+
+        buttons = gui.HBox()
+        buttons.add_class("buttons")
+
+        self._extra_buttons = {}
+        for button_text, button_action in extra_buttons:
+            b = gui.Button(button_text)
+            b.onclick.do(button_action)
+            buttons.append(b)
+            self._extra_buttons[button_text] = b
+
+        close_button = gui.Button("Close")
+        close_button.onclick.do(lambda w: self.close())
+        buttons.append(close_button)
+
+        modal.append(buttons)
+        self.add_child("modal", modal)
+        self.onclick.do(lambda w: self.close())
+        modal.onclick.do(lambda w: "Hello World")
+
+    def close(self):
+        parent: gui.Container = self.get_parent()
+        parent.remove_child(self)
+        self._is_closed = True
+
+    def get_extra_buttons(self) -> Dict[str, gui.Button]:
+        return self._extra_buttons
+
+    def is_closed(self):
+        return self._is_closed
+
+
+class SettingsWidget(VBox):
+    _save_button: gui.Button = None
+
+    def __init__(self, settings: Settings):
+        super().__init__()
+        form_title = Title(Level.H4, "Manual mode")
+        self.append(form_title)
+
+        self._form_selection_checkbox = gui.CheckBoxLabel("Specify files manually instead of giving a date and a brewer id",
+                                                          style="height: 30px")
+        self._form_selection_checkbox.set_value(settings.manual_mode)
+        # Click didn't work correctly for checkboxes do to a bug with onclick.
+        self._form_selection_checkbox.onclick.do(
+            lambda w: self._form_selection_checkbox.set_value(not self._form_selection_checkbox.get_value()))
+        self.append(self._form_selection_checkbox)
+
+        form_title = Title(Level.H4, "ARF File column")
+        form_title.set_style("margin-top: 14px")
+        self.append(form_title)
+
+        self._arf_selection = gui.DropDown()
+        self._arf_selection.append(gui.DropDownItem("1"))
+        self._arf_selection.append(gui.DropDownItem("2"))
+        self._arf_selection.append(gui.DropDownItem("3"))
+        self._arf_selection.append(gui.DropDownItem("4"))
+        self._arf_selection.set_value(str(settings.arf_column))
+        arf_input = Input("Column of the ARF file to use for the cos correction (column 0 is sza)", self._arf_selection,
+                          style="margin-bottom: 10px")
+        self.append(arf_input)
+
+        coscor_title = Title(Level.H4, "Cos correction")
+        coscor_title.set_style("margin-top: 14px")
+        self.append(coscor_title)
+
+        self._no_coscor_checkbox = gui.CheckBoxLabel("Skip cos correction", style="height: 30px; width: 260px; padding-right: 20px")
+        self._no_coscor_checkbox.set_value(settings.no_coscor)
+        # Click didn't work correctly for checkboxes do to a bug with onclick.
+        self._no_coscor_checkbox.onclick.do(lambda w: self._no_coscor_checkbox.set_value(not self._no_coscor_checkbox.get_value()))
+        self.append(self._no_coscor_checkbox)
+
+        default_title = Title(Level.H4, "Default values")
+        default_title.set_style("margin-top: 14px")
+        self.append(default_title)
+        default_explanation = IconLabel("Will be used if no value is found in the files or via api", "info_outline",
+                                        style="margin-bottom: 10px")
+        self.append(default_explanation)
+
+        # Albedo field
+        self._albedo_spin = gui.SpinBox(settings.default_albedo, 0, 1, 0.01)
+        albedo_input = Input("Albedo", self._albedo_spin, style="margin-bottom: 10px")
+        self.append(albedo_input)
+
+        # Aerosol dual field
+        aerosol = gui.HBox(style="justify-content: stretch; width: 100%")
+        self._alpha_spin = gui.SpinBox(settings.default_aerosol.alpha, 0, 2, 0.01, style="width: 110px; height: 25px")
+        self._beta_spin = gui.SpinBox(settings.default_aerosol.beta, 0, 1.5, 0.01, style="width: 110px; height: 25px")
+        alpha_label = gui.Label("α:", style="flex-grow: 1")
+        aerosol.append(alpha_label)
+        aerosol.append(self._alpha_spin)
+        beta_label = gui.Label("β:", style="margin-left: 8px; flex-grow: 1")
+        aerosol.append(beta_label)
+        aerosol.append(self._beta_spin)
+        aerosol_input = Input("Aerosol", aerosol, style="margin-bottom: 10px")
+        self.append(aerosol_input)
+
+        # Ozone field
+        self._ozone_spin = gui.SpinBox(settings.default_ozone, 200, 600, 0.5)
+        ozone_input = Input("Ozone", self._ozone_spin, style="margin-bottom: 10px")
+        self.append(ozone_input)
+
+    def save(self) -> Settings:
+        manual_mode = self._form_selection_checkbox.get_value()
+
+        arf_column = int(self._arf_selection.get_value())
+
+        no_coscor = self._no_coscor_checkbox.get_value()
+
+        albedo = self._albedo_spin.get_value()
+
+        alpha = self._alpha_spin.get_value()
+        beta = self._beta_spin.get_value()
+
+        ozone = self._ozone_spin.get_value()
+
+        settings = Settings(
+            manual_mode,
+            arf_column,
+            no_coscor,
+            albedo,
+            Angstrom(alpha, beta),
+            ozone
+        )
+        settings.write()
+        self._show_success()
+        return settings
+
+    def set_save_button(self, button: gui.Button) -> None:
+        self._save_button = button
+
+    def _show_success(self):
+        self.empty()
+        success_label = IconLabel("Saved successfully!", "done")
+        success_label.add_class("success")
+        self.append(success_label)
+
+        if self._save_button is not None:
+            self._save_button.set_enabled(False)

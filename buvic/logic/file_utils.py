@@ -9,8 +9,9 @@ from os.path import join, exists, isdir
 from pprint import PrettyPrinter
 from typing import Dict, List, Tuple, Callable, Pattern, Match, Optional
 
-from buvic.logic.calculation_input import InputParameters, CalculationInput
+from buvic.logic.calculation_input import CalculationInput
 from buvic.logic.file import File
+from buvic.logic.settings import Settings
 from buvic.logic.utils import days_to_date, date_range, date_to_days
 
 LOG = getLogger(__name__)
@@ -93,7 +94,7 @@ class FileUtils:
                 LOG.warning(f"No UV file exists for brewer id {brewer_id}, skipping")
                 del self._file_dict[brewer_id]
 
-    def get_calculation_inputs_between(self, start_date: date, end_date: date, brewer_id, parameters: InputParameters,
+    def get_calculation_inputs_between(self, start_date: date, end_date: date, brewer_id, settings: Settings,
                                        uvr_file: Optional[str] = None) -> List[CalculationInput]:
         """
         Create inputs for all UV Files found for between a start date and an end date for a given brewer id.
@@ -101,7 +102,7 @@ class FileUtils:
         :param start_date: the dates' lower bound (inclusive) for the measurements
         :param end_date: the dates' upper bound (inclusive) for the measurements
         :param brewer_id: the id of the brewer instrument
-        :param parameters: the parameters to use for the calculation
+        :param settings: the settings to use for the calculation
         :param uvr_file: the uvr file to use for the calculation or None to use the default
         :return: the calculation inputs
         """
@@ -115,17 +116,17 @@ class FileUtils:
             days = date_to_days(d)
 
             LOG.debug("Creating input for date %s as days %d and year %d", d.isoformat(), days, year)
-            calculation_input = self._input_from_files(f"{days:03}", f"{year:02}", brewer_id, parameters, uvr_file)
+            calculation_input = self._input_from_files(f"{days:03}", f"{year:02}", brewer_id, settings, uvr_file)
             if calculation_input is not None:
                 input_list.append(calculation_input)
 
         return input_list
 
-    def get_calculation_inputs(self, parameters: InputParameters) -> List[CalculationInput]:
+    def get_calculation_inputs(self, settings: Settings) -> List[CalculationInput]:
         """
         Create inputs for all UV Files found in a given directory.
 
-        :param parameters: the parameters to use for the calculation
+        :param settings: the settings to use for the calculation
         :return: the calculation inputs
         """
 
@@ -141,7 +142,7 @@ class FileUtils:
 
                 uvr_file = files.uvr_files[0].file_name
 
-                calculation_input = self._input_from_files(f"{days}", f"{year:02}", brewer_id, parameters, uvr_file)
+                calculation_input = self._input_from_files(f"{days}", f"{year:02}", brewer_id, settings, uvr_file)
                 if calculation_input is not None:
                     LOG.debug("Creating input for %s", file.file_name)
                     input_list.append(calculation_input)
@@ -153,11 +154,11 @@ class FileUtils:
             days: str,
             year: str,
             brewer_id: str,
-            parameters: InputParameters,
+            settings: Settings,
             uvr_file: str
     ) -> Optional[CalculationInput]:
         """
-        Create calculation inputs for a given date given as days since new year and the year, for a given brewer id, for given parameters
+        Create calculation inputs for a given date given as days since new year and the year, for a given brewer id, for given settings
         and for a given uvr file name.
 
         This looks for registered files matching the date and brewer id and uvr file name. If no UV file matches, None is returned
@@ -165,7 +166,7 @@ class FileUtils:
         :param days: the days since new year
         :param year: the year
         :param brewer_id: the id of the brewer instrument
-        :param parameters: the parameter to pass in the input
+        :param settings: the parameter to pass in the input
         :param uvr_file: the name of the uvr file
         :return: a calculation input or None if no corresponding file was found
         """
@@ -184,7 +185,7 @@ class FileUtils:
         parameter_file = self.get_parameter_file(parameter_file_name)
 
         return CalculationInput(
-            parameters,
+            settings,
             uv_file,
             b_file,
             calibration_file,

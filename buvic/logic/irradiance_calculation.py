@@ -180,7 +180,7 @@ class IrradianceCalculation:
 
         b_file: BFile = self._calculation_input.b_file
         libradtran.add_input(LibradtranInput.OZONE,
-                             [b_file.interpolated_ozone(minutes, self._calculation_input.input_parameters.default_ozone)])
+                             [b_file.interpolated_ozone(minutes, self._calculation_input.settings.default_ozone)])
 
         libradtran.add_input(LibradtranInput.TIME, [
             uv_file_header.date.year,
@@ -195,9 +195,9 @@ class IrradianceCalculation:
         libradtran.add_input(LibradtranInput.PRESSURE, [uv_file_header.pressure])
         libradtran.add_input(LibradtranInput.ALBEDO, [self._calculation_input.parameters.interpolated_albedo(
             days,
-            self._calculation_input.input_parameters.default_albedo
+            self._calculation_input.settings.default_albedo
         )])
-        aerosol = self._calculation_input.parameters.interpolated_aerosol(days, self._calculation_input.input_parameters.default_aerosol)
+        aerosol = self._calculation_input.parameters.interpolated_aerosol(days, self._calculation_input.settings.default_aerosol)
         libradtran.add_input(LibradtranInput.AEROSOL,
                              [aerosol.alpha, aerosol.beta])
 

@@ -12,10 +12,11 @@ from buvic.logic.b_file import read_b_file, BFile
 from buvic.logic.calibration_file import read_calibration_file, Calibration
 from buvic.logic.darksky import get_cloud_cover, CloudCover, ParameterCloudCover
 from buvic.logic.file import File
-from buvic.logic.parameter_file import Parameters, read_parameter_file, Angstrom
+from buvic.logic.parameter_file import Parameters, read_parameter_file
+from buvic.logic.settings import Settings
 from buvic.logic.utils import date_to_days
 from buvic.logic.uv_file import UVFileReader, UVFileEntry
-from .arf_file import Direction, read_arf_file, ARF
+from .arf_file import read_arf_file, ARF
 
 LOG = getLogger(__name__)
 
@@ -25,12 +26,11 @@ class CalculationInput:
     """
     An input for the `IrradianceCalculation`
     """
-    input_parameters: InputParameters
+    settings: Settings
     uv_file_name: File
     b_file_name: Optional[File]
     calibration_file_name: File
     arf_file_name: Optional[File]
-    arf_direction: Direction = Direction.SOUTH
     parameter_file_name: Optional[File] = None
     warnings: List[WarningMessage] = field(default_factory=list)
 
@@ -53,7 +53,7 @@ class CalculationInput:
             LOG.warning("No arf file specified. Cos correction will not be applied")
             warn(f"ARF file was not found. Cos correction has not been applied")
             return None
-        return read_arf_file(self.arf_file_name.full_path, self.arf_direction)
+        return read_arf_file(self.arf_file_name.full_path, self.settings.arf_column)
 
     @cached_property
     def parameters(self) -> Parameters:
@@ -72,7 +72,7 @@ class CalculationInput:
             return get_cloud_cover(position.latitude, position.longitude, date)
 
     def cos_correction_to_apply(self, time: float) -> CosCorrection:
-        if self.input_parameters.no_coscor or self.arf is None:
+        if self.settings.no_coscor or self.arf is None:
             return CosCorrection.NONE
         elif self.cloud_cover.is_diffuse(time):
             return CosCorrection.DIFFUSE
@@ -96,14 +96,6 @@ class CalculationInput:
 
     def add_warnings(self, warnings: WarningMessage):
         self.warnings.extend(warnings)
-
-
-@dataclass
-class InputParameters:
-    default_albedo: float
-    default_aerosol: Angstrom
-    default_ozone: float
-    no_coscor: bool = False
 
 
 class CosCorrection(Enum):

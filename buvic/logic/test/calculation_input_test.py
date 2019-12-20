@@ -1,10 +1,10 @@
 import logging
 import unittest
 
-from buvic.logic.calculation_input import CalculationInput, InputParameters
+from buvic.logic.calculation_input import CalculationInput
 from buvic.logic.darksky import ParameterCloudCover, DefaultCloudCover
 from buvic.logic.file import File
-from buvic.logic.parameter_file import Angstrom
+from buvic.logic.settings import Settings
 from buvic.logutils import init_logging
 
 
@@ -14,7 +14,7 @@ class UVFileReaderTestCase(unittest.TestCase):
         init_logging(logging.DEBUG)
 
         calculation_input = CalculationInput(
-            InputParameters(0, Angstrom(0, 0), 0),
+            Settings(),
             File("dummy"),
             File("dummy"),
             File("buvic/logic/test/calibration_example"),
@@ -31,7 +31,7 @@ class UVFileReaderTestCase(unittest.TestCase):
         init_logging(logging.DEBUG)
 
         calculation_input = CalculationInput(
-            InputParameters(0, Angstrom(0, 0), 0),
+            Settings(),
             File("buvic/logic/test/uv_example"),
             File("dummy"),
             File("dummy"),
@@ -45,7 +45,7 @@ class UVFileReaderTestCase(unittest.TestCase):
         self.assertTrue(calculation_input.cloud_cover.is_diffuse(15))
 
         calculation_input = CalculationInput(
-            InputParameters(0, Angstrom(0, 0), 0),
+            Settings(),
             File("buvic/logic/test/uv_example"),
             File("dummy"),
             File("dummy"),

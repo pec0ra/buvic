@@ -13,11 +13,6 @@ CALIBRATION_FILES_SUBDIR = "instr/"
 ARF_FILES_SUBDIR = "instr/"
 PARAMETER_FILES_SUBDIR = "instr/"
 
-DEFAULT_ALBEDO_VALUE = 0.04
-DEFAULT_ALPHA_VALUE = 1.3
-DEFAULT_BETA_VALUE = 0.1
-DEFAULT_OZONE_VALUE = 300
-
 APP_VERSION = "test-version"
 if path.exists("version"):
     with open("version") as version_file:

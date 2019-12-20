@@ -10,9 +10,10 @@ from remi.gui import VBox
 from buvic.logic.calculation_utils import CalculationUtils
 from buvic.logic.file_utils import FileUtils
 from buvic.logic.result import Result
+from buvic.logic.settings import Settings
 from .const import OUTPUT_DIR, DATA_DIR, APP_VERSION, ASSETS_DIR
 from .gui.utils import show, hide
-from .gui.widgets import Title, Level, Loader, PathMainForm, SimpleMainForm, ResultWidget, ExtraParamForm
+from .gui.widgets import Title, Level, Loader, PathMainForm, SimpleMainForm, ResultWidget, Modal, IconButton, SettingsWidget
 
 LOG = getLogger(__name__)
 
@@ -21,15 +22,17 @@ class UVApp(App):
     _file_utils: FileUtils
     _main_container: VBox
     _forms: VBox
-    _extra_param_form: ExtraParamForm
+    _setting_widget: SettingsWidget
     _main_form: SimpleMainForm
     _secondary_form: PathMainForm
     _loader: Loader
     _result_container: ResultWidget
     _error_label: Label
     _lock = multiprocessing.Manager().Lock()
+    _modal: Modal = None
 
     def __init__(self, *args):
+        self._settings = Settings.load()
         super(UVApp, self).__init__(*args, static_file_path={'plots': OUTPUT_DIR, 'res': ASSETS_DIR})
 
         self._executor = ThreadPoolExecutor(1)
@@ -41,28 +44,22 @@ class UVApp(App):
         head.add_child("google_icons", '<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">')
         self._file_utils = FileUtils(DATA_DIR)
 
-        self._main_container = gui.VBox(width="80%", style="margin: 30px auto; padding: 20px 40px 10px 40px")
+        self._main_container = gui.VBox(width="80%", style="margin: auto; padding: 20px 40px 10px 40px; min-height: calc(100% - 1500px)")
 
         header_picture = gui.Image("/res:pmodwrc_logo.png", width=200, style="align-self: flex-start")
         title = Title(Level.H1, "Brewer UV Irradiance Calculator")
 
         self._forms = VBox()
 
-        form_selection_checkbox = gui.CheckBoxLabel("Manual mode", style="align-self: flex-start; margin-bottom: 20px;"
-                                                                         "height: 30px")
-        form_selection_checkbox.onchange.do(self._on_form_selection_change)
-        self._forms.append(form_selection_checkbox)
+        settings_button = IconButton("Settings", "settings", style="align-self: flex-start; margin-bottom: 5px")
+        settings_button.onclick.do(self._open_settings)
+        self._forms.append(settings_button)
 
-        self._extra_param_form = ExtraParamForm()
-        self._forms.append(self._extra_param_form)
-
-        self._main_form = SimpleMainForm(self._calculate, self._file_utils)
-        self._secondary_form = PathMainForm(self._calculate)
+        self._main_form = SimpleMainForm(self._calculate, self._file_utils, self._settings)
+        self._secondary_form = PathMainForm(self._calculate, self._settings)
         hide(self._secondary_form)
         self._forms.append(self._main_form)
         self._forms.append(self._secondary_form)
-
-        self._extra_param_form.register_handler(self._main_form.extra_param_change_callback)
 
         self._loader = Loader()
 
@@ -82,6 +79,8 @@ class UVApp(App):
         version = gui.Link("https://hub.docker.com/r/pmodwrc/buvic", f"BUVIC {APP_VERSION}",
                            style="color: #999; align-self: flex-end; margin-top: 30px")
         self._main_container.append(version)
+
+        self._on_settings_changed()
 
         # returning the root widget
         return self._main_container
@@ -162,16 +161,31 @@ class UVApp(App):
         else:
             LOG.warning("Trying to show an error with no message")
 
-    def _on_form_selection_change(self, widget: gui.Widget, value: bool) -> None:
+    def _on_settings_changed(self) -> None:
         """
-        Called when the `Manual mode` checkbox is toggled
+        Called when the settings have been changed
         """
-        del widget  # remove unused parameter
-        if value:
+        self._main_form.update_settings(self._settings)
+        self._secondary_form.update_settings(self._settings)
+        if self._settings.manual_mode:
             hide(self._main_form)
             show(self._secondary_form)
-            self._extra_param_form.register_handler(self._secondary_form.extra_param_change_callback)
         else:
             show(self._main_form)
             hide(self._secondary_form)
-            self._extra_param_form.register_handler(self._main_form.extra_param_change_callback)
+
+    def _open_settings(self, widget: gui.Widget):
+        del widget
+
+        save_button_text = "Save"
+        self._setting_widget = SettingsWidget(self._settings)
+        if self._modal is not None and not self._modal.is_closed():
+            self._modal.close()
+        self._modal = Modal("Settings", self._setting_widget, [(save_button_text, self._save_settings)])
+        self._main_container.append(self._modal)
+        self._setting_widget.set_save_button(self._modal.get_extra_buttons()[save_button_text])
+
+    def _save_settings(self, widget: gui.Widget):
+        del widget
+        self._settings = self._setting_widget.save()
+        self._on_settings_changed()

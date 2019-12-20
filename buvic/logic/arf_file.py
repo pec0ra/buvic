@@ -5,15 +5,16 @@ from dataclasses import dataclass
 from enum import Enum
 from logging import getLogger
 from typing import List
+from warnings import warn
 
 LOG = getLogger(__name__)
 
 
-def read_arf_file(file_name: str, direction: Direction) -> ARF:
+def read_arf_file(file_name: str, arf_column: int) -> ARF:
     """
     Parse a given arf file into a `ARF` object.
     :param file_name: the name of the file to parse
-    :param direction: the direction to get the value for
+    :param arf_column: the column to integrate the data from
     :return: the `ARF` object
     """
 
@@ -33,10 +34,13 @@ def read_arf_file(file_name: str, direction: Direction) -> ARF:
                 if sza < 0 or sza > 90:
                     raise ValueError(f"Invalid value found in the first column. Sza must be between 0 and 90. Found {sza}")
                 szas.append(sza)
-                if len(line_values) <= 4:
+
+                if len(line_values) <= arf_column:
+                    warn(f"Could not read column {arf_column} from arf file, file has only {len(line_values)} columns. Used last column "
+                         f"instead.")
                     values.append(float(line_values[-1]))
                 else:
-                    values.append(float(line_values[direction.value]))
+                    values.append(float(line_values[arf_column]))
             szas.append(90)
             values.append(0)
 

@@ -11,7 +11,7 @@ import progressbar
 from matplotlib import rcParams
 
 from buvic.const import DEFAULT_ALBEDO_VALUE, DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE, TMP_FILE_DIR, DEFAULT_OZONE_VALUE
-from buvic.logic.calculation_input import CalculationInput, InputParameters, Angstrom
+from buvic.logic.calculation_input import CalculationInput, Settings, Angstrom
 from buvic.logic.calculation_utils import CalculationUtils
 from buvic.logic.file import File
 from buvic.logic.file_utils import FileUtils
@@ -100,7 +100,7 @@ def show_progress(value: float):
 
 if input_dir is None:
     input_dir = DEFAULT_DATA_DIR
-parameters = InputParameters(
+parameters = Settings(
     albedo,
     aerosol,
     ozone,

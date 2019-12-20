@@ -26,9 +26,9 @@ class Result:
         """
         minutes = self.uv_file_entry.raw_values[0].time
         days = date_to_days(self.uv_file_entry.header.date)
-        ozone = self.calculation_input.b_file.interpolated_ozone(minutes, self.calculation_input.input_parameters.default_ozone)
-        albedo = self.calculation_input.parameters.interpolated_albedo(days, self.calculation_input.input_parameters.default_albedo)
-        aerosol = self.calculation_input.parameters.interpolated_aerosol(days, self.calculation_input.input_parameters.default_aerosol)
+        ozone = self.calculation_input.b_file.interpolated_ozone(minutes, self.calculation_input.settings.default_ozone)
+        albedo = self.calculation_input.parameters.interpolated_albedo(days, self.calculation_input.settings.default_albedo)
+        aerosol = self.calculation_input.parameters.interpolated_aerosol(days, self.calculation_input.settings.default_aerosol)
         cos_cor_to_apply = self.calculation_input.cos_correction_to_apply(minutes)
 
         # If the value comes from Darksky, we add the cloud cover in parenthesis after the coscor type
@@ -75,7 +75,7 @@ class Result:
         file_name = f"{prefix}{days:03}{time.hour:02}{time.minute:02}G.{bid}{suffix}"
         file_path = path.join(f"{self.uv_file_entry.brewer_id}", f"{self.uv_file_entry.header.date.year}", file_name)
 
-        if self.calculation_input.input_parameters.no_coscor:
+        if self.calculation_input.settings.no_coscor:
             return path.join("nocoscor", file_path)
         else:
             return file_path

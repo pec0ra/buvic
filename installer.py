@@ -276,9 +276,20 @@ def run_installer():
             sys.exit()
     print()
 
+    if not check_command(f"docker volume inspect buvic-settings >/dev/null 2>&1 || exit 1"):
+        print("* Creating volume for settings")
+        print(Colors.LIGHTGRAY, end='', flush=True)
+        result = run("docker volume create --name buvic-settings", shell=True)
+        print(Colors.ENDC, end='', flush=True)
+        if result.returncode != 0:
+            p("ERROR: An error occurred while creating the buvic settings volume!", Colors.ERROR)
+            print("Exiting")
+            sys.exit(1)
+        print()
+
     print("* Starting server")
     docker_command = ["docker", "run", "--init", "-d", f"-p {port}:4444", f"-v {instr_path}:/instr", f"-v {uvdata_path}:/uvdata",
-                      f"-v {output_path}:/out"]
+                      f"-v {output_path}:/out", "-v buvic-settings:/settings"]
 
     if user is not None:
         docker_command.extend(["--user", f"{user}"])

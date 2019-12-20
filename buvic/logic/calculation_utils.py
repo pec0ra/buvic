@@ -20,7 +20,8 @@ from buvic.logic.calculation_event_handler import CalculationEventHandler
 from buvic.logic.file import File
 from buvic.logic.output_utils import create_csv
 from buvic.logic.result import Result
-from .calculation_input import CalculationInput, InputParameters
+from buvic.logic.settings import Settings
+from .calculation_input import CalculationInput
 from .irradiance_calculation import IrradianceCalculation
 
 LOG = getLogger(__name__)
@@ -95,7 +96,7 @@ class CalculationUtils:
                  calculation_input.arf_file_name, duration)
         return result_list
 
-    def watch(self, parameters: InputParameters) -> None:
+    def watch(self, settings: Settings) -> None:
         """
         TODO: fix me
         Watch a directory for new UV or B files.
@@ -105,11 +106,11 @@ class CalculationUtils:
 
         This method will run until interrupted by the user
 
-        :param parameters: the parameters to use for calculation
+        :param settings: the settings to use for calculation
         """
         self._init_progress = None
         self._progress_handler = None
-        event_handler = CalculationEventHandler(self._on_new_file, parameters)
+        event_handler = CalculationEventHandler(self._on_new_file, settings)
         observer = Observer()
         observer.schedule(event_handler, self._input_dir)
         observer.start()
@@ -164,20 +165,20 @@ class CalculationUtils:
         LOG.info("Finished calculation batch in %ds", duration)
         return ret
 
-    def _on_new_file(self, file_type: str, days: str, year: str, brewer_id: str, parameters: InputParameters) -> None:
+    def _on_new_file(self, file_type: str, days: str, year: str, brewer_id: str, settings: Settings) -> None:
         """
         TODO: fix me
         """
         if file_type == "UV":
-            calculation_input = self._input_from_files(days, year, brewer_id, parameters, File("TODO", "TODO"))
+            calculation_input = self._input_from_files(days, year, brewer_id, settings, File("TODO", "TODO"))
             if calculation_input is not None:
                 self.calculate_for_input(calculation_input)
         if file_type == "B":
-            calculation_input = self._input_from_files(days, year, brewer_id, parameters, File("TODO", "TODO"))
+            calculation_input = self._input_from_files(days, year, brewer_id, settings, File("TODO", "TODO"))
             if calculation_input is not None:
                 self.calculate_for_input(calculation_input)
 
-    def _input_from_files(self, days: str, year: str, brewer_id: str, parameters: InputParameters, uvr_file: File):
+    def _input_from_files(self, days: str, year: str, brewer_id: str, settings: Settings, uvr_file: File):
         """
         TODO: deprecated
 
@@ -217,7 +218,7 @@ class CalculationUtils:
 
         # If everything is ok, return a calculation input
         return CalculationInput(
-            parameters,
+            settings,
             uv_file,
             b_file,
             uvr_file,
