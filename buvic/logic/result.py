@@ -73,7 +73,8 @@ class Result:
         time = minutes_to_time(self.spectrum.measurement_times[0])
 
         file_name = f"{prefix}{days:03}{time.hour:02}{time.minute:02}G.{bid}{suffix}"
-        file_path = path.join(f"{self.uv_file_entry.brewer_id}", f"{self.uv_file_entry.header.date.year}", file_name)
+        output_path = path.commonprefix([self.calculation_input.b_file_name.path, self.calculation_input.uv_file_name.path])
+        file_path = path.join(output_path, file_name)
 
         if self.calculation_input.settings.no_coscor:
             return path.join("nocoscor", file_path)
