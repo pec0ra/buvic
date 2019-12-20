@@ -56,7 +56,7 @@ def get_cloud_cover(latitude: float, longitude: float, d: date) -> CloudCover:
         if "cloudCover" not in hour_data:
             LOG.warning("No cloud cover data found for hour %d at date %s (%d). Value will be interpolated.", i, d.isoformat(),
                         date_to_days(d))
-            warn(f"No cloud cover data found for hour {i}. Value is be interpolated.")
+            warn(f"No cloud cover data found for hour {i}. Value is interpolated.")
             i += 1
             continue
         times.append(float(i * 60))

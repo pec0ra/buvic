@@ -10,7 +10,8 @@ from buvic.logic.file import File
 from buvic.logic.file_utils import FileUtils
 from buvic.logic.parameter_file import Angstrom
 from buvic.logic.result import Result
-from buvic.logic.settings import Settings
+from buvic.logic.settings import Settings, DataSource
+from buvic.logic.utils import name_to_date_and_brewer_id
 from .utils import show, hide
 from ..const import TMP_FILE_DIR, OUTPUT_DIR
 from ..logic.calculation_input import CalculationInput
@@ -272,8 +273,11 @@ class PathMainForm(MainForm):
         if (self._uv_file is not None and
                 self._calibration_file is not None):
 
+            d, brewer_id = name_to_date_and_brewer_id(self._uv_file)
             # If all fields are valid, we initialize a CalculationInput and enable the button
             self._calculation_input = CalculationInput(
+                brewer_id,
+                d,
                 self.settings,
                 File(self._uv_file),
                 File(self._b_file) if self._b_file is not None else None,
@@ -592,7 +596,7 @@ class IconLabel(gui.Label):
     def __init__(self, text, icon_name, *args, **kwargs):
         super().__init__(text, *args, **kwargs)
         self.set_style("display: flex; align-items: center")
-        icon = Icon(icon_name, style="margin-right: 3px; order: -1")
+        icon = Icon(icon_name, style="margin-right: 5px; order: -1")
         self.append(icon)
 
 
@@ -600,7 +604,7 @@ class IconButton(gui.Button):
     def __init__(self, text, icon_name, *args, **kwargs):
         super().__init__(text, *args, **kwargs)
         self.set_style("display: flex; align-items: center")
-        icon = Icon(icon_name, style="margin-right: 3px; order: -1")
+        icon = Icon(icon_name, style="margin-right: 5px; order: -1")
         self.add_child("icon", icon)
 
 
@@ -727,6 +731,37 @@ class SettingsWidget(VBox):
         ozone_input = Input("Ozone", self._ozone_spin, style="margin-bottom: 10px")
         self.append(ozone_input)
 
+        source_title = Title(Level.H4, "Data source")
+        source_title.set_style("margin-top: 14px")
+        self.append(source_title)
+        source_explanation = IconLabel("Data can either come from files on disk or from the online database eubrewnet.", "info_outline",
+                                       style="margin-bottom: 10px; line-height: 14pt")
+        self.append(source_explanation)
+
+        self._uv_source_selection = gui.DropDown()
+        for source in DataSource:
+            self._uv_source_selection.append(gui.DropDownItem(source))
+        self._uv_source_selection.set_value(settings.uv_data_source)
+        uv_source_input = Input("UV data source", self._uv_source_selection,
+                                style="margin-bottom: 10px")
+        self.append(uv_source_input)
+
+        self._ozone_source_selection = gui.DropDown()
+        for source in DataSource:
+            self._ozone_source_selection.append(gui.DropDownItem(source))
+        self._ozone_source_selection.set_value(settings.ozone_data_source)
+        ozone_source_input = Input("Ozone data source", self._ozone_source_selection,
+                                   style="margin-bottom: 10px")
+        self.append(ozone_source_input)
+
+        self._uvr_source_selection = gui.DropDown()
+        for source in DataSource:
+            self._uvr_source_selection.append(gui.DropDownItem(source))
+        self._uvr_source_selection.set_value(settings.uvr_data_source)
+        uvr_source_input = Input("UVR data source", self._uvr_source_selection,
+                                 style="margin-bottom: 10px")
+        self.append(uvr_source_input)
+
     def save(self) -> Settings:
         manual_mode = self._form_selection_checkbox.get_value()
 
@@ -741,13 +776,20 @@ class SettingsWidget(VBox):
 
         ozone = self._ozone_spin.get_value()
 
+        uv_data_source = self._uv_source_selection.get_value()
+        ozone_data_source = self._ozone_source_selection.get_value()
+        uvr_data_source = self._uvr_source_selection.get_value()
+
         settings = Settings(
             manual_mode,
             arf_column,
             no_coscor,
             albedo,
             Angstrom(alpha, beta),
-            ozone
+            ozone,
+            DataSource(uv_data_source),
+            DataSource(ozone_data_source),
+            DataSource(uvr_data_source)
         )
         settings.write()
         self._show_success()

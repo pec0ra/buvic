@@ -21,6 +21,7 @@ from buvic.logic.file import File
 from buvic.logic.output_utils import create_csv
 from buvic.logic.result import Result
 from buvic.logic.settings import Settings
+from buvic.logic.utils import days_to_date
 from .calculation_input import CalculationInput
 from .irradiance_calculation import IrradianceCalculation
 
@@ -218,6 +219,8 @@ class CalculationUtils:
 
         # If everything is ok, return a calculation input
         return CalculationInput(
+            brewer_id,
+            days_to_date(int(days), int(year)),
             settings,
             uv_file,
             b_file,

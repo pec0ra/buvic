@@ -1,6 +1,6 @@
 import unittest
 
-from buvic.logic.b_file import BFile
+from buvic.logic.ozone import BFile
 
 
 class UVFileReaderTestCase(unittest.TestCase):

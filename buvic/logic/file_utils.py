@@ -11,7 +11,7 @@ from typing import Dict, List, Tuple, Callable, Pattern, Match, Optional
 
 from buvic.logic.calculation_input import CalculationInput
 from buvic.logic.file import File
-from buvic.logic.settings import Settings
+from buvic.logic.settings import Settings, DataSource
 from buvic.logic.utils import days_to_date, date_range, date_to_days
 
 LOG = getLogger(__name__)
@@ -172,7 +172,7 @@ class FileUtils:
         """
 
         uv_file = self.get_uv_file(brewer_id, f"UV{days}{year}.{brewer_id}")
-        if uv_file is None:
+        if uv_file is None and settings.uv_data_source == DataSource.FILES:
             return None
 
         b_file = self.get_b_file(brewer_id, f"B{days}{year}.{brewer_id}")
@@ -185,6 +185,8 @@ class FileUtils:
         parameter_file = self.get_parameter_file(parameter_file_name)
 
         return CalculationInput(
+            brewer_id,
+            days_to_date(int(days), int(year)),
             settings,
             uv_file,
             b_file,

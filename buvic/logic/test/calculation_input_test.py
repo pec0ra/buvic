@@ -1,5 +1,6 @@
 import logging
 import unittest
+from datetime import date
 
 from buvic.logic.calculation_input import CalculationInput
 from buvic.logic.darksky import ParameterCloudCover, DefaultCloudCover
@@ -14,6 +15,8 @@ class UVFileReaderTestCase(unittest.TestCase):
         init_logging(logging.DEBUG)
 
         calculation_input = CalculationInput(
+            "033",
+            date(2019, 12, 20),
             Settings(),
             File("dummy"),
             File("dummy"),
@@ -31,6 +34,8 @@ class UVFileReaderTestCase(unittest.TestCase):
         init_logging(logging.DEBUG)
 
         calculation_input = CalculationInput(
+            "033",
+            date(2019, 12, 20),
             Settings(),
             File("buvic/logic/test/uv_example"),
             File("dummy"),
@@ -45,6 +50,8 @@ class UVFileReaderTestCase(unittest.TestCase):
         self.assertTrue(calculation_input.cloud_cover.is_diffuse(15))
 
         calculation_input = CalculationInput(
+            "033",
+            date(2019, 12, 20),
             Settings(),
             File("buvic/logic/test/uv_example"),
             File("dummy"),

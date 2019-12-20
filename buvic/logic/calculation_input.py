@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import date
 from enum import Enum
 from logging import getLogger
 from typing import List, Optional
@@ -8,14 +9,15 @@ from warnings import warn, WarningMessage
 
 from cached_property import cached_property
 
-from buvic.logic.b_file import read_b_file, BFile
 from buvic.logic.calibration_file import read_calibration_file, Calibration
 from buvic.logic.darksky import get_cloud_cover, CloudCover, ParameterCloudCover
 from buvic.logic.file import File
+from buvic.logic.ozone import BFile, BFileOzoneProvider
+from buvic.logic.ozone import EubrewnetOzoneProvider
 from buvic.logic.parameter_file import Parameters, read_parameter_file
-from buvic.logic.settings import Settings
+from buvic.logic.settings import Settings, DataSource
 from buvic.logic.utils import date_to_days
-from buvic.logic.uv_file import UVFileReader, UVFileEntry
+from buvic.logic.uv_file import UVFileUVProvider, UVFileEntry, EubrewnetUVProvider
 from .arf_file import read_arf_file, ARF
 
 LOG = getLogger(__name__)
@@ -26,6 +28,8 @@ class CalculationInput:
     """
     An input for the `IrradianceCalculation`
     """
+    brewer_id: str
+    date: date
     settings: Settings
     uv_file_name: File
     b_file_name: Optional[File]
@@ -36,12 +40,18 @@ class CalculationInput:
 
     @cached_property
     def uv_file_entries(self) -> List[UVFileEntry]:
-        uv_file_reader = UVFileReader(self.uv_file_name.full_path)
+        if self.settings.uv_data_source == DataSource.FILES:
+            uv_file_reader = UVFileUVProvider(self.uv_file_name.full_path)
+        else:
+            uv_file_reader = EubrewnetUVProvider(self.brewer_id, self.date)
         return uv_file_reader.get_uv_file_entries()
 
     @cached_property
     def b_file(self) -> BFile:
-        return read_b_file(self.b_file_name)
+        if self.settings.ozone_data_source == DataSource.FILES:
+            return BFileOzoneProvider(self.b_file_name).get_b_data()
+        else:
+            return EubrewnetOzoneProvider(self.brewer_id, self.date).get_b_data()
 
     @cached_property
     def calibration(self) -> Calibration:

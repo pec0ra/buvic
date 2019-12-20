@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, asdict
+from enum import Enum
 from logging import getLogger
 from os import path
 
@@ -20,6 +21,11 @@ DEFAULT_BETA_VALUE = 0.1
 DEFAULT_OZONE_VALUE = 300
 
 
+class DataSource(str, Enum):
+    FILES = "Files"
+    EUBREWNET = "EUBREWNET"
+
+
 @dataclass
 class Settings:
     manual_mode: bool = DEFAULT_MANUAL_MODE
@@ -31,6 +37,10 @@ class Settings:
     default_albedo: float = DEFAULT_ALBEDO_VALUE
     default_aerosol: Angstrom = Angstrom(DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE)
     default_ozone: float = DEFAULT_OZONE_VALUE
+
+    uv_data_source: DataSource = DataSource.FILES
+    ozone_data_source: DataSource = DataSource.FILES
+    uvr_data_source: DataSource = DataSource.FILES
 
     def write(self):
         with open(SETTINGS_FILE_PATH, 'w') as config_file:
@@ -53,4 +63,7 @@ class Settings:
                 dict_settings["default_albedo"],
                 Angstrom(dict_settings["default_aerosol"][0], dict_settings["default_aerosol"][1]),
                 dict_settings["default_ozone"],
+                DataSource(dict_settings["uv_data_source"]),
+                DataSource(dict_settings["ozone_data_source"]),
+                DataSource(dict_settings["uvr_data_source"])
             )

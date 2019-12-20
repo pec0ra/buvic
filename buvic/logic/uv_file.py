@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+from statistics import mean
+import itertools
+import json
 import re
+import urllib.request
 from collections import namedtuple
 from dataclasses import dataclass
 from datetime import date
 from logging import getLogger
 from typing import List, TextIO
+from urllib.error import HTTPError
 from warnings import warn
 
 from numpy import divide, sqrt
@@ -13,7 +18,40 @@ from numpy import divide, sqrt
 LOG = getLogger(__name__)
 
 
-class UVFileReader(object):
+class UVProvider:
+    def get_uv_file_entries(self) -> List[UVFileEntry]:
+        """
+        Get the list of `UVFileEntry`
+        :return: the list of `UVFileEntry`
+        """
+        raise NotImplementedError("'get_uv_file_entries' should be implemented in a child class")
+
+    @staticmethod
+    def mean_of_duplicates(values: List[RawUVValue]) -> List[RawUVValue]:
+        ret_list = []
+        for wavelength, values_of_group in itertools.groupby(sorted(values, key=lambda v: v.wavelength), lambda v: v.wavelength):
+            value_list = list(values_of_group)
+            if len(value_list) == 1:
+                ret_list.append(value_list[0])
+            else:
+                time = mean([v.time for v in value_list])
+                step = mean([v.step for v in value_list])
+                events = mean([v.events for v in value_list])
+                if events == 0:
+                    std = 0
+                else:
+                    std = divide(1, sqrt(events))
+                ret_list.append(RawUVValue(
+                    time,
+                    wavelength,
+                    step,
+                    events,
+                    std
+                ))
+        return ret_list
+
+
+class UVFileUVProvider(UVProvider):
     """
     A utility class to read and parse UV files.
 
@@ -52,7 +90,7 @@ class UVFileReader(object):
         while header_line.strip() != '\x1A' and header_line.strip() != '':
 
             # Parse the header
-            header = UVFileHeader(header_line)
+            header = UVFileHeader.from_header_line(header_line)
 
             LOG.debug("Parsed header: %s", header.raw_header_line)
 
@@ -60,7 +98,7 @@ class UVFileReader(object):
             values = []
             next_line = self.__read_line(file)
             while "dark" not in next_line and "end" not in next_line and next_line != '':
-                values.append(RawUVValue(next_line))
+                values.append(RawUVValue.from_value_line(next_line))
                 next_line = self.__read_line(file)
 
             dark_match = re.match("^dark\s+(?P<dark>\S+)\s+$", next_line)
@@ -69,7 +107,7 @@ class UVFileReader(object):
                 next_line = self.__read_line(file)
                 for i in range(len(values) - 1, -1, -1):
                     old_value = values[i]
-                    new_value = RawUVValue(next_line)
+                    new_value = RawUVValue.from_value_line(next_line)
                     old_value.time = (old_value.time + new_value.time) / 2
                     old_value.events = (old_value.events + new_value.events) / 2
                     old_value.time = (old_value.step + new_value.step) / 2
@@ -81,7 +119,6 @@ class UVFileReader(object):
 
             # Create the resulting entry and add it to the result
             entry = UVFileEntry(
-                self.__get_brewer_id(),
                 header,
                 values
             )
@@ -115,8 +152,71 @@ class UVFileReader(object):
         """
         return file.readline().replace('\r', ' ').replace('\n', '')
 
-    def __get_brewer_id(self) -> str:
-        return self._file_name.split('.')[-1]
+
+class EubrewnetUVProvider(UVProvider):
+
+    def __init__(self, brewer_id: str, d: date):
+        self._brewer_id = brewer_id
+        self._date = d
+
+    def get_uv_file_entries(self) -> List[UVFileEntry]:
+
+        url_string = f"http://rbcce.aemet.es/eubrewnet/getdataold/getUVAvailableScanTypes?brewerid={self._brewer_id}&date={self._date.isoformat()}"
+        LOG.info("Retrieved scan types from %s", url_string)
+        try:
+            with urllib.request.urlopen(url_string) as url:
+                scan_types = json.loads(url.read().decode())
+        except HTTPError as e:
+            raise Exception(f"Error while trying to access eubrewnet. {e}") from e
+
+        file_entries = []
+        for scan_type in scan_types:
+            url_string = f"http://rbcce.aemet.es/eubrewnet/getdataold/getUV?scantype={scan_type}&brewerid={self._brewer_id}&date={self._date.isoformat()}"
+            LOG.info("Retrieved uv data from %s", url_string)
+            try:
+                with urllib.request.urlopen(url_string) as url:
+                    data = json.loads(url.read().decode())
+                    for d in [data[i:i + 5] for i in range(0, len(data), 5)]:
+                        header_list = d[0]
+                        times = d[1]
+                        wavelengths = d[2]
+                        steps = d[3]
+                        counts = d[4]
+                        header = UVFileHeader(
+                            raw_header_line=url_string,
+                            type=scan_type,
+                            integration_time=header_list[2],
+                            dead_time=header_list[3],
+                            cycles=header_list[4],
+                            date=date.fromisoformat(header_list[5]),
+                            place=header_list[6],
+                            position=Position(header_list[7], header_list[8]),
+                            temperature=header_list[9],  # TODO: Temperature might need a conversion
+                            pressure=header_list[10],
+                            dark=header_list[11]
+                        )
+                        values = []
+                        for i in range(0, len(times)):
+                            events = counts[i]
+                            if events == 0:
+                                std = 0
+                            else:
+                                std = divide(1, sqrt(events))
+                            values.append(RawUVValue(
+                                times[i],
+                                wavelengths[i] / 10,
+                                steps[i],
+                                events,
+                                std
+                            ))
+
+                        file_entries.append(UVFileEntry(
+                            header,
+                            self.mean_of_duplicates(values)
+                        ))
+            except HTTPError as e:
+                raise Exception(f"Error while trying to access eubrewnet. {e}") from e
+        return file_entries
 
 
 @dataclass
@@ -147,10 +247,11 @@ class UVFileHeader:
     place: str
     position: Position
     temperature: float
-    pressure: int
+    pressure: float
     dark: float
 
-    def __init__(self, header_line: str):
+    @staticmethod
+    def from_header_line(header_line: str) -> UVFileHeader:
         """
         Init from a given header line
 
@@ -160,25 +261,28 @@ class UVFileHeader:
         :param header_line: the line to parse
         """
 
-        res = re.match(self.HEADER_REGEX, header_line)
+        res = re.match(UVFileHeader.HEADER_REGEX, header_line)
         if res is None:
             raise UVFileParsingError("Unable to parse header.\nHeader: '" + header_line + "'")
 
-        self.raw_header_line = header_line
-        self.type = res.group('type')
-        self.integration_time = float(res.group('integration_time'))
-        self.dead_time = float(res.group('dead_time'))
-        self.cycles = int(res.group('cycles'))
-        self.date = date(int(2000 + int(res.group('year'))), int(res.group('month')), int(res.group('day')))
-        self.place = res.group('place')
-        self.position = Position(float(res.group('latitude')), float(res.group('longitude')))
-        self.temperature = float(res.group('temperature'))  # TODO: Temperature might need a conversion
-        self.pressure = int(res.group('pressure'))  # TODO: Check that this is really always an int
-        self.dark = float(res.group('dark'))
-
-        if self.integration_time == 0.1147:
+        integration_time = float(res.group('integration_time'))
+        if integration_time == 0.1147:
             warn("Integration time is 0.1147. This might be correct but there is a high chance that the value that you"
                  "want is 0.2294 instead.")
+
+        return UVFileHeader(
+            raw_header_line=header_line,
+            type=res.group('type'),
+            integration_time=float(res.group('integration_time')),
+            dead_time=float(res.group('dead_time')),
+            cycles=int(res.group('cycles')),
+            date=date(int(2000 + int(res.group('year'))), int(res.group('month')), int(res.group('day'))),
+            place=res.group('place'),
+            position=Position(float(res.group('latitude')), float(res.group('longitude'))),
+            temperature=float(res.group('temperature')),  # TODO: Temperature might need a conversion
+            pressure=float(res.group('pressure')),
+            dark=float(res.group('dark'))
+        )
 
 
 @dataclass
@@ -198,30 +302,36 @@ class RawUVValue:
     events: float
     std: float
 
-    def __init__(self, value_line):
+    @staticmethod
+    def from_value_line(value_line: str):
         """
         Init from a given line
         :param value_line: the line to parse
         """
 
-        res = re.match(self.VALUE_REGEX, value_line)
+        res = re.match(RawUVValue.VALUE_REGEX, value_line)
         if res is None:
             raise UVFileParsingError("Unable to parse value line.\nLine: '" + value_line + "'")
 
-        self.time = float(res.group("time"))
-        self.wavelength = float(res.group("wavelength")) / 10
-        self.step = int(res.group("step"))
+        time = float(res.group("time"))
+        wavelength = float(res.group("wavelength")) / 10
+        step = int(res.group("step"))
         events = float(res.group("events"))
-        self.events = events
         if events == 0:
-            self.std = 0
+            std = 0
         else:
-            self.std = divide(1, sqrt(events))
+            std = divide(1, sqrt(events))
+        return RawUVValue(
+            time,
+            wavelength,
+            step,
+            events,
+            std
+        )
 
 
 @dataclass
 class UVFileEntry:
-    brewer_id: str
     header: UVFileHeader
     raw_values: List[RawUVValue]
 

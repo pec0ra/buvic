@@ -1,5 +1,6 @@
+import re
 from datetime import timedelta, date, time
-from typing import Iterable
+from typing import Iterable, Tuple
 
 
 def days_to_date(days: int, year: int) -> date:
@@ -56,3 +57,22 @@ def date_range(start_date: date, end_date: date) -> Iterable[date]:
     """
     for n in range(int((end_date - start_date).days) + 1):
         yield start_date + timedelta(n)
+
+
+_FILE_NAME_REGEX = re.compile("[A-Z]+(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d+)")
+
+
+def name_to_date_and_brewer_id(file_name: str) -> Tuple[date, str]:
+    """
+    Find the date and brewer id from a file name of the form XXDDDYY.bid
+    :param file_name: the name to find the date and brewer id from
+    :return: the date and the brewer id
+    """
+    res = re.match(_FILE_NAME_REGEX, file_name)
+    if res is None:
+        raise ValueError(f"Unknown file name {file_name}")
+    year = int(res.group("year"))
+    days = res.group("days")
+    d = days_to_date(int(days), year)
+    brewer_id = res.group("brewer_id")
+    return d, brewer_id

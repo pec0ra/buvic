@@ -68,12 +68,19 @@ class Result:
         :param suffix: the suffix to add to the file name
         :return: the created file name
         """
-        bid = self.uv_file_entry.brewer_id
+        bid = self.calculation_input.brewer_id
         days = date_to_days(self.uv_file_entry.header.date)
         time = minutes_to_time(self.spectrum.measurement_times[0])
 
         file_name = f"{prefix}{days:03}{time.hour:02}{time.minute:02}G.{bid}{suffix}"
-        output_path = path.commonprefix([self.calculation_input.b_file_name.path, self.calculation_input.uv_file_name.path])
+        if self.calculation_input.uv_file_name is not None and self.calculation_input.b_file_name is not None:
+            output_path = path.commonprefix([self.calculation_input.b_file_name.path, self.calculation_input.uv_file_name.path])
+        elif self.calculation_input.uv_file_name is not None:
+            output_path = self.calculation_input.uv_file_name.path
+        elif self.calculation_input.b_file_name is not None:
+            output_path = self.calculation_input.b_file_name.path
+        else:
+            output_path = path.join(f"{self.calculation_input.brewer_id}", f"{self.uv_file_entry.header.date.year}")
         file_path = path.join(output_path, file_name)
 
         if self.calculation_input.settings.no_coscor:
