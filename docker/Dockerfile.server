@@ -36,6 +36,11 @@ ENV PATH /opt/libRadtran/bin:$PATH
 COPY requirements.txt ./
 RUN pip3 install -r requirements.txt
 
+# Create settings directory
+RUN mkdir /settings && chmod 777 /settings
+ENV HOME /settings
+VOLUME /settings
+
 # Copy code and data
 COPY docker/run_docker.py ./
 COPY assets ./assets
@@ -51,10 +56,6 @@ COPY docker/libradtran_command.py ./buvic/
 
 ARG DOCKER_TAG
 ENV DOCKER_TAG $DOCKER_TAG
-
-RUN mkdir /settings && chmod 777 /settings
-ENV HOME /settings
-VOLUME /settings
 
 RUN if [ ! -z "$DOCKER_TAG" ]; \
     then echo $DOCKER_TAG > version; \

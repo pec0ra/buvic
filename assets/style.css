@@ -284,12 +284,6 @@ select {
     border-bottom: 2px solid rgba(0, 0, 0, .12);
 }
 
-input[type='checkbox'] {
-    height: 100%;
-    min-height: 20px;
-    min-width: 20px;
-}
-
 button {
     background: 0 0;
     border: none;
@@ -836,4 +830,11 @@ progress {
     padding: 0 30px;
     margin-bottom: 15px !important;
     justify-content: unset !important;
+}
+.CheckBoxLabel {
+    display: flex;
+    align-items: center;
+}
+.CheckBoxLabel > input {
+    margin-right: 5px !important;
 }

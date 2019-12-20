@@ -43,12 +43,12 @@ class Title(gui.Label):
         super().__init__(text, *args, **kwargs)
         self.set_style("font-weight: normal")
         if level == Level.H1:
-            self.set_style("font-size: 20pt; margin-top: 10px; margin-bottom: 30px")
+            self.set_style("font-size: 23pt; margin-top: 10px; margin-bottom: 30px")
         elif level == Level.H2:
-            self.set_style("font-size: 18pt; margin-top: 10px; margin-bottom: 30px")
+            self.set_style("font-size: 19pt; margin-top: 10px; margin-bottom: 30px")
         elif level == Level.H3:
             self.set_style(
-                "font-size: 15pt; margin-top: 10px; margin-bottom: 20px")
+                "font-size: 16pt; margin-top: 10px; margin-bottom: 20px")
         else:
             self.set_style("font-size: 12pt; margin-top: 5px; margin-bottom: 8px; font-weight: bold")
 
@@ -591,7 +591,7 @@ class Icon(gui.Label):
 class IconLabel(gui.Label):
     def __init__(self, text, icon_name, *args, **kwargs):
         super().__init__(text, *args, **kwargs)
-        self.set_style("display: flex")
+        self.set_style("display: flex; align-items: center")
         icon = Icon(icon_name, style="margin-right: 3px; order: -1")
         self.append(icon)
 
@@ -599,7 +599,7 @@ class IconLabel(gui.Label):
 class IconButton(gui.Button):
     def __init__(self, text, icon_name, *args, **kwargs):
         super().__init__(text, *args, **kwargs)
-        self.set_style("display: flex")
+        self.set_style("display: flex; align-items: center")
         icon = Icon(icon_name, style="margin-right: 3px; order: -1")
         self.add_child("icon", icon)
 
@@ -666,7 +666,7 @@ class SettingsWidget(VBox):
         self.append(form_title)
 
         self._form_selection_checkbox = gui.CheckBoxLabel("Specify files manually instead of giving a date and a brewer id",
-                                                          style="height: 30px")
+                                                          style="min-height: 30px")
         self._form_selection_checkbox.set_value(settings.manual_mode)
         # Click didn't work correctly for checkboxes do to a bug with onclick.
         self._form_selection_checkbox.onclick.do(

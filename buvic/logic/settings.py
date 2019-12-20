@@ -10,8 +10,6 @@ from buvic.logic.parameter_file import Angstrom
 LOG = getLogger(__name__)
 
 SETTINGS_FILE_PATH = path.join(path.expanduser("~"), '.buvic-settings.conf')
-print(SETTINGS_FILE_PATH)
-print(path.expanduser("~"))
 
 DEFAULT_MANUAL_MODE = False
 DEFAULT_ARF_COLUMN = 3

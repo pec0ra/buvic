@@ -51,7 +51,7 @@ class UVApp(App):
 
         self._forms = VBox()
 
-        settings_button = IconButton("Settings", "settings", style="align-self: flex-start; margin-bottom: 5px")
+        settings_button = IconButton("Settings", "settings", style="align-self: flex-start; margin-bottom: 10px")
         settings_button.onclick.do(self._open_settings)
         self._forms.append(settings_button)
 
