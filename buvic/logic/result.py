@@ -5,6 +5,7 @@ from datetime import datetime
 from os import path
 from typing import TextIO, List
 
+from buvic.brewer_infos import StraylightCorrection
 from buvic.logic.darksky import DarkskyCloudCover
 from buvic.logic.utils import date_to_days, minutes_to_time
 from .calculation_input import CalculationInput, CosCorrection
@@ -26,7 +27,7 @@ class Result:
         """
         minutes = self.uv_file_entry.raw_values[0].time
         days = date_to_days(self.uv_file_entry.header.date)
-        ozone = self.calculation_input.b_file.interpolated_ozone(minutes, self.calculation_input.settings.default_ozone)
+        ozone = self.calculation_input.ozone.interpolated_ozone(minutes, self.calculation_input.settings.default_ozone)
         albedo = self.calculation_input.parameters.interpolated_albedo(days, self.calculation_input.settings.default_albedo)
         aerosol = self.calculation_input.parameters.interpolated_aerosol(days, self.calculation_input.settings.default_aerosol)
         cos_cor_to_apply = self.calculation_input.cos_correction_to_apply(minutes)
@@ -41,11 +42,14 @@ class Result:
         file.write(f"% {self.uv_file_entry.header.place} {self.uv_file_entry.header.position.latitude}N "
                    f"{self.uv_file_entry.header.position.longitude}W\n")
 
+        straylight_correction = self.calculation_input.straylight_correction
+        if straylight_correction == StraylightCorrection.UNDEFINED:
+            straylight_correction = self.calculation_input.settings.default_straylight_correction
         second_line_parts = {
             "type": self.uv_file_entry.header.type,
             "coscor": f"{cos_cor_to_apply.value}{cloud_cover_value}",
             "tempcor": "false",
-            "straylightcor": "true" if self.calculation_input.b_file.straylight_correction else "false",
+            "straylightcor": straylight_correction.value,
             "o3": f"{ozone}DU",
             "albedo": str(albedo),
             "alpha": str(aerosol.alpha),

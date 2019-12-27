@@ -68,7 +68,7 @@ def name_to_date_and_brewer_id(file_name: str) -> Tuple[date, str]:
     :param file_name: the name to find the date and brewer id from
     :return: the date and the brewer id
     """
-    res = re.match(_FILE_NAME_REGEX, file_name)
+    res = re.search(_FILE_NAME_REGEX, file_name)
     if res is None:
         raise ValueError(f"Unknown file name {file_name}")
     year = int(res.group("year"))

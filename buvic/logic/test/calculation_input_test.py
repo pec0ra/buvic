@@ -2,6 +2,7 @@ import logging
 import unittest
 from datetime import date
 
+from buvic.brewer_infos import StraylightCorrection
 from buvic.logic.calculation_input import CalculationInput
 from buvic.logic.darksky import ParameterCloudCover, DefaultCloudCover
 from buvic.logic.file import File
@@ -22,6 +23,7 @@ class UVFileReaderTestCase(unittest.TestCase):
             File("dummy"),
             File("buvic/logic/test/calibration_example"),
             File("dummy"),
+            StraylightCorrection.UNDEFINED
         )
 
         c = calculation_input.calibration
@@ -41,6 +43,7 @@ class UVFileReaderTestCase(unittest.TestCase):
             File("dummy"),
             File("dummy"),
             File("dummy"),
+            StraylightCorrection.UNDEFINED,
             parameter_file_name=File("buvic/logic/test/parameter_example"),
         )
 
@@ -57,6 +60,7 @@ class UVFileReaderTestCase(unittest.TestCase):
             File("dummy"),
             File("dummy"),
             File("dummy"),
+            StraylightCorrection.UNDEFINED,
             parameter_file_name=None,
         )
 

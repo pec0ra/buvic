@@ -9,11 +9,12 @@ from warnings import warn, WarningMessage
 
 from cached_property import cached_property
 
+from buvic.brewer_infos import StraylightCorrection
 from buvic.logic.calibration_file import read_calibration_file, Calibration
 from buvic.logic.darksky import get_cloud_cover, CloudCover, ParameterCloudCover
 from buvic.logic.file import File
-from buvic.logic.ozone import BFile, BFileOzoneProvider
 from buvic.logic.ozone import EubrewnetOzoneProvider
+from buvic.logic.ozone import Ozone, BFileOzoneProvider
 from buvic.logic.parameter_file import Parameters, read_parameter_file
 from buvic.logic.settings import Settings, DataSource
 from buvic.logic.utils import date_to_days
@@ -35,6 +36,7 @@ class CalculationInput:
     b_file_name: Optional[File]
     calibration_file_name: File
     arf_file_name: Optional[File]
+    straylight_correction: StraylightCorrection
     parameter_file_name: Optional[File] = None
     warnings: List[WarningMessage] = field(default_factory=list)
 
@@ -47,11 +49,11 @@ class CalculationInput:
         return uv_file_reader.get_uv_file_entries()
 
     @cached_property
-    def b_file(self) -> BFile:
+    def ozone(self) -> Ozone:
         if self.settings.ozone_data_source == DataSource.FILES:
-            return BFileOzoneProvider(self.b_file_name).get_b_data()
+            return BFileOzoneProvider(self.b_file_name).get_ozone_data()
         else:
-            return EubrewnetOzoneProvider(self.brewer_id, self.date).get_b_data()
+            return EubrewnetOzoneProvider(self.brewer_id, self.date).get_ozone_data()
 
     @cached_property
     def calibration(self) -> Calibration:
@@ -94,12 +96,12 @@ class CalculationInput:
         Call all cached properties to initialize them.
         """
         uv_file_entries = self.uv_file_entries
-        b_file = self.b_file
+        ozone = self.ozone
         calibration = self.calibration
         arf = self.arf
         cloud_cover = self.cloud_cover
         del uv_file_entries
-        del b_file
+        del ozone
         del calibration
         del arf
         del cloud_cover

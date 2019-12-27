@@ -9,8 +9,10 @@ from os.path import join, exists, isdir
 from pprint import PrettyPrinter
 from typing import Dict, List, Tuple, Callable, Pattern, Match, Optional
 
+from buvic.brewer_infos import StraylightCorrection
 from buvic.logic.calculation_input import CalculationInput
 from buvic.logic.file import File
+from buvic.logic.ozone import BFileOzoneProvider
 from buvic.logic.settings import Settings, DataSource
 from buvic.logic.utils import days_to_date, date_range, date_to_days
 
@@ -149,6 +151,19 @@ class FileUtils:
 
         return input_list
 
+    def get_straylight_correction_type(self, brewer_id: str) -> StraylightCorrection:
+        if brewer_id is None:
+            raise ValueError(f"brewer id should not be None.")
+        if brewer_id not in self._file_dict:
+            return StraylightCorrection.UNDEFINED
+
+        b_files = self._file_dict[brewer_id].b_files
+        for b_file in b_files:
+            correction = BFileOzoneProvider(b_file).get_straylight_correction()
+            if correction != StraylightCorrection.UNDEFINED:
+                return correction
+        return StraylightCorrection.UNDEFINED
+
     def _input_from_files(
             self,
             days: str,
@@ -184,6 +199,8 @@ class FileUtils:
         parameter_file_name = year + ".par"
         parameter_file = self.get_parameter_file(parameter_file_name)
 
+        straylight_correction = BFileOzoneProvider(b_file).get_straylight_correction()
+
         return CalculationInput(
             brewer_id,
             days_to_date(int(days), int(year)),
@@ -192,6 +209,7 @@ class FileUtils:
             b_file,
             calibration_file,
             arf_file,
+            straylight_correction,
             parameter_file_name=parameter_file
         )
 

@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import json
 import re
 from dataclasses import dataclass
@@ -13,7 +14,7 @@ import requests
 import requests.auth
 from scipy.interpolate import interp1d
 
-from buvic.brewer_infos import correct_straylight
+from buvic.brewer_infos import correct_straylight, StraylightCorrection
 from buvic.logic.file import File
 
 LOG = getLogger(__name__)
@@ -21,7 +22,7 @@ LOG = getLogger(__name__)
 
 class OzoneProvider:
 
-    def get_b_data(self) -> BFile:
+    def get_ozone_data(self) -> Ozone:
         raise NotImplementedError("'get_b_data' must be implemented in a descendent class")
 
     @staticmethod
@@ -37,7 +38,7 @@ class EubrewnetOzoneProvider(OzoneProvider):
     def __init__(self, brewer_id: str, d: date):
         self._url_string = f"http://rbcce.aemet.es/eubrewnet/data/get/O3L1_5?brewerid={brewer_id}&date={d.isoformat()}"
 
-    def get_b_data(self) -> BFile:
+    def get_ozone_data(self) -> Ozone:
 
         LOG.info("Retrieving ozone data from %s", self._url_string)
         try:
@@ -51,7 +52,7 @@ class EubrewnetOzoneProvider(OzoneProvider):
                 dt = datetime.strptime(line[1][:-1], '%Y%m%dT%H%M%S')
                 times.append(self.convert_time(dt.hour, dt.minute, dt.second))
                 values.append(float(line[9]))
-            return BFile(times, values)
+            return Ozone(times, values)
         except Exception as e:
             raise Exception(f"Error while trying to access eubrewnet. {e}") from e
 
@@ -79,11 +80,11 @@ class BFileOzoneProvider(OzoneProvider):
     def __init__(self, file: Optional[File]):
         self._file = file
 
-    def get_b_data(self) -> BFile:
+    def get_ozone_data(self) -> Ozone:
         if self._file is None or not path.exists(self._file.full_path):
             warn(f"Corresponding B file not found. default ozone value is used "
                  f"and straylight correction is applied.")
-            return BFile([], [])
+            return Ozone([], [])
 
         LOG.debug("Parsing file: %s", self._file.file_name)
 
@@ -114,20 +115,44 @@ class BFileOzoneProvider(OzoneProvider):
                 if brewer_type is None:
                     raise ValueError(f"No brewer type found in b file {self._file.file_name}")
 
-                return BFile(
+                return Ozone(
                     times,
-                    values,
-                    correct_straylight(brewer_type)
+                    values
                 )
+            except Exception as e:
+                raise BFileParsingError("An error occurred while parsing the B File") from e
+
+    def get_straylight_correction(self) -> StraylightCorrection:
+        if self._file is None or not path.exists(self._file.full_path):
+            return StraylightCorrection.UNDEFINED
+
+        LOG.debug("Parsing file: %s", self._file.file_name)
+
+        with open(self._file.full_path, newline='\r\n') as f:
+            try:
+                brewer_type = None
+                for raw_line in f:
+                    line = raw_line.replace('\r', ' ').replace('\n', '').strip()
+                    res_constants = re.match(self.INSTRUMENT_CONSTANTS_LINE_REGEX, line)
+                    if res_constants is not None:
+                        brewer_type = res_constants.group("brewer_type")
+                        break
+
+                LOG.debug("Finished parsing file: %s", self._file.file_name)
+
+                if brewer_type is None:
+                    LOG.warning(f"No brewer type found in b file {self._file.file_name}")
+                    return StraylightCorrection.UNDEFINED
+
+                return correct_straylight(brewer_type)
             except Exception as e:
                 raise BFileParsingError("An error occurred while parsing the B File") from e
 
 
 @dataclass
-class BFile:
+class Ozone:
     times: List[float]
     values: List[float]
-    straylight_correction: bool = True
 
     def interpolated_ozone(self, time: float, default_value: float) -> float:
         if len(self.values) == 0:

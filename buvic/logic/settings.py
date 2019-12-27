@@ -6,6 +6,7 @@ from enum import Enum
 from logging import getLogger
 from os import path
 
+from buvic.brewer_infos import StraylightCorrection
 from buvic.logic.parameter_file import Angstrom
 
 LOG = getLogger(__name__)
@@ -37,6 +38,7 @@ class Settings:
     default_albedo: float = DEFAULT_ALBEDO_VALUE
     default_aerosol: Angstrom = Angstrom(DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE)
     default_ozone: float = DEFAULT_OZONE_VALUE
+    default_straylight_correction: StraylightCorrection = StraylightCorrection.APPLIED
 
     uv_data_source: DataSource = DataSource.FILES
     ozone_data_source: DataSource = DataSource.FILES
@@ -63,6 +65,7 @@ class Settings:
                 dict_settings["default_albedo"],
                 Angstrom(dict_settings["default_aerosol"][0], dict_settings["default_aerosol"][1]),
                 dict_settings["default_ozone"],
+                StraylightCorrection(dict_settings["default_straylight_correction"]),
                 DataSource(dict_settings["uv_data_source"]),
                 DataSource(dict_settings["ozone_data_source"]),
                 DataSource(dict_settings["uvr_data_source"])

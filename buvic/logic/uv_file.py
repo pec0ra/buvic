@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from statistics import mean
 import itertools
 import json
 import re
@@ -9,6 +8,7 @@ from collections import namedtuple
 from dataclasses import dataclass
 from datetime import date
 from logging import getLogger
+from statistics import mean
 from typing import List, TextIO
 from urllib.error import HTTPError
 from warnings import warn

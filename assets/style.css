@@ -804,7 +804,7 @@ progress {
 .modal {
     position: relative;
     margin: 30px auto !important;
-    max-width: 500px;
+    max-width: 700px;
     min-height: 150px;
     max-height: calc(100% - 100px);
     padding: 10px 0 15px;

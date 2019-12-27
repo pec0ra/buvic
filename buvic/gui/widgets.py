@@ -6,8 +6,10 @@ from typing import Any, Callable, List, Dict, Optional, Tuple
 
 import remi.gui as gui
 
+from buvic.brewer_infos import StraylightCorrection
 from buvic.logic.file import File
 from buvic.logic.file_utils import FileUtils
+from buvic.logic.ozone import BFileOzoneProvider
 from buvic.logic.parameter_file import Angstrom
 from buvic.logic.result import Result
 from buvic.logic.settings import Settings, DataSource
@@ -193,8 +195,6 @@ class MainForm(VBox):
         pass
 
     def show_warning(self, text: str):
-        self.clean_warnings()
-
         warning_label = IconLabel(text, "warning")
         warning_label.attributes["class"] = "warning"
         self._warning_box.append(warning_label)
@@ -270,10 +270,15 @@ class PathMainForm(MainForm):
         self.check_fields()
 
     def check_fields(self):
+        self.clean_warnings()
         if (self._uv_file is not None and
                 self._calibration_file is not None):
 
             d, brewer_id = name_to_date_and_brewer_id(self._uv_file)
+            straylight_correction = BFileOzoneProvider(File(self._b_file) if self._b_file is not None else None).get_straylight_correction()
+            if straylight_correction == straylight_correction.UNDEFINED:
+                straylight_correction = self.settings.default_straylight_correction
+                self.show_warning(f"Straylight correction cannot be determined. Using default: {straylight_correction.value}")
             # If all fields are valid, we initialize a CalculationInput and enable the button
             self._calculation_input = CalculationInput(
                 brewer_id,
@@ -282,7 +287,8 @@ class PathMainForm(MainForm):
                 File(self._uv_file),
                 File(self._b_file) if self._b_file is not None else None,
                 File(self._calibration_file),
-                File(self._arf_file) if self._arf_file is not None else None
+                File(self._arf_file) if self._arf_file is not None else None,
+                straylight_correction
             )
             self._calculate_button.set_enabled(True)
         else:
@@ -436,6 +442,7 @@ class SimpleMainForm(MainForm):
         self.check_fields()
 
     def check_fields(self):
+        self.clean_warnings()
         if self._brewer_id is not None and self._date_start is not None and self._date_end is not None:
 
             # If all fields are valid, we enable the button
@@ -447,10 +454,11 @@ class SimpleMainForm(MainForm):
             arf = self._file_utils.get_arf_file(self._brewer_id)
             if arf is None:
                 self.show_warning("No arf file exists for this brewer id. Cos correction will not be applied")
-            else:
-                self.clean_warnings()
-        else:
-            self.clean_warnings()
+
+        straylight_correction = self._file_utils.get_straylight_correction_type(self._brewer_id)
+        if straylight_correction == straylight_correction.UNDEFINED:
+            straylight_correction = self.settings.default_straylight_correction
+            self.show_warning(f"Straylight correction cannot be determined. Using default: {straylight_correction.value}")
 
     def start_calculation(self, calculation_utils: CalculationUtils) -> List[Result]:
         if self._brewer_id is None or self._date_start is None or self._date_end is None:
@@ -731,6 +739,13 @@ class SettingsWidget(VBox):
         ozone_input = Input("Ozone", self._ozone_spin, style="margin-bottom: 10px")
         self.append(ozone_input)
 
+        self._straylight_checkbox = gui.CheckBoxLabel("Apply straylight correction",
+                                                      style="height: 30px; width: 260px; padding-right: 20px")
+        self._straylight_checkbox.set_value(settings.default_straylight_correction == StraylightCorrection.APPLIED)
+        # Click didn't work correctly for checkboxes do to a bug with onclick.
+        self._straylight_checkbox.onclick.do(lambda w: self._straylight_checkbox.set_value(not self._straylight_checkbox.get_value()))
+        self.append(self._straylight_checkbox)
+
         source_title = Title(Level.H4, "Data source")
         source_title.set_style("margin-top: 14px")
         self.append(source_title)
@@ -776,6 +791,11 @@ class SettingsWidget(VBox):
 
         ozone = self._ozone_spin.get_value()
 
+        if self._straylight_checkbox.get_value():
+            straylight_correction = StraylightCorrection.APPLIED
+        else:
+            straylight_correction = StraylightCorrection.NOT_APPLIED
+
         uv_data_source = self._uv_source_selection.get_value()
         ozone_data_source = self._ozone_source_selection.get_value()
         uvr_data_source = self._uvr_source_selection.get_value()
@@ -787,6 +807,7 @@ class SettingsWidget(VBox):
             albedo,
             Angstrom(alpha, beta),
             ozone,
+            straylight_correction,
             DataSource(uv_data_source),
             DataSource(ozone_data_source),
             DataSource(uvr_data_source)
