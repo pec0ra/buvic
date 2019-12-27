@@ -429,7 +429,7 @@ class SimpleMainForm(MainForm):
 
     def _on_date_start_change(self, widget: gui.Widget, value: str):
         del widget  # remove unused parameter
-        if value is not '' and value is not None:
+        if value != '' and value is not None:
             self._date_start = date.fromisoformat(value)
         else:
             self._date_start = None
@@ -437,7 +437,7 @@ class SimpleMainForm(MainForm):
 
     def _on_date_end_change(self, widget: gui.Widget, value: str):
         del widget  # remove unused parameter
-        if value is not '' and value is not None:
+        if value != '' and value is not None:
             self._date_end = date.fromisoformat(value)
         else:
             self._date_end = None

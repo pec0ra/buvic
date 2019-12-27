@@ -1,8 +1,7 @@
 import unittest
 
-from buvic.logic.calculation_input import Angstrom
 from buvic.logic.file import File
-from buvic.logic.parameter_file import Parameters, read_parameter_file, ParameterFileParsingError
+from buvic.logic.parameter_file import Parameters, read_parameter_file, ParameterFileParsingError, Angstrom
 
 
 class UVFileReaderTestCase(unittest.TestCase):
