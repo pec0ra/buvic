@@ -56,12 +56,14 @@ def get_cloud_cover(latitude: float, longitude: float, d: date) -> CloudCover:
         if "cloudCover" not in hour_data:
             LOG.warning("No cloud cover data found for hour %d at date %s (%d). Value will be interpolated.", i, d.isoformat(),
                         date_to_days(d))
-            warn(f"No cloud cover data found for hour {i}. Value is interpolated.")
             i += 1
             continue
         times.append(float(i * 60))
         values.append(hour_data["cloudCover"])
         i += 1
+
+    if 24 > len(values) > 0:
+        warn(f"Cloud cover data not found for some of the hours of this day. Interpolated values might be used.")
 
     if len(values) == 0:
         LOG.warning("No cloud cover data found for date %s (%d). Default value will be used", d.isoformat(), date_to_days(d))
@@ -118,6 +120,10 @@ class DarkskyCloudCover(CloudCover):
         :param t: the time to get the value for
         :return: the cloud cover value
         """
+        if len(self.values) == 0:
+            raise ValueError("No cloud cover value found in DarkskyCloudCover")
+        if len(self.values) == 1:
+            return self.values[0]
         interpolator = self._get_interpolator()
         return interpolator(t)
 

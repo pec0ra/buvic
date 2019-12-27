@@ -15,6 +15,7 @@ from buvic.logic.result import Result
 from buvic.logic.settings import Settings, DataSource
 from buvic.logic.utils import name_to_date_and_brewer_id
 from .utils import show, hide
+from ..logic.utils import date_to_days
 from ..const import TMP_FILE_DIR, OUTPUT_DIR
 from ..logic.calculation_input import CalculationInput
 from ..logic.calculation_utils import CalculationUtils
@@ -337,8 +338,6 @@ class SimpleMainForm(MainForm):
         self._date_end_selector.onchange.do(self._on_date_end_change)
         self._date_end_input = Input("End date", self._date_end_selector, style="margin-right: 20px")
 
-        self._update_date_range()
-
         file_form.append(self._brewer_input)
         file_form.append(self._uvr_input)
         file_form.append(self._date_start_input)
@@ -379,13 +378,18 @@ class SimpleMainForm(MainForm):
         self._uvr_dd.set_value(self._uvr_file)
 
     def _update_date_range(self):
-        date_range = self._file_utils.get_date_range(self._brewer_id)
+        if self.settings.uv_data_source == DataSource.FILES:
+            date_range = self._file_utils.get_date_range(self._brewer_id)
+        else:
+            date_range = (date(2000, 1, 1), date.today())
+
         if self._date_start < date_range[0] or self._date_start > date_range[1]:
             self._date_start = date_range[0]
-            self._date_start_selector.set_value(self._date_start)
         if self._date_end > date_range[1] or self._date_start < date_range[0]:
             self._date_end = date_range[1]
-            self._date_end_selector.set_value(self._date_end)
+
+        self._date_start_selector.set_value(self._date_start)
+        self._date_end_selector.set_value(self._date_end)
 
         self._date_start_selector.attributes["min"] = date_range[0].isoformat()
         self._date_start_selector.attributes["max"] = date_range[1].isoformat()
@@ -397,7 +401,6 @@ class SimpleMainForm(MainForm):
         del widget  # remove unused parameter
         self._file_utils.refresh()
         self._update_brewer_ids()
-        self._update_date_range()
         self._update_uvr_files()
         self.check_fields()
 
@@ -416,7 +419,6 @@ class SimpleMainForm(MainForm):
     def _on_bid_change(self, widget: gui.Widget, value: str):
         del widget  # remove unused parameter
         self._brewer_id = value
-        self._update_date_range()
         self._update_uvr_files()
         self.check_fields()
 
@@ -442,6 +444,8 @@ class SimpleMainForm(MainForm):
         self.check_fields()
 
     def check_fields(self):
+        self._update_date_range()
+
         self.clean_warnings()
         if self._brewer_id is not None and self._date_start is not None and self._date_end is not None:
 
@@ -459,6 +463,11 @@ class SimpleMainForm(MainForm):
         if straylight_correction == straylight_correction.UNDEFINED:
             straylight_correction = self.settings.default_straylight_correction
             self.show_warning(f"Straylight correction cannot be determined. Using default: {straylight_correction.value}")
+
+        if self.settings.uvr_data_source == DataSource.EUBREWNET:
+            hide(self._uvr_input)
+        else:
+            show(self._uvr_input)
 
     def start_calculation(self, calculation_utils: CalculationUtils) -> List[Result]:
         if self._brewer_id is None or self._date_start is None or self._date_end is None:
@@ -507,21 +516,22 @@ class ResultWidget(VBox):
         self.empty()
         self.append(self.result_title)
 
-        files: Dict[File, List[Result]] = {}
+        files: Dict[str, List[Result]] = {}
         for result in results:
-            if result.calculation_input.uv_file_name not in files:
-                files[result.calculation_input.uv_file_name] = []
+            date_iso = result.calculation_input.date.isoformat()
+            if date_iso not in files:
+                files[date_iso] = []
 
-            files[result.calculation_input.uv_file_name].append(result)
+            files[date_iso].append(result)
 
         self.append(self._create_result_overview(files, duration))
 
         for file in files:
-            file_gui = self._create_result_gui(file, files[file])
+            file_gui = self._create_result_gui(files[file])
             self.append(file_gui)
 
     @staticmethod
-    def _create_result_overview(files: Dict[File, List[Result]], duration: float) -> VBox:
+    def _create_result_overview(files: Dict[str, List[Result]], duration: float) -> VBox:
         vbox = VBox(style="margin-bottom: 20px")
 
         # Convert the duration into something human readable
@@ -551,16 +561,15 @@ class ResultWidget(VBox):
         return vbox
 
     @staticmethod
-    def _create_result_gui(file: File, results: List[Result]) -> VBox:
+    def _create_result_gui(results: List[Result]) -> VBox:
         """
         Create a section's GUI with a title and a list of files
-        :param file: the file for which to create the gui
         :param results: the results for the given file
         :return: the GUI's widget
         """
         vbox = VBox(style="margin-bottom: 20px")
 
-        result_title = Title(Level.H3, f"Input file '{path.basename(file.file_name)}'")
+        result_title = Title(Level.H3, f"{results[0].calculation_input.date.isoformat()} ({date_to_days(results[0].calculation_input.date)})")
         vbox.append(result_title)
 
         if len(results) > 0 and len(results[0].calculation_input.warnings) > 0:

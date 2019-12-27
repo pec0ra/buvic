@@ -23,7 +23,7 @@ LOG = getLogger(__name__)
 class OzoneProvider:
 
     def get_ozone_data(self) -> Ozone:
-        raise NotImplementedError("'get_b_data' must be implemented in a descendent class")
+        raise NotImplementedError("'get_ozone_data' must be implemented in a descendent class")
 
     @staticmethod
     def convert_time(hour: float, minute: float, second: float) -> float:

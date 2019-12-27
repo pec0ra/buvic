@@ -10,7 +10,7 @@ from warnings import warn, WarningMessage
 from cached_property import cached_property
 
 from buvic.brewer_infos import StraylightCorrection
-from buvic.logic.calibration_file import read_calibration_file, Calibration
+from buvic.logic.calibration_file import Calibration, EubrewnetCalibrationProvider, UVRFileCalibrationProvider
 from buvic.logic.darksky import get_cloud_cover, CloudCover, ParameterCloudCover
 from buvic.logic.file import File
 from buvic.logic.ozone import EubrewnetOzoneProvider
@@ -57,7 +57,10 @@ class CalculationInput:
 
     @cached_property
     def calibration(self) -> Calibration:
-        return read_calibration_file(self.calibration_file_name.full_path)
+        if self.settings.uvr_data_source == DataSource.FILES:
+            return UVRFileCalibrationProvider(self.calibration_file_name.full_path).get_calibration_data()
+        else:
+            return EubrewnetCalibrationProvider(self.brewer_id, self.date).get_calibration_data()
 
     @cached_property
     def arf(self) -> Optional[ARF]:
@@ -96,6 +99,8 @@ class CalculationInput:
         Call all cached properties to initialize them.
         """
         uv_file_entries = self.uv_file_entries
+        if len(uv_file_entries) == 0:
+            return
         ozone = self.ozone
         calibration = self.calibration
         arf = self.arf

@@ -137,8 +137,8 @@ class CalculationUtils:
 
         # Initialize the progress bar
         if self._init_progress is not None:
-            self._init_progress(len(calculation_inputs), f"Reading {len(calculation_inputs)} "
-                                                         f"file{'s' if len(calculation_inputs) > 1 else ''}...")
+            self._init_progress(len(calculation_inputs), f"Collecting data for {len(calculation_inputs)} "
+                                                         f"day{'s' if len(calculation_inputs) > 1 else ''}...")
         job_list = []
         for calculation_input in calculation_inputs:
             # We collect all warnings and add them to the calculation input
@@ -146,17 +146,23 @@ class CalculationUtils:
                 calculation_input.init_properties()
                 calculation_input.add_warnings(w)
 
-            # Create `IrradianceCalculation` Jobs
-            calculation_jobs = self._create_jobs(calculation_input)
-            job_list.extend(calculation_jobs)
+            if len(calculation_input.uv_file_entries) > 0:
+                # Create `IrradianceCalculation` Jobs
+                calculation_jobs = self._create_jobs(calculation_input)
+                job_list.extend(calculation_jobs)
             self._make_progress()
 
-        LOG.info("Starting calculation of %d file sections in %d files", len(job_list), len(calculation_inputs))
+        if len(job_list) == 0:
+            return self._handle_empty_input()
+
+        valid_input_count = len([calculation_input for calculation_input in calculation_inputs if len(calculation_input.uv_file_entries) > 0])
+        LOG.info("Starting calculation of %d file sections in %d files", len(job_list),
+                 valid_input_count)
         # Init progress bar
         if self._init_progress is not None:
             self._init_progress(len(job_list), f"Calculating irradiance for {len(job_list)} "
-                                               f"section{'s' if len(job_list) > 1 else ''} in {len(calculation_inputs)} "
-                                               f"file{'s' if len(calculation_inputs) > 1 else ''}...")
+                                               f"section{'s' if len(job_list) > 1 else ''} in {valid_input_count} "
+                                               f"file{'s' if valid_input_count > 1 else ''}...")
 
         # Execute the jobs
         ret = self._execute_jobs(job_list)
