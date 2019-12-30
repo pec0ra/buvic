@@ -459,10 +459,11 @@ class SimpleMainForm(MainForm):
             if arf is None:
                 self.show_warning("No arf file exists for this brewer id. Cos correction will not be applied")
 
-        straylight_correction = self._file_utils.get_straylight_correction_type(self._brewer_id)
-        if straylight_correction == straylight_correction.UNDEFINED:
-            straylight_correction = self.settings.default_straylight_correction
-            self.show_warning(f"Straylight correction cannot be determined. Using default: {straylight_correction.value}")
+        if self._brewer_id is not None:
+            straylight_correction = self._file_utils.get_straylight_correction_type(self._brewer_id)
+            if straylight_correction == StraylightCorrection.UNDEFINED:
+                straylight_correction = self.settings.default_straylight_correction
+                self.show_warning(f"Straylight correction cannot be determined. Using default: {straylight_correction.value}")
 
         if self.settings.uvr_data_source == DataSource.EUBREWNET:
             hide(self._uvr_input)
