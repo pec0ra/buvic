@@ -123,7 +123,7 @@ class LibradtranResult:
 
         for line in libradtran_output.splitlines():
             # Each line consists of values separated by spaces
-            line_values = re.split("\s+", line.strip())
+            line_values = re.split(r"\s+", line.strip())
 
             if len(line_values) != len(column_names):
                 raise ValueError("LibRadtran din't produce the correct amount of columns. Expected: " +

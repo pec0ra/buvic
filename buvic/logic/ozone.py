@@ -59,22 +59,22 @@ class EubrewnetOzoneProvider(OzoneProvider):
 
 class BFileOzoneProvider(OzoneProvider):
     SUMMARY_LINE_REGEX = re.compile(
-        "summary "
-        "(?P<hours>\d\d):(?P<minutes>\d\d):(?P<seconds>\d\d)\s+"
-        "[A-Z]{3}\s+\d\d/\s*\d\d\s+"
-        "\S+\s+"
-        "(?P<air_mass>\S+)\s+"
-        "\S+\s+"
-        "ds\s+"
-        "(?:\S+\s+){8}"
-        "(?P<ozone>\S+)\s+"
-        "(?:\S+\s+){7}"
-        "(?P<ozone_std>\S+)"
+        r"summary "
+        r"(?P<hours>\d\d):(?P<minutes>\d\d):(?P<seconds>\d\d)\s+"
+        r"[A-Z]{3}\s+\d\d/\s*\d\d\s+"
+        r"\S+\s+"
+        r"(?P<air_mass>\S+)\s+"
+        r"\S+\s+"
+        r"ds\s+"
+        r"(?:\S+\s+){8}"
+        r"(?P<ozone>\S+)\s+"
+        r"(?:\S+\s+){7}"
+        r"(?P<ozone_std>\S+)"
     )
     INSTRUMENT_CONSTANTS_LINE_REGEX = re.compile(
-        "inst\s+"
-        "(?:\S+\s+){22}"
-        "(?P<brewer_type>\S+)\s+"
+        r"inst\s+"
+        r"(?:\S+\s+){22}"
+        r"(?P<brewer_type>\S+)\s+"
     )
 
     def __init__(self, file: Optional[File]):

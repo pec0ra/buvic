@@ -61,7 +61,7 @@ class UVRFileCalibrationProvider(CalibrationProvider):
             values = []
             for line in file:
                 # Each line consists of two values separated by spaces
-                line_values = re.split("\s+", line.strip())
+                line_values = re.split(r"\s+", line.strip())
                 if len(line_values) != 2:
                     raise CalibrationFileParsingError("Failure to read calibration file line correctly.\nLine: " + line)
                 wavelengths.append(float(line_values[0]) / 10)

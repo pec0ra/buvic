@@ -22,11 +22,11 @@ pp = PrettyPrinter(indent=2)
 
 
 class FileUtils:
-    UV_FILE_NAME_REGEX = re.compile("UV(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d+)")
-    B_FILE_NAME_REGEX = re.compile("B(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d+)")
-    ARF_FILE_NAME_REGEX = re.compile("arf_[a-zA-Z]*(?P<brewer_id>\d+)\.dat")
-    UVR_FILE_NAME_REGEX = re.compile("(:?UVR|uvr)\S+\.(?P<brewer_id>\d+)")
-    PARAMETER_FILE_NAME_REGEX = re.compile("(?P<year>\d+)\.par")
+    UV_FILE_NAME_REGEX = re.compile(r"UV(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d+)")
+    B_FILE_NAME_REGEX = re.compile(r"B(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d+)")
+    ARF_FILE_NAME_REGEX = re.compile(r"arf_[a-zA-Z]*(?P<brewer_id>\d+)\.dat")
+    UVR_FILE_NAME_REGEX = re.compile(r"(:?UVR|uvr)\S+\.(?P<brewer_id>\d+)")
+    PARAMETER_FILE_NAME_REGEX = re.compile(r"(?P<year>\d+)\.par")
 
     _instr_dir: str
     _uvdata_dir: str

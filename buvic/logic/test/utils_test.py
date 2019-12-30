@@ -1,6 +1,7 @@
 import unittest
+from datetime import date, time
 
-from ..utils import *
+from buvic.logic.utils import days_to_date, date_to_days, minutes_to_time, time_to_minutes
 
 
 class UtilsTestCase(unittest.TestCase):

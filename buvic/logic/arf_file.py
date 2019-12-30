@@ -29,7 +29,7 @@ def read_arf_file(file_name: str, arf_column: int) -> ARF:
                 if line.strip().startswith("%"):
                     continue
                 # Each line consists of at least five values separated by spaces
-                line_values = re.split("\s+", line.strip())
+                line_values = re.split(r"\s+", line.strip())
                 sza = float(line_values[0])
                 if sza < 0 or sza > 90:
                     raise ValueError(f"Invalid value found in the first column. Sza must be between 0 and 90. Found {sza}")

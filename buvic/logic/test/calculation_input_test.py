@@ -27,10 +27,12 @@ class UVFileReaderTestCase(unittest.TestCase):
         )
 
         c = calculation_input.calibration
+        del c
 
         calculation_input.calibration_file_name = "does_not_exist"
         # No exception is thrown since the calibration value used is cached
         c = calculation_input.calibration
+        del c
 
     def test_cloud_cover(self):
         init_logging(logging.DEBUG)

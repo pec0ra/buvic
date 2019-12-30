@@ -5,7 +5,6 @@ import os
 import threading
 import time
 import warnings
-from concurrent.futures.process import ProcessPoolExecutor
 from concurrent.futures.thread import ThreadPoolExecutor
 from dataclasses import dataclass
 from logging import getLogger
@@ -155,7 +154,8 @@ class CalculationUtils:
         if len(job_list) == 0:
             return self._handle_empty_input()
 
-        valid_input_count = len([calculation_input for calculation_input in calculation_inputs if len(calculation_input.uv_file_entries) > 0])
+        valid_input_count = len(
+            [calculation_input for calculation_input in calculation_inputs if len(calculation_input.uv_file_entries) > 0])
         LOG.info("Starting calculation of %d file sections in %d files", len(job_list),
                  valid_input_count)
         # Init progress bar

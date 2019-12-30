@@ -101,7 +101,7 @@ class UVFileUVProvider(UVProvider):
                 values.append(RawUVValue.from_value_line(next_line))
                 next_line = self.__read_line(file)
 
-            dark_match = re.match("^dark\s+(?P<dark>\S+)\s+$", next_line)
+            dark_match = re.match(r"^dark\s+(?P<dark>\S+)\s+$", next_line)
             if dark_match is not None:
                 header.dark = (header.dark + float(dark_match.group("dark"))) / 2
                 next_line = self.__read_line(file)
@@ -161,7 +161,8 @@ class EubrewnetUVProvider(UVProvider):
 
     def get_uv_file_entries(self) -> List[UVFileEntry]:
 
-        url_string = f"http://rbcce.aemet.es/eubrewnet/getdataold/getUVAvailableScanTypes?brewerid={self._brewer_id}&date={self._date.isoformat()}"
+        url_string = f"http://rbcce.aemet.es/eubrewnet/getdataold/getUVAvailableScanTypes?brewerid={self._brewer_id}" \
+                     f"&date={self._date.isoformat()}"
         LOG.info("Retrieved scan types from %s", url_string)
         try:
             with urllib.request.urlopen(url_string) as url:
@@ -171,7 +172,8 @@ class EubrewnetUVProvider(UVProvider):
 
         file_entries = []
         for scan_type in scan_types:
-            url_string = f"http://rbcce.aemet.es/eubrewnet/getdataold/getUV?scantype={scan_type}&brewerid={self._brewer_id}&date={self._date.isoformat()}"
+            url_string = f"http://rbcce.aemet.es/eubrewnet/getdataold/getUV?scantype={scan_type}" \
+                         f"&brewerid={self._brewer_id}&date={self._date.isoformat()}"
             LOG.info("Retrieved uv data from %s", url_string)
             try:
                 with urllib.request.urlopen(url_string) as url:
@@ -222,20 +224,20 @@ class EubrewnetUVProvider(UVProvider):
 @dataclass
 class UVFileHeader:
     HEADER_REGEX = re.compile(
-        "^"  # Matches the beginning of the line
-        "(?P<type>[a-z]{2})\s+"  # The type is composed of two lower case letters (e.g. ux).
-        "Integration time is (?P<integration_time>\S+) seconds.+"  # We match any non blank chars ("\S")
-        "dt\s+(?P<dead_time>\S+).+"  # We match any non blank chars ("\S") for the dead time to allow scientific 
-        # notation 
-        "cy\s+(?P<cycles>\d+).+"  # The number of cycles can be any integer (multiple digits "\d")
-        "dh\s+(?P<day>\d+) (?P<month>\d+) (?P<year>\d+)\s+"  # Day, month and year are all integers
-        "(?P<place>(?: ?[a-zA-Z])+)\s+"  # The localisation name is composed of 1 or more words followed by spaces. 
-        # NOTE: special chars (é, ö, ä,etc) are not matched 
-        "(?P<latitude>\S+) +(?P<longitude>\S+) +(?P<temperature>\S+)\s+"
+        r"^"  # Matches the beginning of the line
+        r"(?P<type>[a-z]{2})\s+"  # The type is composed of two lower case letters (e.g. ux).
+        r"Integration time is (?P<integration_time>\S+) seconds.+"  # We match any non blank chars ("\S")
+        r"dt\s+(?P<dead_time>\S+).+"  # We match any non blank chars ("\S") for the dead time to allow scientific
+        # notation
+        r"cy\s+(?P<cycles>\d+).+"  # The number of cycles can be any integer (multiple digits "\d")
+        r"dh\s+(?P<day>\d+) (?P<month>\d+) (?P<year>\d+)\s+"  # Day, month and year are all integers
+        r"(?P<place>(?: ?[a-zA-Z])+)\s+"  # The localisation name is composed of 1 or more words followed by spaces.
+        # NOTE: special chars (é, ö, ä,etc) are not matched
+        r"(?P<latitude>\S+) +(?P<longitude>\S+) +(?P<temperature>\S+)\s+"
         # TODO: Check that this is really an int:
-        "pr\s*(?P<pressure>\d+).*"  # Pressure is an integer
-        "dark\s*(?P<dark>\S+)\s*"  # We match any non blank chars ("\S") for the dark to allow scientific notation
-        "$"  # Matches the end of the line
+        r"pr\s*(?P<pressure>\d+).*"  # Pressure is an integer
+        r"dark\s*(?P<dark>\S+)\s*"  # We match any non blank chars ("\S") for the dark to allow scientific notation
+        r"$"  # Matches the end of the line
     )
 
     raw_header_line: str
@@ -288,12 +290,12 @@ class UVFileHeader:
 @dataclass
 class RawUVValue:
     VALUE_REGEX = re.compile(
-        "^\s*"  # Matches the beginning of the line
-        "(?P<time>\S+)\s+"  # Time can be any combination of non blank chars
-        "(?P<wavelength>\S+)\s+"  # Wavelength can be any combination of non blank chars
-        "(?P<step>\d+)\s+"  # Step can be any combination of digits
-        "(?P<events>\S+)\s*"  # Events can be any combination of non blank chars
-        "$"  # Matches the end of the line
+        r"^\s*"  # Matches the beginning of the line
+        r"(?P<time>\S+)\s+"  # Time can be any combination of non blank chars
+        r"(?P<wavelength>\S+)\s+"  # Wavelength can be any combination of non blank chars
+        r"(?P<step>\d+)\s+"  # Step can be any combination of digits
+        r"(?P<events>\S+)\s*"  # Events can be any combination of non blank chars
+        r"$"  # Matches the end of the line
     )
 
     time: float

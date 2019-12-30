@@ -15,10 +15,10 @@ from buvic.logic.result import Result
 from buvic.logic.settings import Settings, DataSource
 from buvic.logic.utils import name_to_date_and_brewer_id
 from .utils import show, hide
-from ..logic.utils import date_to_days
 from ..const import TMP_FILE_DIR, OUTPUT_DIR
 from ..logic.calculation_input import CalculationInput
 from ..logic.calculation_utils import CalculationUtils
+from ..logic.utils import date_to_days
 
 
 class VBox(gui.VBox):
@@ -315,8 +315,8 @@ class SimpleMainForm(MainForm):
         self.check_fields()
 
     def _init_elements(self):
-        self._date_start = date(2019, 6, 24)
         self._date_end = date.today()
+        self._date_start = self._date_end - timedelta(days=3)
 
         file_form = gui.HBox(style="margin-bottom: 20px; flex-wrap: wrap")
 
@@ -569,7 +569,8 @@ class ResultWidget(VBox):
         """
         vbox = VBox(style="margin-bottom: 20px")
 
-        result_title = Title(Level.H3, f"{results[0].calculation_input.date.isoformat()} ({date_to_days(results[0].calculation_input.date)})")
+        result_title = Title(Level.H3,
+                             f"{results[0].calculation_input.date.isoformat()} ({date_to_days(results[0].calculation_input.date)})")
         vbox.append(result_title)
 
         if len(results) > 0 and len(results[0].calculation_input.warnings) > 0:

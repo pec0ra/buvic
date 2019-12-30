@@ -10,7 +10,7 @@ LOG = getLogger(__name__)
 
 
 class CalculationEventHandler(FileSystemEventHandler):
-    ACCEPTED_FILE_REGEX = re.compile(".*(?P<file_type>B|UV)(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d{3})$")
+    ACCEPTED_FILE_REGEX = re.compile(r".*(?P<file_type>B|UV)(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d{3})$")
 
     def __init__(self, on_new_file: Callable[[str, str, str, str, Settings], None], settings: Settings):
         self._on_new_file = on_new_file
