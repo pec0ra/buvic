@@ -5,7 +5,7 @@ from datetime import datetime
 from os import path
 from typing import TextIO, List
 
-from buvic.brewer_infos import StraylightCorrection
+from buvic.brewer_infos import StraylightCorrection, correct_straylight
 from buvic.logic.darksky import DarkskyCloudCover
 from buvic.logic.utils import date_to_days, minutes_to_time
 from .calculation_input import CalculationInput, CosCorrection
@@ -42,7 +42,7 @@ class Result:
         file.write(f"% {self.uv_file_entry.header.place} {self.uv_file_entry.header.position.latitude}N "
                    f"{self.uv_file_entry.header.position.longitude}W\n")
 
-        straylight_correction = self.calculation_input.straylight_correction
+        straylight_correction = correct_straylight(self.calculation_input.brewer_type)
         if straylight_correction == StraylightCorrection.UNDEFINED:
             straylight_correction = self.calculation_input.settings.default_straylight_correction
         second_line_parts = {
@@ -77,6 +77,23 @@ class Result:
         time = minutes_to_time(self.spectrum.measurement_times[0])
 
         file_name = f"{prefix}{days:03}{time.hour:02}{time.minute:02}G.{bid}{suffix}"
+        return path.join(self.get_relative_path(), file_name)
+
+    def get_woudc_name(self):
+        """
+        Create a WOUDC format name specific to this result.
+
+        :return: the created file name
+        """
+        bid = self.calculation_input.brewer_id
+        d = self.uv_file_entry.header.date
+        agency = "TODO"  # TODO
+        file_name = f"{d.year:04d}{d.month:02d}{d.day:02d}.Brewer.{self.calculation_input.brewer_type.upper()}.{bid}" \
+                    f".{agency}.csv"
+        return path.join(self.get_relative_path(), file_name)
+
+
+    def get_relative_path(self):
         if self.calculation_input.uv_file_name is not None and self.calculation_input.b_file_name is not None:
             output_path = path.commonprefix([self.calculation_input.b_file_name.path, self.calculation_input.uv_file_name.path])
         elif self.calculation_input.uv_file_name is not None:
@@ -85,12 +102,11 @@ class Result:
             output_path = self.calculation_input.b_file_name.path
         else:
             output_path = path.join(f"{self.calculation_input.brewer_id}", f"{self.uv_file_entry.header.date.year}")
-        file_path = path.join(output_path, file_name)
 
         if self.calculation_input.settings.no_coscor:
-            return path.join("nocoscor", file_path)
+            return path.join("nocoscor", output_path)
         else:
-            return file_path
+            return output_path
 
     @property
     def uv_file_entry(self) -> UVFileEntry:

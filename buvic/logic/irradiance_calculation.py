@@ -7,7 +7,7 @@ from typing import List
 from numpy import multiply, divide, sin, add, pi, mean, exp, maximum, linspace, trapz, cos, isnan, ones
 from scipy.interpolate import UnivariateSpline
 
-from buvic.brewer_infos import StraylightCorrection
+from buvic.brewer_infos import StraylightCorrection, correct_straylight
 from buvic.logic.calibration_file import Calibration
 from buvic.logic.ozone import Ozone
 from .arf_file import ARF
@@ -111,7 +111,7 @@ class IrradianceCalculation:
         raw_values = [v.events for v in uv_file_entry.raw_values]
         corrected_values = [v - uv_file_header.dark for v in raw_values]
 
-        straylight_correction = self._calculation_input.straylight_correction
+        straylight_correction = correct_straylight(self._calculation_input.brewer_type)
         if straylight_correction == StraylightCorrection.UNDEFINED:
             straylight_correction = self._calculation_input.settings.default_straylight_correction
         if straylight_correction == StraylightCorrection.APPLIED:
@@ -119,8 +119,8 @@ class IrradianceCalculation:
             # Remove straylight
             below_292 = list(filter(lambda x: x.wavelength < 292, uv_file_entry.raw_values))
             if len(below_292) > 0:
-                straylight_correction = mean([v.events for v in below_292])
-                corrected_values = [v - straylight_correction for v in corrected_values]
+                correction = mean([v.events for v in below_292])
+                corrected_values = [v - correction for v in corrected_values]
 
         # Convert to photon/sec
         photon_rate = [v * 4 / (uv_file_header.cycles * uv_file_header.integration_time) for v in corrected_values]

@@ -9,7 +9,7 @@ from os.path import join, exists, isdir
 from pprint import PrettyPrinter
 from typing import Dict, List, Tuple, Callable, Pattern, Match, Optional
 
-from buvic.brewer_infos import StraylightCorrection
+from buvic.brewer_infos import StraylightCorrection, correct_straylight
 from buvic.logic.calculation_input import CalculationInput
 from buvic.logic.file import File
 from buvic.logic.ozone import BFileOzoneProvider
@@ -151,18 +151,18 @@ class FileUtils:
 
         return input_list
 
-    def get_straylight_correction_type(self, brewer_id: str) -> StraylightCorrection:
+    def get_brewer_type(self, brewer_id: str) -> Optional[str]:
         if brewer_id is None:
             raise ValueError(f"brewer id should not be None.")
         if brewer_id not in self._file_dict:
-            return StraylightCorrection.UNDEFINED
+            return None
 
         b_files = self._file_dict[brewer_id].b_files
         for b_file in b_files:
-            correction = BFileOzoneProvider(b_file).get_straylight_correction()
-            if correction != StraylightCorrection.UNDEFINED:
-                return correction
-        return StraylightCorrection.UNDEFINED
+            brewer_type = BFileOzoneProvider(b_file).get_brewer_type()
+            if brewer_type is not None:
+                return brewer_type
+        return None
 
     def _input_from_files(
             self,
@@ -199,7 +199,7 @@ class FileUtils:
         parameter_file_name = year + ".par"
         parameter_file = self.get_parameter_file(parameter_file_name)
 
-        straylight_correction = BFileOzoneProvider(b_file).get_straylight_correction()
+        brewer_type = self.get_brewer_type(brewer_id)
 
         return CalculationInput(
             brewer_id,
@@ -209,7 +209,7 @@ class FileUtils:
             b_file,
             calibration_file,
             arf_file,
-            straylight_correction,
+            brewer_type,
             parameter_file_name=parameter_file
         )
 

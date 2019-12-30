@@ -36,7 +36,7 @@ class CalculationInput:
     b_file_name: Optional[File]
     calibration_file_name: File
     arf_file_name: Optional[File]
-    straylight_correction: StraylightCorrection
+    brewer_type: Optional[str]
     parameter_file_name: Optional[File] = None
     warnings: List[WarningMessage] = field(default_factory=list)
 

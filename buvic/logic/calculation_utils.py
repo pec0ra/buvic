@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import concurrent
+import itertools
 import os
 import threading
 import time
@@ -18,7 +19,7 @@ from buvic.brewer_infos import StraylightCorrection
 from buvic.const import ARF_FILES_SUBDIR, UV_FILES_SUBDIR, B_FILES_SUBDIR, PARAMETER_FILES_SUBDIR
 from buvic.logic.calculation_event_handler import CalculationEventHandler
 from buvic.logic.file import File
-from buvic.logic.output_utils import create_csv
+from buvic.logic.output_utils import create_csv, create_woudc
 from buvic.logic.result import Result
 from buvic.logic.settings import Settings
 from buvic.logic.utils import days_to_date
@@ -277,15 +278,19 @@ class CalculationUtils:
                 except concurrent.futures.TimeoutError as e:
                     raise ExecutionError("One of the threads took too long to do its calculations.") from e
 
-                # At this point, we have finished waiting for all future_results (irradiance calculation)
-                LOG.debug("Finished irradiance calculation for '%s'", result_list[0].calculation_input.uv_file_name)
-
-                return result_list
             except Exception as e:
                 LOG.info("Exception caught in child thread, cancelling all remaining tasks")
                 for future in future_result:
                     future.cancel()
                 raise e
+
+        sorted_results = sorted(result_list, key=lambda r: r.uv_file_entry.header.date)
+        for date, results in itertools.groupby(sorted_results, key=lambda r: r.uv_file_entry.header.date):
+            create_woudc(self._output_dir, list(results))
+
+        # At this point, we have finished waiting for all future_results (irradiance calculation)
+        LOG.debug("Finished irradiance calculation for '%s'", result_list[0].calculation_input.uv_file_name)
+        return result_list
 
     def _create_jobs(self, calculation_input: CalculationInput) -> List[Job[Tuple[IrradianceCalculation, int], Result]]:
         """

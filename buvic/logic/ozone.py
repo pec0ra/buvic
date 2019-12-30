@@ -122,9 +122,9 @@ class BFileOzoneProvider(OzoneProvider):
             except Exception as e:
                 raise BFileParsingError("An error occurred while parsing the B File") from e
 
-    def get_straylight_correction(self) -> StraylightCorrection:
+    def get_brewer_type(self) -> Optional[str]:
         if self._file is None or not path.exists(self._file.full_path):
-            return StraylightCorrection.UNDEFINED
+            return None
 
         LOG.debug("Parsing file: %s", self._file.file_name)
 
@@ -142,9 +142,9 @@ class BFileOzoneProvider(OzoneProvider):
 
                 if brewer_type is None:
                     LOG.warning(f"No brewer type found in b file {self._file.file_name}")
-                    return StraylightCorrection.UNDEFINED
+                    return None
 
-                return correct_straylight(brewer_type)
+                return brewer_type
             except Exception as e:
                 raise BFileParsingError("An error occurred while parsing the B File") from e
 

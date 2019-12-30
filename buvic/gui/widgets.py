@@ -276,10 +276,10 @@ class PathMainForm(MainForm):
                 self._calibration_file is not None):
 
             d, brewer_id = name_to_date_and_brewer_id(self._uv_file)
-            straylight_correction = BFileOzoneProvider(File(self._b_file) if self._b_file is not None else None).get_straylight_correction()
-            if straylight_correction == straylight_correction.UNDEFINED:
-                straylight_correction = self.settings.default_straylight_correction
-                self.show_warning(f"Straylight correction cannot be determined. Using default: {straylight_correction.value}")
+            brewer_type = BFileOzoneProvider(File(self._b_file) if self._b_file is not None else None).get_brewer_type()
+            if brewer_type is None:
+                self.show_warning(f"Straylight correction cannot be determined. Using default:"
+                                  f"{self.settings.default_straylight_correction.value}")
             # If all fields are valid, we initialize a CalculationInput and enable the button
             self._calculation_input = CalculationInput(
                 brewer_id,
@@ -289,7 +289,7 @@ class PathMainForm(MainForm):
                 File(self._b_file) if self._b_file is not None else None,
                 File(self._calibration_file),
                 File(self._arf_file) if self._arf_file is not None else None,
-                straylight_correction
+                brewer_type
             )
             self._calculate_button.set_enabled(True)
         else:
@@ -460,8 +460,8 @@ class SimpleMainForm(MainForm):
                 self.show_warning("No arf file exists for this brewer id. Cos correction will not be applied")
 
         if self._brewer_id is not None:
-            straylight_correction = self._file_utils.get_straylight_correction_type(self._brewer_id)
-            if straylight_correction == StraylightCorrection.UNDEFINED:
+            brewer_type = self._file_utils.get_brewer_type(self._brewer_id)
+            if brewer_type is None:
                 straylight_correction = self.settings.default_straylight_correction
                 self.show_warning(f"Straylight correction cannot be determined. Using default: {straylight_correction.value}")
 
