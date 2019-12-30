@@ -9,7 +9,6 @@ from warnings import warn, WarningMessage
 
 from cached_property import cached_property
 
-from buvic.brewer_infos import StraylightCorrection
 from buvic.logic.calibration_file import Calibration, EubrewnetCalibrationProvider, UVRFileCalibrationProvider
 from buvic.logic.darksky import get_cloud_cover, CloudCover, ParameterCloudCover
 from buvic.logic.file import File

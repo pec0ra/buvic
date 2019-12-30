@@ -92,7 +92,6 @@ class Result:
                     f".{agency}.csv"
         return path.join(self.get_relative_path(), file_name)
 
-
     def get_relative_path(self):
         if self.calculation_input.uv_file_name is not None and self.calculation_input.b_file_name is not None:
             output_path = path.commonprefix([self.calculation_input.b_file_name.path, self.calculation_input.uv_file_name.path])

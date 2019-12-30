@@ -14,7 +14,6 @@ import requests
 import requests.auth
 from scipy.interpolate import interp1d
 
-from buvic.brewer_infos import correct_straylight, StraylightCorrection
 from buvic.logic.file import File
 
 LOG = getLogger(__name__)

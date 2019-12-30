@@ -9,7 +9,6 @@ from os.path import join, exists, isdir
 from pprint import PrettyPrinter
 from typing import Dict, List, Tuple, Callable, Pattern, Match, Optional
 
-from buvic.brewer_infos import StraylightCorrection, correct_straylight
 from buvic.logic.calculation_input import CalculationInput
 from buvic.logic.file import File
 from buvic.logic.ozone import BFileOzoneProvider
