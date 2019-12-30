@@ -199,7 +199,7 @@ class FileUtils:
         parameter_file_name = year + ".par"
         parameter_file = self.get_parameter_file(parameter_file_name)
 
-        straylight_correction = BFileOzoneProvider(b_file).get_straylight_correction()
+        straylight_correction = self.get_straylight_correction_type(brewer_id)
 
         return CalculationInput(
             brewer_id,
