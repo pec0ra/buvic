@@ -1,7 +1,7 @@
 import unittest
 from datetime import date, time
 
-from buvic.logic.utils import days_to_date, date_to_days, minutes_to_time, time_to_minutes
+from buvic.logic.utils import days_to_date, date_to_days, minutes_to_time, time_to_minutes, name_to_date_and_brewer_id
 
 
 class UtilsTestCase(unittest.TestCase):
@@ -105,3 +105,44 @@ class UtilsTestCase(unittest.TestCase):
 
         minutes = time_to_minutes(time(23, 59, 30))
         self.assertEqual(minutes, 1439.5)
+
+    def test_name_to_date_and_brewer_id(self):
+        d, brewer_id = name_to_date_and_brewer_id("UV00119.033")
+        self.assertEqual(1, d.day)
+        self.assertEqual(1, d.month)
+        self.assertEqual(2019, d.year)
+        self.assertEqual("033", brewer_id)
+
+        d, brewer_id = name_to_date_and_brewer_id("UV36519.033")
+        self.assertEqual(31, d.day)
+        self.assertEqual(12, d.month)
+        self.assertEqual(2019, d.year)
+        self.assertEqual("033", brewer_id)
+
+        d, brewer_id = name_to_date_and_brewer_id("B00119.033")
+        self.assertEqual(1, d.day)
+        self.assertEqual(1, d.month)
+        self.assertEqual(2019, d.year)
+        self.assertEqual("033", brewer_id)
+
+        d, brewer_id = name_to_date_and_brewer_id("B36519.033")
+        self.assertEqual(31, d.day)
+        self.assertEqual(12, d.month)
+        self.assertEqual(2019, d.year)
+        self.assertEqual("033", brewer_id)
+
+        with self.assertRaises(ValueError):
+            # Day too big
+            name_to_date_and_brewer_id("B36719.033")
+
+        with self.assertRaises(ValueError):
+            # Day too small
+            name_to_date_and_brewer_id("B00019.033")
+
+        # Wrong patterns
+        with self.assertRaises(ValueError):
+            name_to_date_and_brewer_id("00119.033")
+        with self.assertRaises(ValueError):
+            name_to_date_and_brewer_id("UV00119.03")
+        with self.assertRaises(ValueError):
+            name_to_date_and_brewer_id("UV0011.033")

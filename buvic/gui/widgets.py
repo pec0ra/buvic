@@ -6,7 +6,7 @@ from typing import Any, Callable, List, Dict, Optional, Tuple
 
 import remi.gui as gui
 
-from buvic.brewer_infos import StraylightCorrection
+from buvic.brewer_infos import StraylightCorrection, eubrewnet_available_brewer_ids
 from buvic.logic.file import File
 from buvic.logic.file_utils import FileUtils
 from buvic.logic.ozone import BFileOzoneProvider
@@ -354,13 +354,7 @@ class SimpleMainForm(MainForm):
         if self.settings.uv_data_source == DataSource.FILES or self.settings.uvr_data_source == DataSource.FILES:
             brewer_ids = self._file_utils.get_brewer_ids()
         else:
-            brewer_ids = ["001", "005", "006", "008", "010", "016", "017", "030", "033", "037", "039", "040", "043", "044", "047", "048",
-                          "051", "053", "064", "065", "066", "067", "070", "071", "072", "075", "078", "082", "085", "086", "088", "095",
-                          "097", "098", "099", "100", "102", "107", "109", "117", "118", "123", "126", "128", "143", "145", "149", "150",
-                          "151", "152", "155", "156", "157", "158", "161", "163", "164", "165", "166", "171", "172", "174", "178", "179",
-                          "180", "183", "184", "185", "186", "188", "190", "191", "192", "193", "195", "196", "197", "201", "202", "204",
-                          "205", "207", "209", "212", "214", "216", "217", "218", "220", "221", "225", "226", "227", "228", "229", "230",
-                          "232", "233", "246", "300"]
+            brewer_ids = eubrewnet_available_brewer_ids
         self._brewer_dd.empty()
         for bid in brewer_ids:
             item = gui.DropDownItem(bid)

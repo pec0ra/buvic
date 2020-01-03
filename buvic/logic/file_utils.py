@@ -109,7 +109,7 @@ class FileUtils:
         :return: the calculation inputs
         """
 
-        if uvr_file is None and settings.uvr_data_source == DataSource.FILES:
+        if uvr_file is None and settings.uvr_data_source == DataSource.FILES and brewer_id in self._file_dict:
             uvr_file = self._file_dict[brewer_id].uvr_files[0].file_name
 
         input_list = []

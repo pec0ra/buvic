@@ -77,14 +77,14 @@ class CalculationInput:
     @cached_property
     def cloud_cover(self) -> CloudCover:
         position = self.uv_file_entries[0].header.position
-        date = self.uv_file_entries[0].header.date
+        d = self.uv_file_entries[0].header.date
 
-        days = date_to_days(date)
+        days = date_to_days(d)
         parameter_value = self.parameters.cloud_cover(days)
         if parameter_value is not None:
             return ParameterCloudCover(parameter_value)
         else:
-            return get_cloud_cover(position.latitude, position.longitude, date)
+            return get_cloud_cover(position.latitude, position.longitude, d)
 
     def cos_correction_to_apply(self, time: float) -> CosCorrection:
         if self.settings.no_coscor or self.arf is None:
