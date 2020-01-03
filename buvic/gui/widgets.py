@@ -351,9 +351,18 @@ class SimpleMainForm(MainForm):
         self.append(self._refresh_button)
 
     def _update_brewer_ids(self):
-        brewer_ids = self._file_utils.get_brewer_ids()
+        if self.settings.uv_data_source == DataSource.FILES or self.settings.uvr_data_source == DataSource.FILES:
+            brewer_ids = self._file_utils.get_brewer_ids()
+        else:
+            brewer_ids = ["001", "005", "006", "008", "010", "016", "017", "030", "033", "037", "039", "040", "043", "044", "047", "048",
+                          "051", "053", "064", "065", "066", "067", "070", "071", "072", "075", "078", "082", "085", "086", "088", "095",
+                          "097", "098", "099", "100", "102", "107", "109", "117", "118", "123", "126", "128", "143", "145", "149", "150",
+                          "151", "152", "155", "156", "157", "158", "161", "163", "164", "165", "166", "171", "172", "174", "178", "179",
+                          "180", "183", "184", "185", "186", "188", "190", "191", "192", "193", "195", "196", "197", "201", "202", "204",
+                          "205", "207", "209", "212", "214", "216", "217", "218", "220", "221", "225", "226", "227", "228", "229", "230",
+                          "232", "233", "246", "300"]
         self._brewer_dd.empty()
-        for bid in self._file_utils.get_brewer_ids():
+        for bid in brewer_ids:
             item = gui.DropDownItem(bid)
             self._brewer_dd.append(item)
 
@@ -364,6 +373,8 @@ class SimpleMainForm(MainForm):
         self._brewer_dd.set_value(self._brewer_id)
 
     def _update_uvr_files(self):
+        if self.settings.uvr_data_source == DataSource.EUBREWNET:
+            return
         uvr_files = self._file_utils.get_uvr_files(self._brewer_id)
 
         self._uvr_dd.empty()
@@ -371,9 +382,9 @@ class SimpleMainForm(MainForm):
             item = gui.DropDownItem(uvr_file.file_name)
             self._uvr_dd.append(item)
 
-        if self._uvr_file not in uvr_files and len(uvr_files) > 0:
+        if self._uvr_file not in [u.file_name for u in uvr_files] and len(uvr_files) > 0:
             self._uvr_file = uvr_files[0].file_name
-        elif self._uvr_file not in uvr_files:
+        elif self._uvr_file not in [u.file_name for u in uvr_files]:
             self._uvr_file = None
         self._uvr_dd.set_value(self._uvr_file)
 
@@ -400,8 +411,6 @@ class SimpleMainForm(MainForm):
     def _refresh(self, widget: gui.Widget):
         del widget  # remove unused parameter
         self._file_utils.refresh()
-        self._update_brewer_ids()
-        self._update_uvr_files()
         self.check_fields()
 
     @property
@@ -444,6 +453,8 @@ class SimpleMainForm(MainForm):
         self.check_fields()
 
     def check_fields(self):
+        self._update_brewer_ids()
+        self._update_uvr_files()
         self._update_date_range()
 
         self.clean_warnings()

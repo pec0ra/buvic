@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import date
 from enum import Enum
 from logging import getLogger
-from typing import List, Optional
+from typing import List, Optional, Iterable
 from warnings import warn, WarningMessage
 
 from cached_property import cached_property
@@ -32,9 +32,9 @@ class CalculationInput:
     brewer_id: str
     date: date
     settings: Settings
-    uv_file_name: File
+    uv_file_name: Optional[File]  # None if the data source is EUBREWNET
     b_file_name: Optional[File]
-    calibration_file_name: File
+    calibration_file_name: Optional[File]  # None if the data source is EUBREWNET
     arf_file_name: Optional[File]
     straylight_correction: StraylightCorrection
     parameter_file_name: Optional[File] = None
@@ -111,7 +111,7 @@ class CalculationInput:
         del arf
         del cloud_cover
 
-    def add_warnings(self, warnings: WarningMessage):
+    def add_warnings(self, warnings: Iterable[WarningMessage]):
         self.warnings.extend(warnings)
 
 
