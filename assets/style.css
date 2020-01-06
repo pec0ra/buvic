@@ -836,10 +836,12 @@ progress {
     margin-bottom: 15px !important;
     justify-content: unset !important;
 }
+
 .CheckBoxLabel {
     display: flex;
     align-items: center;
 }
+
 .CheckBoxLabel > input {
     margin-right: 5px !important;
 }
