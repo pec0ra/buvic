@@ -44,7 +44,7 @@ class UVApp(App):
         head.add_child("google_icons", '<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">')
         self._file_utils = FileUtils(DATA_DIR)
 
-        self._main_container = gui.VBox(width="80%", style="margin: auto; padding: 20px 40px 10px 40px; min-height: calc(100% - 1500px)")
+        self._main_container = gui.VBox()
 
         header_picture = gui.Image("/res:pmodwrc_logo.png", width=200, style="align-self: flex-start")
         title = Title(Level.H1, "Brewer UV Irradiance Calculator")

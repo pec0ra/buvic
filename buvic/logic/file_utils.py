@@ -108,7 +108,7 @@ class FileUtils:
         :return: the calculation inputs
         """
 
-        if uvr_file is None:
+        if uvr_file is None and settings.uvr_data_source == DataSource.FILES and brewer_id in self._file_dict:
             uvr_file = self._file_dict[brewer_id].uvr_files[0].file_name
 
         input_list = []
@@ -185,15 +185,21 @@ class FileUtils:
         :return: a calculation input or None if no corresponding file was found
         """
 
-        uv_file = self.get_uv_file(brewer_id, f"UV{days}{year}.{brewer_id}")
-        if uv_file is None and settings.uv_data_source == DataSource.FILES:
-            return None
+        if settings.uv_data_source == DataSource.FILES:
+            uv_file = self.get_uv_file(brewer_id, f"UV{days}{year}.{brewer_id}")
+            if uv_file is None:
+                return None
+        else:
+            uv_file = None
 
         b_file = self.get_b_file(brewer_id, f"B{days}{year}.{brewer_id}")
 
         arf_file = self.get_arf_file(brewer_id)
 
-        calibration_file = self.get_uvr_file(brewer_id, uvr_file)
+        if settings.uvr_data_source == DataSource.FILES:
+            calibration_file = self.get_uvr_file(brewer_id, uvr_file)
+        else:
+            calibration_file = None
 
         parameter_file_name = year + ".par"
         parameter_file = self.get_parameter_file(parameter_file_name)
@@ -345,13 +351,11 @@ class FileUtils:
         """
         Search if a arf file exists for a given brewer id and return it if it exists or None otherwise.
 
-        A ValueError is raised if the file is not found
-
         :param brewer_id: the id of the brewer to get the file for
         :return: the file if found, None otherwise
         """
         if brewer_id is None or brewer_id not in self._file_dict:
-            raise ValueError(f"Invalid brewer id {brewer_id}.")
+            return None
         return self._file_dict[brewer_id].arf_file
 
     def get_parameter_file(self, parameter_file_name: str) -> Optional[File]:
@@ -377,7 +381,7 @@ class FileUtils:
         :return: the file if found, None otherwise
         """
         if brewer_id is None or brewer_id not in self._file_dict:
-            raise ValueError(f"Invalid brewer id {brewer_id}.")
+            return None
         try:
             return next(file for file in field_getter(self._file_dict[brewer_id]) if file.file_name == file_name)
         except StopIteration:

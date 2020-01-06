@@ -34,8 +34,8 @@ class Result:
 
         # If the value comes from Darksky, we add the cloud cover in parenthesis after the coscor type
         cloud_cover_value = ""
-        if isinstance(self.calculation_input.cloud_cover, DarkskyCloudCover) and cos_cor_to_apply != CosCorrection.NONE:
-            cloud_cover_value = f"({self.calculation_input.cloud_cover.darksky_value(minutes)})"
+        if cos_cor_to_apply != CosCorrection.NONE and isinstance(self.calculation_input.cloud_cover, DarkskyCloudCover):
+            cloud_cover_value = f"(darksky:{self.calculation_input.cloud_cover.darksky_value(minutes)})"
 
         file.write(f"% Generated with Brewer UV Irradiance Calculation {APP_VERSION} at {datetime.now().replace(microsecond=0)}\n")
 
@@ -73,7 +73,7 @@ class Result:
         :return: the created file name
         """
         bid = self.calculation_input.brewer_id
-        days = date_to_days(self.uv_file_entry.header.date)
+        days = date_to_days(self.calculation_input.date)
         time = minutes_to_time(self.spectrum.measurement_times[0])
 
         file_name = f"{prefix}{days:03}{time.hour:02}{time.minute:02}G.{bid}{suffix}"
@@ -100,7 +100,7 @@ class Result:
         elif self.calculation_input.b_file_name is not None:
             output_path = self.calculation_input.b_file_name.path
         else:
-            output_path = path.join(f"{self.calculation_input.brewer_id}", f"{self.uv_file_entry.header.date.year}")
+            output_path = path.join(f"{self.calculation_input.brewer_id}", f"{self.calculation_input.date.year}")
 
         if self.calculation_input.settings.no_coscor:
             return path.join("nocoscor", output_path)

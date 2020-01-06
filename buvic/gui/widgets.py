@@ -6,7 +6,7 @@ from typing import Any, Callable, List, Dict, Optional, Tuple
 
 import remi.gui as gui
 
-from buvic.brewer_infos import StraylightCorrection
+from buvic.brewer_infos import StraylightCorrection, eubrewnet_available_brewer_ids
 from buvic.logic.file import File
 from buvic.logic.file_utils import FileUtils
 from buvic.logic.ozone import BFileOzoneProvider
@@ -351,9 +351,12 @@ class SimpleMainForm(MainForm):
         self.append(self._refresh_button)
 
     def _update_brewer_ids(self):
-        brewer_ids = self._file_utils.get_brewer_ids()
+        if self.settings.uv_data_source == DataSource.FILES or self.settings.uvr_data_source == DataSource.FILES:
+            brewer_ids = self._file_utils.get_brewer_ids()
+        else:
+            brewer_ids = eubrewnet_available_brewer_ids
         self._brewer_dd.empty()
-        for bid in self._file_utils.get_brewer_ids():
+        for bid in brewer_ids:
             item = gui.DropDownItem(bid)
             self._brewer_dd.append(item)
 
@@ -364,6 +367,8 @@ class SimpleMainForm(MainForm):
         self._brewer_dd.set_value(self._brewer_id)
 
     def _update_uvr_files(self):
+        if self.settings.uvr_data_source == DataSource.EUBREWNET:
+            return
         uvr_files = self._file_utils.get_uvr_files(self._brewer_id)
 
         self._uvr_dd.empty()
@@ -371,9 +376,9 @@ class SimpleMainForm(MainForm):
             item = gui.DropDownItem(uvr_file.file_name)
             self._uvr_dd.append(item)
 
-        if self._uvr_file not in uvr_files and len(uvr_files) > 0:
+        if self._uvr_file not in [u.file_name for u in uvr_files] and len(uvr_files) > 0:
             self._uvr_file = uvr_files[0].file_name
-        elif self._uvr_file not in uvr_files:
+        elif self._uvr_file not in [u.file_name for u in uvr_files]:
             self._uvr_file = None
         self._uvr_dd.set_value(self._uvr_file)
 
@@ -400,8 +405,6 @@ class SimpleMainForm(MainForm):
     def _refresh(self, widget: gui.Widget):
         del widget  # remove unused parameter
         self._file_utils.refresh()
-        self._update_brewer_ids()
-        self._update_uvr_files()
         self.check_fields()
 
     @property
@@ -444,6 +447,8 @@ class SimpleMainForm(MainForm):
         self.check_fields()
 
     def check_fields(self):
+        self._update_brewer_ids()
+        self._update_uvr_files()
         self._update_date_range()
 
         self.clean_warnings()
@@ -685,19 +690,8 @@ class SettingsWidget(VBox):
 
     def __init__(self, settings: Settings):
         super().__init__()
-        form_title = Title(Level.H4, "Manual mode")
-        self.append(form_title)
-
-        self._form_selection_checkbox = gui.CheckBoxLabel("Specify files manually instead of giving a date and a brewer id",
-                                                          style="min-height: 30px")
-        self._form_selection_checkbox.set_value(settings.manual_mode)
-        # Click didn't work correctly for checkboxes do to a bug with onclick.
-        self._form_selection_checkbox.onclick.do(
-            lambda w: self._form_selection_checkbox.set_value(not self._form_selection_checkbox.get_value()))
-        self.append(self._form_selection_checkbox)
 
         form_title = Title(Level.H4, "ARF File column")
-        form_title.set_style("margin-top: 14px")
         self.append(form_title)
 
         self._arf_selection = gui.DropDown()
@@ -764,13 +758,23 @@ class SettingsWidget(VBox):
                                        style="margin-bottom: 10px; line-height: 14pt")
         self.append(source_explanation)
 
+        self._form_selection_checkbox = gui.CheckBoxLabel("Specify files manually instead of giving a date and a brewer id",
+                                                          style="min-height: 30px; margin-bottom: 6px")
+        self._form_selection_checkbox.set_value(settings.manual_mode)
+        # Click didn't work correctly for checkboxes do to a bug with onclick.
+        self._form_selection_checkbox.onclick.do(
+            lambda w: self._form_selection_checkbox_change())
+        self.append(self._form_selection_checkbox)
+
+        self._source_container = VBox()
+
         self._uv_source_selection = gui.DropDown()
         for source in DataSource:
             self._uv_source_selection.append(gui.DropDownItem(source))
         self._uv_source_selection.set_value(settings.uv_data_source)
         uv_source_input = Input("UV data source", self._uv_source_selection,
                                 style="margin-bottom: 10px")
-        self.append(uv_source_input)
+        self._source_container.append(uv_source_input)
 
         self._ozone_source_selection = gui.DropDown()
         for source in DataSource:
@@ -778,7 +782,7 @@ class SettingsWidget(VBox):
         self._ozone_source_selection.set_value(settings.ozone_data_source)
         ozone_source_input = Input("Ozone data source", self._ozone_source_selection,
                                    style="margin-bottom: 10px")
-        self.append(ozone_source_input)
+        self._source_container.append(ozone_source_input)
 
         self._uvr_source_selection = gui.DropDown()
         for source in DataSource:
@@ -786,7 +790,10 @@ class SettingsWidget(VBox):
         self._uvr_source_selection.set_value(settings.uvr_data_source)
         uvr_source_input = Input("UVR data source", self._uvr_source_selection,
                                  style="margin-bottom: 10px")
-        self.append(uvr_source_input)
+        self._source_container.append(uvr_source_input)
+
+        self.append(self._source_container)
+        self._update_manual_mode()
 
     def save(self) -> Settings:
         manual_mode = self._form_selection_checkbox.get_value()
@@ -838,3 +845,13 @@ class SettingsWidget(VBox):
 
         if self._save_button is not None:
             self._save_button.set_enabled(False)
+
+    def _form_selection_checkbox_change(self):
+        self._form_selection_checkbox.set_value(not self._form_selection_checkbox.get_value())
+        self._update_manual_mode()
+
+    def _update_manual_mode(self):
+        if self._form_selection_checkbox.get_value():
+            hide(self._source_container)
+        else:
+            show(self._source_container)

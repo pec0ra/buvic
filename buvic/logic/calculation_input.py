@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import date
 from enum import Enum
 from logging import getLogger
-from typing import List, Optional
+from typing import List, Optional, Iterable
 from warnings import warn, WarningMessage
 
 from cached_property import cached_property
@@ -31,9 +31,9 @@ class CalculationInput:
     brewer_id: str
     date: date
     settings: Settings
-    uv_file_name: File
+    uv_file_name: Optional[File]  # None if the data source is EUBREWNET
     b_file_name: Optional[File]
-    calibration_file_name: File
+    calibration_file_name: Optional[File]  # None if the data source is EUBREWNET
     arf_file_name: Optional[File]
     brewer_type: Optional[str]
     parameter_file_name: Optional[File] = None
@@ -76,14 +76,14 @@ class CalculationInput:
     @cached_property
     def cloud_cover(self) -> CloudCover:
         position = self.uv_file_entries[0].header.position
-        date = self.uv_file_entries[0].header.date
+        d = self.uv_file_entries[0].header.date
 
-        days = date_to_days(date)
+        days = date_to_days(d)
         parameter_value = self.parameters.cloud_cover(days)
         if parameter_value is not None:
             return ParameterCloudCover(parameter_value)
         else:
-            return get_cloud_cover(position.latitude, position.longitude, date)
+            return get_cloud_cover(position.latitude, position.longitude, d)
 
     def cos_correction_to_apply(self, time: float) -> CosCorrection:
         if self.settings.no_coscor or self.arf is None:
@@ -103,14 +103,16 @@ class CalculationInput:
         ozone = self.ozone
         calibration = self.calibration
         arf = self.arf
-        cloud_cover = self.cloud_cover
+        coscor_to_apply = self.cos_correction_to_apply(0)
+        parameters = self.parameters
         del uv_file_entries
         del ozone
         del calibration
         del arf
-        del cloud_cover
+        del coscor_to_apply
+        del parameters
 
-    def add_warnings(self, warnings: WarningMessage):
+    def add_warnings(self, warnings: Iterable[WarningMessage]):
         self.warnings.extend(warnings)
 
 
