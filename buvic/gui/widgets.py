@@ -690,16 +690,6 @@ class SettingsWidget(VBox):
 
     def __init__(self, settings: Settings):
         super().__init__()
-        form_title = Title(Level.H4, "Manual mode")
-        self.append(form_title)
-
-        self._form_selection_checkbox = gui.CheckBoxLabel("Specify files manually instead of giving a date and a brewer id",
-                                                          style="min-height: 30px")
-        self._form_selection_checkbox.set_value(settings.manual_mode)
-        # Click didn't work correctly for checkboxes do to a bug with onclick.
-        self._form_selection_checkbox.onclick.do(
-            lambda w: self._form_selection_checkbox.set_value(not self._form_selection_checkbox.get_value()))
-        self.append(self._form_selection_checkbox)
 
         form_title = Title(Level.H4, "ARF File column")
         form_title.set_style("margin-top: 14px")
@@ -769,13 +759,23 @@ class SettingsWidget(VBox):
                                        style="margin-bottom: 10px; line-height: 14pt")
         self.append(source_explanation)
 
+        self._form_selection_checkbox = gui.CheckBoxLabel("Specify files manually instead of giving a date and a brewer id",
+                                                          style="min-height: 30px; margin-bottom: 6px")
+        self._form_selection_checkbox.set_value(settings.manual_mode)
+        # Click didn't work correctly for checkboxes do to a bug with onclick.
+        self._form_selection_checkbox.onclick.do(
+            lambda w: self._form_selection_checkbox_change())
+        self.append(self._form_selection_checkbox)
+
+        self._source_container = VBox()
+
         self._uv_source_selection = gui.DropDown()
         for source in DataSource:
             self._uv_source_selection.append(gui.DropDownItem(source))
         self._uv_source_selection.set_value(settings.uv_data_source)
         uv_source_input = Input("UV data source", self._uv_source_selection,
                                 style="margin-bottom: 10px")
-        self.append(uv_source_input)
+        self._source_container.append(uv_source_input)
 
         self._ozone_source_selection = gui.DropDown()
         for source in DataSource:
@@ -783,7 +783,7 @@ class SettingsWidget(VBox):
         self._ozone_source_selection.set_value(settings.ozone_data_source)
         ozone_source_input = Input("Ozone data source", self._ozone_source_selection,
                                    style="margin-bottom: 10px")
-        self.append(ozone_source_input)
+        self._source_container.append(ozone_source_input)
 
         self._uvr_source_selection = gui.DropDown()
         for source in DataSource:
@@ -791,7 +791,10 @@ class SettingsWidget(VBox):
         self._uvr_source_selection.set_value(settings.uvr_data_source)
         uvr_source_input = Input("UVR data source", self._uvr_source_selection,
                                  style="margin-bottom: 10px")
-        self.append(uvr_source_input)
+        self._source_container.append(uvr_source_input)
+
+        self.append(self._source_container)
+        self._update_manual_mode()
 
     def save(self) -> Settings:
         manual_mode = self._form_selection_checkbox.get_value()
@@ -843,3 +846,13 @@ class SettingsWidget(VBox):
 
         if self._save_button is not None:
             self._save_button.set_enabled(False)
+
+    def _form_selection_checkbox_change(self):
+        self._form_selection_checkbox.set_value(not self._form_selection_checkbox.get_value())
+        self._update_manual_mode()
+
+    def _update_manual_mode(self):
+        if self._form_selection_checkbox.get_value():
+            hide(self._source_container)
+        else:
+            show(self._source_container)
