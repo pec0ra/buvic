@@ -117,5 +117,5 @@ class UVFileReaderTestCase(unittest.TestCase):
 
         with warnings.catch_warnings(record=True) as w:
             calculation_input.init_properties()
-            # We expect 3 warnings: arf file not found, parameter file not found and darksky token not set
-            self.assertEqual(3, len(w))
+            # We expect 2 warnings: arf file not found and parameter file not found
+            self.assertEqual(2, len(w))
