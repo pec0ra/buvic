@@ -35,7 +35,7 @@ class Result:
         # If the value comes from Darksky, we add the cloud cover in parenthesis after the coscor type
         cloud_cover_value = ""
         if isinstance(self.calculation_input.cloud_cover, DarkskyCloudCover) and cos_cor_to_apply != CosCorrection.NONE:
-            cloud_cover_value = f"({self.calculation_input.cloud_cover.darksky_value(minutes)})"
+            cloud_cover_value = f"(darksky:{self.calculation_input.cloud_cover.darksky_value(minutes)})"
 
         file.write(f"% Generated with Brewer UV Irradiance Calculation {APP_VERSION} at {datetime.now().replace(microsecond=0)}\n")
 
