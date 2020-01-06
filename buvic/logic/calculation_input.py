@@ -11,7 +11,7 @@ from cached_property import cached_property
 
 from buvic.brewer_infos import StraylightCorrection
 from buvic.logic.calibration_file import Calibration, EubrewnetCalibrationProvider, UVRFileCalibrationProvider
-from buvic.logic.darksky import get_cloud_cover, CloudCover, ParameterCloudCover
+from buvic.logic.darksky import get_cloud_cover, CloudCover, ParameterCloudCover, DefaultCloudCover
 from buvic.logic.file import File
 from buvic.logic.ozone import EubrewnetOzoneProvider
 from buvic.logic.ozone import Ozone, BFileOzoneProvider
@@ -104,12 +104,14 @@ class CalculationInput:
         ozone = self.ozone
         calibration = self.calibration
         arf = self.arf
-        cloud_cover = self.cloud_cover
+        coscor_to_apply = self.cos_correction_to_apply(0)
+        parameters = self.parameters
         del uv_file_entries
         del ozone
         del calibration
         del arf
-        del cloud_cover
+        del coscor_to_apply
+        del parameters
 
     def add_warnings(self, warnings: Iterable[WarningMessage]):
         self.warnings.extend(warnings)

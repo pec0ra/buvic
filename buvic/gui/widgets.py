@@ -692,7 +692,6 @@ class SettingsWidget(VBox):
         super().__init__()
 
         form_title = Title(Level.H4, "ARF File column")
-        form_title.set_style("margin-top: 14px")
         self.append(form_title)
 
         self._arf_selection = gui.DropDown()
