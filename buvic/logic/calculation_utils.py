@@ -135,9 +135,12 @@ class CalculationUtils:
         if self._init_progress is not None:
             self._init_progress(len(calculation_inputs), f"Collecting data for {len(calculation_inputs)} "
                                                          f"day{'s' if len(calculation_inputs) > 1 else ''}...")
-        # Create the thread pool
+
+        # We initialize the data (reading files / querying eubrewnet) and create the jobs on multiple threads for improved performance
         with ThreadPoolExecutor(max_workers=self._get_thread_count()) as thread_pool:
-            job_list_list = thread_pool.map(self._init_and_create_job, calculation_inputs, timeout=5)
+            job_list_list = thread_pool.map(self._init_and_create_jobs, calculation_inputs, timeout=30)
+
+        # Flatten the list of lists of jobs into a list of jobs
         job_list = list(itertools.chain(*list(job_list_list)))
 
         if len(job_list) == 0:
@@ -145,8 +148,8 @@ class CalculationUtils:
 
         valid_input_count = len(
             [calculation_input for calculation_input in calculation_inputs if len(calculation_input.uv_file_entries) > 0])
-        LOG.info("Starting calculation of %d file sections in %d files", len(job_list),
-                 valid_input_count)
+        LOG.info("Starting calculation of %d file sections in %d files", len(job_list), valid_input_count)
+
         # Init progress bar
         if self._init_progress is not None:
             self._init_progress(len(job_list), f"Calculating irradiance for {len(job_list)} "
@@ -162,7 +165,13 @@ class CalculationUtils:
         LOG.info("Finished calculation batch in %ds", duration)
         return ret
 
-    def _init_and_create_job(self, calculation_input: CalculationInput) -> List[Job]:
+    def _init_and_create_jobs(self, calculation_input: CalculationInput) -> List[Job]:
+        """
+        Initialize the properties of a given calculation input and create calculation jobs for it.
+
+        :param calculation_input: the calculation input to initialize and for which to creat the jobs
+        :return: the created jobs
+        """
         # We collect all warnings and add them to the calculation input
         calculation_input.init_properties()
         calculation_input.add_warnings(get_warnings())
@@ -173,7 +182,10 @@ class CalculationUtils:
             calculation_jobs = self._create_jobs(calculation_input)
         else:
             calculation_jobs = []
+
+        # Report progress to the progress bar
         self._make_progress()
+
         return calculation_jobs
 
     def _on_new_file(self, file_type: str, days: str, year: str, brewer_id: str, settings: Settings) -> None:

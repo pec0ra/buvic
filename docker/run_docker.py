@@ -3,7 +3,7 @@ import os
 
 from remi import start
 
-from buvic.app import UVApp
+from buvic.app import BUVIC
 from buvic.const import TMP_FILE_DIR, OUTPUT_DIR
 from buvic.logutils import init_logging
 
@@ -20,4 +20,4 @@ if "PORT" in os.environ:
 init_logging(logging.DEBUG)
 
 # starts the web server
-start(UVApp, address='0.0.0.0', port=port, start_browser=False, multiple_instance=True)
+start(BUVIC, address='0.0.0.0', port=port, start_browser=False, multiple_instance=True)

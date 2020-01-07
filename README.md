@@ -202,6 +202,8 @@ It offers the possibility to choose dates and a brewer id to automatically find 
 
 ![GUI](assets/gui.png)
 
+![GUI](assets/gui2.png)
+
 **Instructions:**
 
 Run:

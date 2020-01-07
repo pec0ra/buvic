@@ -18,7 +18,7 @@ from .gui.widgets import Title, Level, Loader, PathMainForm, SimpleMainForm, Res
 LOG = getLogger(__name__)
 
 
-class UVApp(App):
+class BUVIC(App):
     _file_utils: FileUtils
     _main_container: VBox
     _forms: VBox
@@ -33,7 +33,7 @@ class UVApp(App):
 
     def __init__(self, *args):
         self._settings = Settings.load()
-        super(UVApp, self).__init__(*args, static_file_path={'plots': OUTPUT_DIR, 'res': ASSETS_DIR})
+        super(BUVIC, self).__init__(*args, static_file_path={'plots': OUTPUT_DIR, 'res': ASSETS_DIR})
 
         self._executor = ThreadPoolExecutor(1)
         self._duration = 0
