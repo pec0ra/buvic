@@ -554,10 +554,10 @@ section to do the calculations for.
 
 ![Calculation workflow](assets/technical_detail_2.png)
 
-The first part of the calculations is to parse the measurement files or to query eubrewnet for the data. Each file type has its own data
- provider. Their implementations can be found in the files [`uv/logic/uv_file.py`](buvic/logic/uv_file.py),
- [`uv/logic/ozone.py`](buvic/logic/ozone.py), [`uv/logic/arf_file.py`](buvic/logic/arf_file.py),
- [`uv/logic/calibration_file.py`](buvic/logic/calibration_file.py) and [`uv/logic/parameter_file.py`](buvic/logic/parameter_file.py).
+Before starting the the calculation, all the required data is collected by parsing the measurement files or querying eubrewnet for the data.
+Each file type has its own data provider. Their implementations can be found in the files [`uv/logic/uv_file.py`](buvic/logic/uv_file.py),
+[`uv/logic/ozone.py`](buvic/logic/ozone.py), [`uv/logic/arf_file.py`](buvic/logic/arf_file.py),
+[`uv/logic/calibration_file.py`](buvic/logic/calibration_file.py) and [`uv/logic/parameter_file.py`](buvic/logic/parameter_file.py).
 
 Note that the file parsing is triggered automatically (and cached) when calling one of the following property on the `CalculationInput`:
 * `uv_file_entries`: get the uv data from a UV file or eubrewnet
@@ -569,8 +569,8 @@ Note that the file parsing is triggered automatically (and cached) when calling 
 An api call is also made to [darksky.net](https://darksky.net/dev) (if an api key is provided) to get the cloud cover for the day of the
 measurements. This information is used to choose between a clear sky or a diffuse cos correction.
 
-In the next step, the raw measurements and the calibration data is used to convert the raw UV measurements to a calibrated spectrum.
-A call to LibRadtran is also made with the infos from the measurement and parameter files to get `Fdiff`, `Fdir` and `Fglo`.
+During the calculations, the raw measurements and the calibration data is used to convert the raw UV measurements to a calibrated spectrum.
+A call to LibRadtran is made with the infos from the measurement and parameter files to get `Fdiff`, `Fdir` and `Fglo`.
 
 Finally, the results from LibRadtran and from the darksky.net api call are used to apply the cos correction to the calibrated
 spectrum.
