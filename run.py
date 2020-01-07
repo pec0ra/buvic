@@ -16,4 +16,4 @@ if not os.path.exists(OUTPUT_DIR):
 init_logging(logging.INFO)
 
 # starts the web server
-start(BUVIC, multiple_instance=True)
+start(BUVIC, multiple_instance=True, title="BUVIC | Brewer UV Irradiance Calculator")

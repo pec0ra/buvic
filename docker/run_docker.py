@@ -20,4 +20,4 @@ if "PORT" in os.environ:
 init_logging(logging.DEBUG)
 
 # starts the web server
-start(BUVIC, address='0.0.0.0', port=port, start_browser=False, multiple_instance=True)
+start(BUVIC, address='0.0.0.0', port=port, start_browser=False, multiple_instance=True, title="BUVIC | Brewer UV Irradiance Calculator")
