@@ -1,6 +1,5 @@
 import logging
 import unittest
-import warnings
 from datetime import date
 
 from buvic.brewer_infos import StraylightCorrection
@@ -115,7 +114,4 @@ class UVFileReaderTestCase(unittest.TestCase):
             StraylightCorrection.UNDEFINED
         )
 
-        with warnings.catch_warnings(record=True) as w:
-            calculation_input.init_properties()
-            # We expect 2 warnings: arf file not found and parameter file not found
-            self.assertEqual(2, len(w))
+        calculation_input.init_properties()

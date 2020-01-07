@@ -4,7 +4,6 @@ import concurrent
 import itertools
 import os
 import time
-from concurrent.futures.process import ProcessPoolExecutor
 from concurrent.futures.thread import ThreadPoolExecutor
 from dataclasses import dataclass
 from logging import getLogger
