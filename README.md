@@ -1,3 +1,10 @@
+[![Python 3.7](https://img.shields.io/badge/python-3.7-blue.svg)](https://www.python.org/downloads/release/python-370/)
+[![GitHub](https://img.shields.io/github/license/pec0ra/buvic)](https://www.gnu.org/licenses/gpl-3.0) 
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/pec0ra/buvic)](https://github.com/pec0ra/buvic/releases/)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/pec0ra/buvic/Python%20checks)](https://github.com/pec0ra/buvic/actions)
+[![Docker Cloud Automated build](https://img.shields.io/docker/cloud/automated/pmodwrc/buvic)](https://hub.docker.com/r/pmodwrc/buvic/builds)
+
+
 # Brewer UV Irradiance Calculation
 
 This repository contains a set of tools to calculate the cosine corrected irradiance from brewer raw UV measurements.
