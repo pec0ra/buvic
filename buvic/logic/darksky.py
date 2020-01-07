@@ -7,11 +7,11 @@ from datetime import datetime, time, date
 from logging import getLogger
 from typing import List, Callable
 from urllib.error import HTTPError
-from warnings import warn
 
 from scipy.interpolate import interp1d
 
 from buvic.logic.utils import date_to_days
+from .warnings import warn
 from ..const import DARKSKY_TOKEN
 
 LOG = getLogger(__name__)

@@ -11,9 +11,10 @@ from logging import getLogger
 from statistics import mean
 from typing import List, TextIO
 from urllib.error import HTTPError
-from warnings import warn
 
 from numpy import divide, sqrt
+
+from .warnings import warn
 
 LOG = getLogger(__name__)
 

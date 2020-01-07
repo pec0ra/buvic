@@ -1,16 +1,15 @@
 from __future__ import annotations
 
 import concurrent
+import itertools
 import os
-import threading
 import time
-import warnings
+from concurrent.futures.process import ProcessPoolExecutor
 from concurrent.futures.thread import ThreadPoolExecutor
 from dataclasses import dataclass
 from logging import getLogger
 from os import path
 from typing import Callable, List, Any, TypeVar, Generic, Optional, Tuple
-from warnings import warn
 
 from watchdog.observers import Observer
 
@@ -24,6 +23,7 @@ from buvic.logic.settings import Settings
 from buvic.logic.utils import days_to_date
 from .calculation_input import CalculationInput
 from .irradiance_calculation import IrradianceCalculation
+from .warnings import warn, get_warnings, clear_warnings
 
 LOG = getLogger(__name__)
 
@@ -32,8 +32,6 @@ class CalculationUtils:
     """
     A utility to create and schedule calculation jobs.
     """
-
-    warnings_lock = threading.RLock()
 
     def __init__(
             self,
@@ -73,9 +71,9 @@ class CalculationUtils:
                  calculation_input.arf_file_name)
 
         # We collect all warnings and add them to the calculation input
-        with self.warnings_lock, warnings.catch_warnings(record=True) as w:
-            calculation_input.init_properties()
-            calculation_input.add_warnings(w)
+        calculation_input.init_properties()
+        calculation_input.add_warnings(get_warnings())
+        clear_warnings()
 
         # Create `IrradianceCalculation` Jobs
         calculation_jobs = self._create_jobs(calculation_input)
@@ -138,18 +136,10 @@ class CalculationUtils:
         if self._init_progress is not None:
             self._init_progress(len(calculation_inputs), f"Collecting data for {len(calculation_inputs)} "
                                                          f"day{'s' if len(calculation_inputs) > 1 else ''}...")
-        job_list = []
-        for calculation_input in calculation_inputs:
-            # We collect all warnings and add them to the calculation input
-            with self.warnings_lock, warnings.catch_warnings(record=True) as w:
-                calculation_input.init_properties()
-                calculation_input.add_warnings(w)
-
-            if len(calculation_input.uv_file_entries) > 0:
-                # Create `IrradianceCalculation` Jobs
-                calculation_jobs = self._create_jobs(calculation_input)
-                job_list.extend(calculation_jobs)
-            self._make_progress()
+        # Create the thread pool
+        with ThreadPoolExecutor(max_workers=self._get_thread_count()) as thread_pool:
+            job_list_list = thread_pool.map(self._init_and_create_job, calculation_inputs, timeout=5)
+        job_list = list(itertools.chain(*list(job_list_list)))
 
         if len(job_list) == 0:
             return self._handle_empty_input()
@@ -172,6 +162,20 @@ class CalculationUtils:
             self._finish_progress(duration)
         LOG.info("Finished calculation batch in %ds", duration)
         return ret
+
+    def _init_and_create_job(self, calculation_input: CalculationInput) -> List[Job]:
+        # We collect all warnings and add them to the calculation input
+        calculation_input.init_properties()
+        calculation_input.add_warnings(get_warnings())
+        clear_warnings()
+
+        if len(calculation_input.uv_file_entries) > 0:
+            # Create `IrradianceCalculation` Jobs
+            calculation_jobs = self._create_jobs(calculation_input)
+        else:
+            calculation_jobs = []
+        self._make_progress()
+        return calculation_jobs
 
     def _on_new_file(self, file_type: str, days: str, year: str, brewer_id: str, settings: Settings) -> None:
         """
@@ -254,9 +258,8 @@ class CalculationUtils:
         result_list: List[Result] = []
         future_result = []
 
-        cpu_count = os.cpu_count() if os.cpu_count() is not None else 2
-        # Create the thread pool and the process pool
-        with ThreadPoolExecutor(min(20, (cpu_count if cpu_count is not None else 2) + 4)) as thread_pool:
+        # Create the thread pool
+        with ThreadPoolExecutor(self._get_thread_count()) as thread_pool:
 
             try:
                 # Submit the jobs to the thread pool
@@ -348,6 +351,11 @@ class CalculationUtils:
         LOG.warning("No input file found for the given parameters")
 
         return []
+
+    @staticmethod
+    def _get_thread_count() -> int:
+        cpu_count = os.cpu_count() if os.cpu_count() is not None else 2
+        return min(20, (cpu_count if cpu_count is not None else 2) + 4)
 
 
 INPUT = TypeVar('INPUT')

@@ -582,7 +582,7 @@ class ResultWidget(VBox):
         if len(results) > 0 and len(results[0].calculation_input.warnings) > 0:
             warning_box = VBox(style="margin-bottom: 15px")
             for warning in results[0].calculation_input.warnings:
-                warning_label = IconLabel(str(warning.message), "warning", style="margin-bottom: 5px")
+                warning_label = IconLabel(warning, "warning", style="margin-bottom: 5px")
                 warning_label.attributes["class"] = "warning"
                 warning_box.append(warning_label)
 
@@ -710,7 +710,7 @@ class SettingsWidget(VBox):
 
         self._no_coscor_checkbox = gui.CheckBoxLabel("Skip cos correction", style="height: 30px; width: 260px; padding-right: 20px")
         self._no_coscor_checkbox.set_value(settings.no_coscor)
-        # Click didn't work correctly for checkboxes do to a bug with onclick.
+        # Click didn't work correctly for checkboxes due to a bug with onclick.
         self._no_coscor_checkbox.onclick.do(lambda w: self._no_coscor_checkbox.set_value(not self._no_coscor_checkbox.get_value()))
         self.append(self._no_coscor_checkbox)
 
@@ -747,7 +747,7 @@ class SettingsWidget(VBox):
         self._straylight_checkbox = gui.CheckBoxLabel("Apply straylight correction",
                                                       style="height: 30px; width: 260px; padding-right: 20px")
         self._straylight_checkbox.set_value(settings.default_straylight_correction == StraylightCorrection.APPLIED)
-        # Click didn't work correctly for checkboxes do to a bug with onclick.
+        # Click didn't work correctly for checkboxes due to a bug with onclick.
         self._straylight_checkbox.onclick.do(lambda w: self._straylight_checkbox.set_value(not self._straylight_checkbox.get_value()))
         self.append(self._straylight_checkbox)
 
@@ -761,9 +761,8 @@ class SettingsWidget(VBox):
         self._form_selection_checkbox = gui.CheckBoxLabel("Specify files manually instead of giving a date and a brewer id",
                                                           style="min-height: 30px; margin-bottom: 6px")
         self._form_selection_checkbox.set_value(settings.manual_mode)
-        # Click didn't work correctly for checkboxes do to a bug with onclick.
-        self._form_selection_checkbox.onclick.do(
-            lambda w: self._form_selection_checkbox_change())
+        # Click didn't work correctly for checkboxes due to a bug with onclick.
+        self._form_selection_checkbox.onclick.do(lambda w: self._form_selection_checkbox_change())
         self.append(self._form_selection_checkbox)
 
         self._source_container = VBox()

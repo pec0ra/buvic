@@ -8,7 +8,6 @@ from datetime import timedelta
 from logging import getLogger
 from os import path
 from typing import Optional, List
-from warnings import warn
 
 import requests
 import requests.auth
@@ -16,6 +15,7 @@ from scipy.interpolate import interp1d
 
 from buvic.brewer_infos import correct_straylight, StraylightCorrection
 from buvic.logic.file import File
+from .warnings import warn
 
 LOG = getLogger(__name__)
 

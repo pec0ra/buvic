@@ -5,11 +5,11 @@ from dataclasses import dataclass
 from logging import getLogger
 from os import path
 from typing import List, Optional
-from warnings import warn
 
 from scipy.interpolate import interp1d
 
 from buvic.logic.file import File
+from .warnings import warn
 
 LOG = getLogger(__name__)
 

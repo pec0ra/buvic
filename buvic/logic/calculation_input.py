@@ -5,7 +5,6 @@ from datetime import date
 from enum import Enum
 from logging import getLogger
 from typing import List, Optional, Iterable
-from warnings import warn, WarningMessage
 
 from cached_property import cached_property
 
@@ -20,6 +19,7 @@ from buvic.logic.settings import Settings, DataSource
 from buvic.logic.utils import date_to_days
 from buvic.logic.uv_file import UVFileUVProvider, UVFileEntry, EubrewnetUVProvider
 from .arf_file import read_arf_file, ARF
+from .warnings import warn
 
 LOG = getLogger(__name__)
 
@@ -38,7 +38,7 @@ class CalculationInput:
     arf_file_name: Optional[File]
     straylight_correction: StraylightCorrection
     parameter_file_name: Optional[File] = None
-    warnings: List[WarningMessage] = field(default_factory=list)
+    warnings: List[str] = field(default_factory=list)
 
     @cached_property
     def uv_file_entries(self) -> List[UVFileEntry]:
@@ -113,7 +113,7 @@ class CalculationInput:
         del coscor_to_apply
         del parameters
 
-    def add_warnings(self, warnings: Iterable[WarningMessage]):
+    def add_warnings(self, warnings: Iterable[str]):
         self.warnings.extend(warnings)
 
 

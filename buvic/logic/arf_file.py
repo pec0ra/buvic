@@ -5,7 +5,8 @@ from dataclasses import dataclass
 from enum import Enum
 from logging import getLogger
 from typing import List
-from warnings import warn
+
+from .warnings import warn
 
 LOG = getLogger(__name__)
 
