@@ -70,9 +70,9 @@ class CalculationUtils:
                  calculation_input.arf_file_name)
 
         # We collect all warnings and add them to the calculation input
+        clear_warnings()
         calculation_input.init_properties()
         calculation_input.add_warnings(get_warnings())
-        clear_warnings()
 
         # Create `IrradianceCalculation` Jobs
         calculation_jobs = self._create_jobs(calculation_input)
@@ -173,9 +173,9 @@ class CalculationUtils:
         :return: the created jobs
         """
         # We collect all warnings and add them to the calculation input
+        clear_warnings()
         calculation_input.init_properties()
         calculation_input.add_warnings(get_warnings())
-        clear_warnings()
 
         if len(calculation_input.uv_file_entries) > 0:
             # Create `IrradianceCalculation` Jobs
