@@ -24,8 +24,9 @@ This repository contains a set of tools to calculate the cosine corrected irradi
          * [1. User Interface](#1-user-interface)
          * [2. Job creation / handling](#2-job-creation--handling)
          * [3. Calculations](#3-calculations)
+         * [4. Performance](#4-performance)
 
-<!-- Added by: basile, at: Mo Jan  6 13:46:21 CET 2020 -->
+<!-- Added by: basile, at: Di Jan  7 11:17:29 CET 2020 -->
 
 <!--te-->
 
@@ -555,9 +556,10 @@ section to do the calculations for.
 ![Calculation workflow](assets/technical_detail_2.png)
 
 Before starting the the calculation, all the required data is collected by parsing the measurement files or querying eubrewnet for the data.
-Each file type has its own data provider. Their implementations can be found in the files [`uv/logic/uv_file.py`](buvic/logic/uv_file.py),
-[`uv/logic/ozone.py`](buvic/logic/ozone.py), [`uv/logic/arf_file.py`](buvic/logic/arf_file.py),
-[`uv/logic/calibration_file.py`](buvic/logic/calibration_file.py) and [`uv/logic/parameter_file.py`](buvic/logic/parameter_file.py).
+Each file type has its own data provider. Their implementations can be found in the files
+[`buvic/logic/uv_file.py`](buvic/logic/uv_file.py), [`buvic/logic/ozone.py`](buvic/logic/ozone.py),
+[`buvic/logic/arf_file.py`](buvic/logic/arf_file.py), [`buvic/logic/calibration_file.py`](buvic/logic/calibration_file.py)
+and [`buvic/logic/parameter_file.py`](buvic/logic/parameter_file.py).
 
 Note that the file parsing is triggered automatically (and cached) when calling one of the following property on the `CalculationInput`:
 * `uv_file_entries`: get the uv data from a UV file or eubrewnet
@@ -577,3 +579,21 @@ spectrum.
 This information as well as the input parameters used is returned from the `calculate` method as a `Result` object.
 
 This `Result` object will later be converted to output files.
+
+
+### 4. Performance
+
+The two main performance bottlenecks in this application are:
+1. API calls to EUBREWNET and [darksky.net](https://darksky.net/dev)
+2. Calls to libradtran
+
+Any other file parsing or calculation takes a negligible time in comparison to these two actions.
+
+To improve significantly the performance of BUVIC, we use parallelization for these actions. This works best for API calls since we expect
+to be able to make many API calls at the same time before the internet connection is saturated. The calls to libradtran also
+have a performance gain from parallelization, thanks to the overhead of creating and handling the new process executing uvspec.
+
+Parallelization is implemented with the python's `ThreadPoolExecutor` which makes it easy to run jobs on a pool of threads. Relevant code
+parts are in the class [`CalculationUtils`](buvic/logic/calculation_utils.py) in methods `calculate_for_inputs` (data collection) 
+and `_execute_jobs` (calculation jobs). The number of threads used in the pool equal the number of cpu cores plus 4 with a limit at 20
+threads.
