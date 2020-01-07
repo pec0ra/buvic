@@ -38,8 +38,8 @@ def read_arf_file(file_name: str, arf_column: int) -> ARF:
 
                 if len(line_values) <= arf_column:
                     if len(values) == 0:
-                        warn(f"Could not read column {arf_column} from arf file, file has only {len(line_values)} columns. Used last column "
-                             f"instead.")
+                        warn(f"Could not read column {arf_column} from arf file, file has only {len(line_values)} columns. Used last column"
+                             f" instead.")
                     values.append(float(line_values[-1]))
                 else:
                     values.append(float(line_values[arf_column]))
