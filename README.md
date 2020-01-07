@@ -32,8 +32,9 @@ This repository contains a set of tools to calculate the cosine corrected irradi
          * [2. Job creation / handling](#2-job-creation--handling)
          * [3. Calculations](#3-calculations)
          * [4. Performance](#4-performance)
+      * [License](#license)
 
-<!-- Added by: basile, at: Di Jan  7 11:17:29 CET 2020 -->
+<!-- Added by: basile, at: Di Jan  7 16:37:21 CET 2020 -->
 
 <!--te-->
 
@@ -604,3 +605,8 @@ Parallelization is implemented with the python's `ThreadPoolExecutor` which make
 parts are in the class [`CalculationUtils`](buvic/logic/calculation_utils.py) in methods `calculate_for_inputs` (data collection) 
 and `_execute_jobs` (calculation jobs). The number of threads used in the pool equal the number of cpu cores plus 4 with a limit at 20
 threads.
+
+
+## License
+
+BUVIC is published under the `GNU General Public License version 3` (GPL v3). See [LICENSE.md](LICENSE.md) for more details.
