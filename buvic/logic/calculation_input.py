@@ -1,3 +1,22 @@
+#
+# Copyright (c) 2020 Basile Maret.
+#
+# This file is part of BUVIC - Brewer UV Irradiance Calculator
+# (see https://github.com/pec0ra/buvic).
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+#
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -5,7 +24,6 @@ from datetime import date
 from enum import Enum
 from logging import getLogger
 from typing import List, Optional, Iterable
-from warnings import warn, WarningMessage
 
 from cached_property import cached_property
 
@@ -19,6 +37,7 @@ from buvic.logic.settings import Settings, DataSource
 from buvic.logic.utils import date_to_days
 from buvic.logic.uv_file import UVFileUVProvider, UVFileEntry, EubrewnetUVProvider
 from .arf_file import read_arf_file, ARF
+from .warnings import warn
 
 LOG = getLogger(__name__)
 
@@ -37,7 +56,7 @@ class CalculationInput:
     arf_file_name: Optional[File]
     brewer_type: Optional[str]
     parameter_file_name: Optional[File] = None
-    warnings: List[WarningMessage] = field(default_factory=list)
+    warnings: List[str] = field(default_factory=list)
 
     @cached_property
     def uv_file_entries(self) -> List[UVFileEntry]:
@@ -112,7 +131,7 @@ class CalculationInput:
         del coscor_to_apply
         del parameters
 
-    def add_warnings(self, warnings: Iterable[WarningMessage]):
+    def add_warnings(self, warnings: Iterable[str]):
         self.warnings.extend(warnings)
 
 

@@ -18,24 +18,34 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 import unittest
+from concurrent.futures.thread import ThreadPoolExecutor
 
-from buvic.logic.file import File
+from buvic.logic.warnings import warn, get_warnings, clear_warnings
 
 
 class FileUtilsTestCase(unittest.TestCase):
 
     def test(self):
-        file = File("full/path/to/file.txt")
-        self.assertEqual("full/path/to/file.txt", file.full_path)
-        self.assertEqual("file.txt", file.file_name)
-        self.assertEqual("full/path/to", file.path)
+        clear_warnings()
+        self._test_warnings()
 
-        file = File("full/path/to/file.txt", "full")
-        self.assertEqual("full/path/to/file.txt", file.full_path)
-        self.assertEqual("file.txt", file.file_name)
-        self.assertEqual("path/to", file.path)
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            results = []
+            for i in range(0, 8):
+                results.append(pool.submit(self._test_warnings))
+            for result in results:
+                result.result(timeout=5)
 
-        file = File("full/path/to/file.txt", "full/path/")
-        self.assertEqual("full/path/to/file.txt", file.full_path)
-        self.assertEqual("file.txt", file.file_name)
-        self.assertEqual("to", file.path)
+    def _test_warnings(self) -> None:
+        warn("warning 1")
+        warn("warning 2")
+        warn("warning 3")
+        warnings = get_warnings()
+
+        self.assertEqual(3, len(warnings))
+        self.assertEqual("warning 1", warnings[0])
+        self.assertEqual("warning 2", warnings[1])
+        self.assertEqual("warning 3", warnings[2])
+
+        clear_warnings()
+        self.assertEqual(0, len(warnings))

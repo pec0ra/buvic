@@ -1,3 +1,22 @@
+#
+# Copyright (c) 2020 Basile Maret.
+#
+# This file is part of BUVIC - Brewer UV Irradiance Calculator
+# (see https://github.com/pec0ra/buvic).
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+#
 from __future__ import annotations
 
 import re
@@ -5,7 +24,8 @@ from dataclasses import dataclass
 from enum import Enum
 from logging import getLogger
 from typing import List
-from warnings import warn
+
+from .warnings import warn
 
 LOG = getLogger(__name__)
 
@@ -36,8 +56,9 @@ def read_arf_file(file_name: str, arf_column: int) -> ARF:
                 szas.append(sza)
 
                 if len(line_values) <= arf_column:
-                    warn(f"Could not read column {arf_column} from arf file, file has only {len(line_values)} columns. Used last column "
-                         f"instead.")
+                    if len(values) == 0:
+                        warn(f"Could not read column {arf_column} from arf file, file has only {len(line_values)} columns. Used last column"
+                             f" instead.")
                     values.append(float(line_values[-1]))
                 else:
                     values.append(float(line_values[arf_column]))

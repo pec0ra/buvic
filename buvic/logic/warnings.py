@@ -17,22 +17,37 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-import logging
-import os
+import threading
+from typing import List
 
-from remi import start
+local = threading.local()
+local.warnings = []
 
-from buvic.app import BUVIC
-from buvic.const import TMP_FILE_DIR, OUTPUT_DIR
-from buvic.logutils import init_logging
 
-if not os.path.exists(TMP_FILE_DIR):
-    os.makedirs(TMP_FILE_DIR)
+def warn(message: str) -> None:
+    """
+    Record a thread local warning message.
+    :param message: the message to store
+    """
+    if not hasattr(local, "warnings"):
+        local.warnings = []
+    local.warnings.append(message)
 
-if not os.path.exists(OUTPUT_DIR):
-    os.makedirs(OUTPUT_DIR)
 
-init_logging(logging.INFO)
+def get_warnings() -> List[str]:
+    """
+    Get all recorded warning messages recorded for the current thread
+    :return: the warning messages
+    """
+    if hasattr(local, "warnings"):
+        return local.warnings
+    else:
+        return []
 
-# starts the web server
-start(BUVIC, multiple_instance=True, title="BUVIC | Brewer UV Irradiance Calculator")
+
+def clear_warnings() -> None:
+    """
+    Clear all recorded warning messages for the current thread
+    """
+    if hasattr(local, "warnings"):
+        local.warnings.clear()

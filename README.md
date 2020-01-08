@@ -1,3 +1,10 @@
+[![Python 3.7](https://img.shields.io/badge/python-3.7-blue.svg)](https://www.python.org/downloads/release/python-370/)
+[![GitHub](https://img.shields.io/github/license/pec0ra/buvic)](https://www.gnu.org/licenses/gpl-3.0) 
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/pec0ra/buvic)](https://github.com/pec0ra/buvic/releases/)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/pec0ra/buvic/Python%20checks)](https://github.com/pec0ra/buvic/actions)
+[![Docker Cloud Automated build](https://img.shields.io/docker/cloud/automated/pmodwrc/buvic)](https://hub.docker.com/r/pmodwrc/buvic/builds)
+
+
 # Brewer UV Irradiance Calculation
 
 This repository contains a set of tools to calculate the cosine corrected irradiance from brewer raw UV measurements.
@@ -14,18 +21,20 @@ This repository contains a set of tools to calculate the cosine corrected irradi
          * [1. Calculate dates and brewer id](#1-calculate-dates-and-brewer-id)
          * [2. Calculate for given files](#2-calculate-for-given-files)
          * [3. Calculate for all files of a given directory](#3-calculate-for-all-files-of-a-given-directory)
-         * [4. Watchdog](#4-watchdog)
+         * [4. Watchdog (deprecated)](#4-watchdog-deprecated)
       * [Installer](#installer)
       * [Releases](#releases)
       * [Docker](#docker)
          * [1. BUVIC](#1-buvic)
-         * [2. UV Watch](#2-uv-watch)
+         * [2. UV Watch (deprecated)](#2-uv-watch-deprecated)
       * [Implementation](#implementation)
          * [1. User Interface](#1-user-interface)
          * [2. Job creation / handling](#2-job-creation--handling)
          * [3. Calculations](#3-calculations)
+         * [4. Performance](#4-performance)
+      * [License](#license)
 
-<!-- Added by: basile, at: Mi Dez 18 12:52:54 CET 2019 -->
+<!-- Added by: basile, at: Di Jan  7 16:37:21 CET 2020 -->
 
 <!--te-->
 
@@ -202,6 +211,8 @@ It offers the possibility to choose dates and a brewer id to automatically find 
 
 ![GUI](assets/gui.png)
 
+![GUI](assets/gui2.png)
+
 **Instructions:**
 
 Run:
@@ -219,7 +230,7 @@ The command line offers 4 different possibilities to perform irradiance calculat
 1. Calculate for dates and brewer id
 2. Calculate for given files
 3. Calculate for all files of a given directory
-4. Monitor a directory for changes and execute the calculation every time new measurement files are added
+4. Monitor a directory for changes and execute the calculation every time new measurement files are added (deprecated)
 
 **Instructions:**
 
@@ -325,7 +336,7 @@ python run_cmd.py --all data/ -o output/
 ```
 Note that `--input-dir` has no effect for this command.
 
-### 4. Watchdog
+### 4. Watchdog (deprecated)
 
 Monitor a directory for new files and run the calculation for every new/modified pair of UV and B files.
 Calculations will be skipped if UVR and ARF files are not available.
@@ -450,7 +461,7 @@ docker run -d -p <HOST_PORT>:80 -e DARKSKY_TOKEN=your_darksky_token --name buvic
 ```
 
 
-### 2. UV Watch
+### 2. UV Watch (deprecated)
 
 This docker image contains the [UV Watchdog](#4-watchdog)
 
@@ -501,8 +512,7 @@ Two user interfaces are available:
 2. Graphical User Interface (GUI)
 
 Both interfaces are responsible for getting the necessary parameters from the user.
-The parameters include dates and brewer id to find the required files for the calculations as well as some default values for ozone, abledo
-and aerosol for the case where these cannot be found in the files.
+The parameters include dates and brewer id to find the required files for the calculations as well as some settings.
 
 
 The first interface's implementation is written in [`run_cmd.py`](run_cmd.py) and mostly consists of command line argument parsing.
@@ -517,13 +527,13 @@ The UVApp class is the core of the GUI and uses the [remi library](https://githu
 The class initializes the widgets in its `main` method and adds them to its main container.
 
 The most important of the interface's widgets are the `MainForm`s (`PathMainForm` to give files as input and `SimpleMainForm` to give dates
-and brewer id as input). They keep track of the values of their fields and of the extra parameters and call the `CalculationUtils` (See
+and brewer id as input). They keep track of the values of their fields and settings and call the `FileUtils` and `CalculationUtils` (See
 [next section](#2-job-creation--handling)) with these values when the *Calculate* button is clicked.
 
 
 ### 2. Job creation / handling
 
-Job creation and handling is done in the class [`CalculationUtils`](buvic/logic/calculation_utils.py).
+Job creation and handling is done in the classes [`FileUtils`](buvic/logic/file_utils.py) and [`CalculationUtils`](buvic/logic/calculation_utils.py).
 
 Before creating the jobs, all the information required for the Jobs is written in a `CalculationInput` object.
 Each `CalculationInput` corresponds to one UV file (measurements for one day). Since multiple measurements are done each day (in each UV
@@ -535,7 +545,7 @@ Jobs can be created in four different ways:
 1. `calculate_for_input`: Create jobs for a given `CalculationInput`. Used when file paths are already known.
 2. `calculate_for_all_between`: Finds all the files for measurements between two days and create the jobs for them.
 3. `calculate_for_all`: Finds all files in a directory and create the jobs for them
-4. `watch`: Monitors a directory and each time a file is found, calls `calculate_for_input`.
+4. `watch` (deprecated): Monitors a directory and each time a file is found, calls `calculate_for_input`.
 
 The difference between way 1. (and 4.) and ways 2. and 3. is that way 1 only create Jobs for one `CalculationInput`.
 Ways 2. and 3. make calculation for multiple days and therefore create Jobs for multiple `CalculationInput` objects.
@@ -553,26 +563,50 @@ section to do the calculations for.
 
 ![Calculation workflow](assets/technical_detail_2.png)
 
-The first part of the calculations is to parse the measurement files to get the data from. Each file type has its own file parser. Their
-implementations can be found in the files [`uv/logic/uv_file.py`](buvic/logic/uv_file.py), [`uv/logic/b_file.py`](buvic/logic/b_file.py),
-[`uv/logic/arf_file.py`](buvic/logic/arf_file.py), [`uv/logic/calibration_file.py`](buvic/logic/calibration_file.py) and
-[`uv/logic/parameter_file.py`](buvic/logic/parameter_file.py).
+Before starting the the calculation, all the required data is collected by parsing the measurement files or querying eubrewnet for the data.
+Each file type has its own data provider. Their implementations can be found in the files
+[`buvic/logic/uv_file.py`](buvic/logic/uv_file.py), [`buvic/logic/ozone.py`](buvic/logic/ozone.py),
+[`buvic/logic/arf_file.py`](buvic/logic/arf_file.py), [`buvic/logic/calibration_file.py`](buvic/logic/calibration_file.py)
+and [`buvic/logic/parameter_file.py`](buvic/logic/parameter_file.py).
 
 Note that the file parsing is triggered automatically (and cached) when calling one of the following property on the `CalculationInput`:
-* `uv_file_entries`: parses the uv file
-* `ozone`: parses the b file
-* `calibration`: parses the calibration file
+* `uv_file_entries`: get the uv data from a UV file or eubrewnet
+* `ozone`: get ozone data from a B file or eubrewnet
+* `calibration`: get calibration data from a UVR file or eubrewnet
 * `arf`: parses the arf file
 * `parameters`: parses the parameter file
 
-In addition to parsing the files, an api call is made to [darksky.net](https://darksky.net/dev) to get the cloud cover for the day of the
+An api call is also made to [darksky.net](https://darksky.net/dev) (if an api key is provided) to get the cloud cover for the day of the
 measurements. This information is used to choose between a clear sky or a diffuse cos correction.
 
-In the next step, the raw measurements and the calibration data is used to convert the raw UV measurements to a calibrated spectrum.
-A call to LibRadtran is also made with the infos from the measurement and parameter files to get `Fdiff`, `Fdir` and `Fglo`.
+During the calculations, the raw measurements and the calibration data is used to convert the raw UV measurements to a calibrated spectrum.
+A call to LibRadtran is made with the infos from the measurement and parameter files to get `Fdiff`, `Fdir` and `Fglo`.
 
 Finally, the results from LibRadtran and from the darksky.net api call are used to apply the cos correction to the calibrated
 spectrum.
 This information as well as the input parameters used is returned from the `calculate` method as a `Result` object.
 
 This `Result` object will later be converted to output files.
+
+
+### 4. Performance
+
+The two main performance bottlenecks in this application are:
+1. API calls to EUBREWNET and [darksky.net](https://darksky.net/dev)
+2. Calls to libradtran
+
+Any other file parsing or calculation takes a negligible time in comparison to these two actions.
+
+To improve significantly the performance of BUVIC, we use parallelization for these actions. This works best for API calls since we expect
+to be able to make many API calls at the same time before the internet connection is saturated. The calls to libradtran also
+have a performance gain from parallelization, thanks to the overhead of creating and handling the new process executing uvspec.
+
+Parallelization is implemented with the python's `ThreadPoolExecutor` which makes it easy to run jobs on a pool of threads. Relevant code
+parts are in the class [`CalculationUtils`](buvic/logic/calculation_utils.py) in methods `calculate_for_inputs` (data collection) 
+and `_execute_jobs` (calculation jobs). The number of threads used in the pool equal the number of cpu cores plus 4 with a limit at 20
+threads.
+
+
+## License
+
+BUVIC is published under the `GNU General Public License version 3` (GPL v3). See [LICENSE.md](LICENSE.md) for more details.
