@@ -124,10 +124,11 @@ def create_uver(saving_dir: str, file_name: str, calculation: WeightedIrradiance
             makedirs(full_path.parent)
 
     weighted_irradiance = calculation.calculate(WeightedIrradianceType.ERYTHEMAL)
+    daily_dosis = calculation.calculate_daily_dosis(weighted_irradiance)
 
     with open(full_path, "w") as file:
 
-        file.write(f"Erythemal dosis [Jul/m2]: {4.444: 11.6f}\n")
+        file.write(f"Erythemal dosis [Jul/m2]: {daily_dosis: 11.6f}\n")
         file.write(f"Time Erythemal Weighted Irradiance [mW/m2]\n")
 
         for i, time in enumerate(weighted_irradiance.times):

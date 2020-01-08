@@ -57,6 +57,12 @@ class WeightedIrradianceCalculation:
         self._result = results
 
     def calculate(self, weighted_irradiance_type: WeightedIrradianceType) -> WeightedIrradiance:
+        """
+        Calculate the weighted irradiance for the results
+
+        :param weighted_irradiance_type: the type of weight function to use
+        :return: the weighted irradiance
+        """
         times = []
         values = []
         for result in self._result:
@@ -67,6 +73,21 @@ class WeightedIrradianceCalculation:
             values.append(value)
 
         return WeightedIrradiance(times, values)
+
+    @staticmethod
+    def calculate_daily_dosis(weighted_irradiance: WeightedIrradiance) -> float:
+        """
+        Integrate weighted irradiance over a whole day
+
+        :param weighted_irradiance: the irradiance to integrate
+        :return: the integrated irradiance
+        """
+        # We convert the time in hours to a time in seconds
+        times_sec = [t * 3600 for t in weighted_irradiance.times]
+        # We convert milliwatts to watts
+        values_watt = [v / 1000 for v in weighted_irradiance.values]
+
+        return trapz(values_watt, times_sec)
 
     def _calculate_value(self, result: Result, weighted_irradiance_type: WeightedIrradianceType) -> float:
         """
