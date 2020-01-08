@@ -21,7 +21,7 @@ import logging
 import unittest
 from datetime import date
 
-from buvic.brewer_infos import StraylightCorrection
+from buvic.logic.brewer_infos import StraylightCorrection
 from buvic.logic.calculation_input import CalculationInput
 from buvic.logic.darksky import ParameterCloudCover, DefaultCloudCover
 from buvic.logic.file import File

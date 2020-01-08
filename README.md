@@ -520,7 +520,7 @@ Once the arguments are parsed, their values are passed to the `CalculationUtils`
 
 The second interface's implementation is more complex and consists of the following three files:
 1. [`run.py`](run.py) (or [`docker/run_docker.py`](docker/run_docker.py) for the docker image) which serves as an entry point to start the UVApp.
-2. [`buvic/app.py`](buvic/app.py) which contains the UVApp class.
+2. [`buvic/gui/app.py`](buvic/gui/app.py) which contains the UVApp class.
 3. [`buvic/gui/widgets.py`](buvic/gui/widgets.py) which contains the implementation of some of the more complex interface's widgets.
 
 The UVApp class is the core of the GUI and uses the [remi library](https://github.com/dddomodossola/remi).

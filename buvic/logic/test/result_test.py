@@ -20,7 +20,7 @@
 import unittest
 from datetime import date
 
-from buvic.brewer_infos import StraylightCorrection
+from buvic.logic.brewer_infos import StraylightCorrection
 from buvic.logic.calculation_input import CalculationInput
 from buvic.logic.file import File
 from buvic.logic.result import Result, Spectrum

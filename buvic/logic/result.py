@@ -24,7 +24,7 @@ from datetime import datetime
 from os import path
 from typing import TextIO, List
 
-from buvic.brewer_infos import StraylightCorrection, correct_straylight
+from buvic.logic.brewer_infos import StraylightCorrection, correct_straylight
 from buvic.logic.darksky import DarkskyCloudCover
 from buvic.logic.utils import date_to_days, minutes_to_time
 from .calculation_input import CalculationInput, CosCorrection

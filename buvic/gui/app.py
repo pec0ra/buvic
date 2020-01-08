@@ -30,9 +30,9 @@ from buvic.logic.calculation_utils import CalculationUtils
 from buvic.logic.file_utils import FileUtils
 from buvic.logic.result import Result
 from buvic.logic.settings import Settings
-from .const import OUTPUT_DIR, DATA_DIR, APP_VERSION, ASSETS_DIR
-from .gui.utils import show, hide
-from .gui.widgets import Title, Level, Loader, PathMainForm, SimpleMainForm, ResultWidget, Modal, IconButton, SettingsWidget
+from buvic.const import OUTPUT_DIR, DATA_DIR, APP_VERSION, ASSETS_DIR
+from buvic.gui.utils import show, hide
+from buvic.gui.widgets import Title, Level, Loader, PathMainForm, SimpleMainForm, ResultWidget, Modal, IconButton, SettingsWidget
 
 LOG = getLogger(__name__)
 

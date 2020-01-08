@@ -25,7 +25,7 @@ from enum import Enum
 from logging import getLogger
 from os import path
 
-from buvic.brewer_infos import StraylightCorrection
+from buvic.logic.brewer_infos import StraylightCorrection
 from buvic.logic.parameter_file import Angstrom
 
 LOG = getLogger(__name__)

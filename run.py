@@ -22,7 +22,7 @@ import os
 
 from remi import start
 
-from buvic.app import BUVIC
+from buvic.gui.app import BUVIC
 from buvic.const import TMP_FILE_DIR, OUTPUT_DIR
 from buvic.logutils import init_logging
 

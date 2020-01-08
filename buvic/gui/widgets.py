@@ -25,7 +25,7 @@ from typing import Any, Callable, List, Dict, Optional, Tuple
 
 import remi.gui as gui
 
-from buvic.brewer_infos import StraylightCorrection, eubrewnet_available_brewer_ids
+from buvic.logic.brewer_infos import StraylightCorrection, eubrewnet_available_brewer_ids
 from buvic.logic.file import File
 from buvic.logic.file_utils import FileUtils
 from buvic.logic.ozone import BFileOzoneProvider

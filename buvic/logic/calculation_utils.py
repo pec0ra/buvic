@@ -31,7 +31,7 @@ from typing import Callable, List, Any, TypeVar, Generic, Optional, Tuple
 
 from watchdog.observers import Observer
 
-from buvic.brewer_infos import StraylightCorrection
+from buvic.logic.brewer_infos import StraylightCorrection
 from buvic.const import ARF_FILES_SUBDIR, UV_FILES_SUBDIR, B_FILES_SUBDIR, PARAMETER_FILES_SUBDIR
 from buvic.logic.calculation_event_handler import CalculationEventHandler
 from buvic.logic.file import File

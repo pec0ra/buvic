@@ -26,7 +26,7 @@ from typing import List
 from numpy import multiply, divide, sin, add, pi, mean, exp, maximum, linspace, trapz, cos, isnan, ones
 from scipy.interpolate import UnivariateSpline
 
-from buvic.brewer_infos import StraylightCorrection, correct_straylight
+from buvic.logic.brewer_infos import StraylightCorrection, correct_straylight
 from buvic.logic.calibration_file import Calibration
 from buvic.logic.ozone import Ozone
 from .arf_file import ARF
