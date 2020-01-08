@@ -55,7 +55,7 @@ class UVProvider:
                 ret_list.append(value_list[0])
             else:
                 time = mean([v.time for v in value_list])
-                step = mean([v.step for v in value_list])
+                step = int(mean([v.step for v in value_list]))
                 events = mean([v.events for v in value_list])
                 if events == 0:
                     std = 0

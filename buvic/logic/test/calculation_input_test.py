@@ -21,7 +21,6 @@ import logging
 import unittest
 from datetime import date
 
-from buvic.logic.brewer_infos import StraylightCorrection
 from buvic.logic.calculation_input import CalculationInput
 from buvic.logic.darksky import ParameterCloudCover, DefaultCloudCover
 from buvic.logic.file import File
@@ -42,7 +41,7 @@ class UVFileReaderTestCase(unittest.TestCase):
             File("dummy"),
             File("buvic/logic/test/calibration_example"),
             File("dummy"),
-            StraylightCorrection.UNDEFINED
+            None
         )
 
         c = calculation_input.calibration
@@ -64,7 +63,7 @@ class UVFileReaderTestCase(unittest.TestCase):
             File("dummy"),
             File("dummy"),
             File("dummy"),
-            StraylightCorrection.UNDEFINED,
+            None,
             parameter_file_name=File("buvic/logic/test/parameter_example"),
         )
 
@@ -81,7 +80,7 @@ class UVFileReaderTestCase(unittest.TestCase):
             File("dummy"),
             File("dummy"),
             File("dummy"),
-            StraylightCorrection.UNDEFINED,
+            None,
             parameter_file_name=None,
         )
 
@@ -99,7 +98,7 @@ class UVFileReaderTestCase(unittest.TestCase):
             File("dummy"),
             File("dummy"),
             File("dummy"),
-            StraylightCorrection.UNDEFINED
+            None
         )
 
         entries = calculation_input.uv_file_entries
@@ -114,7 +113,7 @@ class UVFileReaderTestCase(unittest.TestCase):
             File("dummy"),
             File("dummy"),
             File("dummy"),
-            StraylightCorrection.UNDEFINED
+            None
         )
 
         # 13 sections are present on EUBREWNET for day 2019-06-20
@@ -130,7 +129,7 @@ class UVFileReaderTestCase(unittest.TestCase):
             File("dummy"),
             File("dummy"),
             None,
-            StraylightCorrection.UNDEFINED
+            None
         )
 
         calculation_input.init_properties()

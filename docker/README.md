@@ -24,13 +24,16 @@ instr/
     UVR17319.117
     UVR17419.033
     ...
-    18.par
-    19.par
+    par_18.033
+    par_18.070
+    par_19.033
+    par_19.070
+    ...
 ```
 It contains:
 * ARF files with the name pattern `arf_<brewer_id>.dat`
 * Calibration files with the name pattern `UVRXXXXX.<brewer_id>`
-* Parameter files with the name pattern `<year>.par` where *year* is the last two digits of the year (e.g. 19)
+* Parameter files with the name pattern `par_<year>.<brewer_id>` where *year* is the last two digits of the year (e.g. 19)
 
 
 The uv data directory is where you put your measurement files.
@@ -62,12 +65,14 @@ instr/
     033/
         arf_033.dat
         UVR17419.033
+        par_18.033
+        par_19.033
     070/
         arf_070.dat
         UVR17019.070
         UVR17319.070
-    18.par
-    19.par
+        par_18.070
+        par_19.070
     ...
 
 uvdata/
@@ -113,7 +118,7 @@ For the following lines, the albedo, alpha and beta values can be omitted. If th
 is used.
 If the cloud coverage is omitted in any line, the value will be retrieved from the [darksky](https://darksky.net/dev) api.
 
-Here is an example of a parameter file content `19.par`:
+Here is an example of a parameter file content `par_19.033`:
 ```
 10;0.1;1;0.1;
 11;;1.2;0.2;1

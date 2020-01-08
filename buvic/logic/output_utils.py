@@ -93,6 +93,7 @@ def to_woudc(result: Result, file: TextIO) -> None:
 def get_woudc_header(result: Result) -> str:
     position = result.uv_file_entry.header.position
     altitude = (1 - pow(result.uv_file_entry.header.pressure / 1013.25, 0.190284)) * 44307.69396
+    brewer_type = result.calculation_input.brewer_type.upper() if result.calculation_input.brewer_type is not None else "UNKNOWN"
     return f"*SOFTWARE: BUVIC {APP_VERSION}\n" \
            "\n" \
            "#CONTENT\n" \
@@ -109,7 +110,7 @@ def get_woudc_header(result: Result) -> str:
            "\n" \
            "#INSTRUMENT\n" \
            "Name,Model,Number\n" \
-           f"Brewer,{result.calculation_input.brewer_type.upper()},{result.calculation_input.brewer_id}\n" \
+           f"Brewer,{brewer_type},{result.calculation_input.brewer_id}\n" \
            "\n" \
            "#LOCATION\n" \
            "Latitude,Longitude,Height\n" \

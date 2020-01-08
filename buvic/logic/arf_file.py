@@ -43,7 +43,7 @@ def read_arf_file(file_name: str, arf_column: int) -> ARF:
     with open(file_name) as file:
         try:
             szas = []
-            values = []
+            values: List[float] = []
             for line in file:
                 # Skip header
                 if line.strip().startswith("%"):

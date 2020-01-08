@@ -149,18 +149,18 @@ elif paths is not None:
     if input_dir is None:
         input_dir = ""
 
-    date, brewer_id = name_to_date_and_brewer_id(paths[0])
+    d, brewer_id = name_to_date_and_brewer_id(paths[0])
     b_file = File(input_dir + paths[1], input_dir) if paths[1] is not None else None
     arf_file = File(input_dir + paths[3], input_dir) if paths[3] is not None else None
     calculation_input = CalculationInput(
         brewer_id,
-        date,
+        d,
         settings,
         File(input_dir + paths[0], input_dir),
         b_file,
         File(input_dir + paths[2], input_dir),
         arf_file,
-        BFileOzoneProvider(b_file).get_straylight_correction()
+        BFileOzoneProvider(b_file).get_brewer_type()
     )
 
     cmd.calculate_for_input(calculation_input)

@@ -114,7 +114,7 @@ class WeightedIrradianceCalculation:
         :return: the values of the evaluation of the weight function for each wavelength
         """
         if weighted_irradiance_type == WeightedIrradianceType.ERYTHEMAL:
-            ret = []
+            ret: List[float] = []
             for w in wavelengths:
                 if w <= 298:
                     ret.append(1)
@@ -158,6 +158,7 @@ class WeightedIrradianceCalculation:
                 else:
                     ret.append(0)
             return ret
+        raise ValueError(f"Invalid weighted irradiance type provided: '{weighted_irradiance_type}'")
 
     @staticmethod
     def _integrate(wavelengths: List[float], values: List[float]) -> float:

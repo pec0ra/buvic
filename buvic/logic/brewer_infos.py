@@ -21,6 +21,7 @@ from __future__ import annotations
 
 # Map brewer types to whether they need straylight correction
 from enum import Enum
+from typing import Optional
 
 
 class StraylightCorrection(str, Enum):
@@ -37,7 +38,7 @@ brewer_types = {
 }
 
 
-def correct_straylight(brewer_type: str) -> StraylightCorrection:
+def correct_straylight(brewer_type: Optional[str]) -> StraylightCorrection:
     if brewer_type in brewer_types:
         return brewer_types[brewer_type]
     else:

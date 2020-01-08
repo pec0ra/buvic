@@ -31,11 +31,11 @@ from typing import Callable, List, Any, TypeVar, Generic, Optional, Tuple
 
 from watchdog.observers import Observer
 
-from buvic.logic.brewer_infos import StraylightCorrection
 from buvic.const import ARF_FILES_SUBDIR, UV_FILES_SUBDIR, B_FILES_SUBDIR, PARAMETER_FILES_SUBDIR
 from buvic.logic.calculation_event_handler import CalculationEventHandler
 from buvic.logic.file import File
 from buvic.logic.output_utils import create_csv, create_uver
+from buvic.logic.ozone import BFileOzoneProvider
 from buvic.logic.result import Result
 from buvic.logic.settings import Settings
 from buvic.logic.utils import days_to_date
@@ -272,7 +272,7 @@ class CalculationUtils:
             b_file,
             uvr_file,
             arf_file,
-            StraylightCorrection.UNDEFINED,
+            BFileOzoneProvider(b_file).get_brewer_type(),
             parameter_file_name=parameter_file
         )
 

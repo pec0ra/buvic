@@ -44,12 +44,11 @@ class FileUtils:
     B_FILE_NAME_REGEX = re.compile(r"B(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d+)")
     ARF_FILE_NAME_REGEX = re.compile(r"arf_[a-zA-Z]*(?P<brewer_id>\d+)\.dat")
     UVR_FILE_NAME_REGEX = re.compile(r"(:?UVR|uvr)\S+\.(?P<brewer_id>\d+)")
-    PARAMETER_FILE_NAME_REGEX = re.compile(r"(?P<year>\d+)\.par")
+    PARAMETER_FILE_NAME_REGEX = re.compile(r"par_(?P<year>\d{2})\.(?P<brewer_id>\d+)")
 
     _instr_dir: str
     _uvdata_dir: str
     _file_dict: Dict[str, InstrumentFiles]
-    _parameter_files: List[File]
 
     def __init__(self, input_dir: str):
         self._instr_dir = join(input_dir, "instr")
@@ -62,7 +61,6 @@ class FileUtils:
         """
 
         self._file_dict = {}
-        self._parameter_files = []
 
         if not exists(self._instr_dir):
             makedirs(self._instr_dir)
@@ -188,7 +186,7 @@ class FileUtils:
             year: str,
             brewer_id: str,
             settings: Settings,
-            uvr_file: str
+            uvr_file: Optional[str]
     ) -> Optional[CalculationInput]:
         """
         Create calculation inputs for a given date given as days since new year and the year, for a given brewer id, for given settings
@@ -216,12 +214,13 @@ class FileUtils:
         arf_file = self.get_arf_file(brewer_id)
 
         if settings.uvr_data_source == DataSource.FILES:
-            calibration_file = self.get_uvr_file(brewer_id, uvr_file)
+            if uvr_file is None:
+                raise ValueError("UVR file should not be None when the data source is FILES")
+            calibration_file: Optional[File] = self.get_uvr_file(brewer_id, uvr_file)
         else:
             calibration_file = None
 
-        parameter_file_name = year + ".par"
-        parameter_file = self.get_parameter_file(parameter_file_name)
+        parameter_file = self.get_parameter_file(brewer_id, year)
 
         brewer_type = self.get_brewer_type(brewer_id)
 
@@ -301,10 +300,10 @@ class FileUtils:
         :param file_path: the path of the matched file
         :param res: the result of the regex match
         """
-        year = res.group("year")
-        if year in self._parameter_files:
-            raise ValueError(f"Multiple parameter files found for year {year}.")
-        self._parameter_files.append(File(file_path, self._instr_dir))
+        brewer_id = res.group("brewer_id")
+        if brewer_id not in self._file_dict:
+            self._file_dict[brewer_id] = InstrumentFiles(None)
+        self._file_dict[brewer_id].parameter_files.append(File(file_path, self._instr_dir))
 
     def get_brewer_ids(self) -> List[str]:
         """
@@ -377,15 +376,20 @@ class FileUtils:
             return None
         return self._file_dict[brewer_id].arf_file
 
-    def get_parameter_file(self, parameter_file_name: str) -> Optional[File]:
+    def get_parameter_file(self, brewer_id: str, year: str) -> Optional[File]:
         """
-        Search if a parameter file with the given name exists and return it if it exists or None otherwise
+        Search if a parameter file exists for given brewer id and year and return it if it exists or None otherwise
 
-        :param parameter_file_name: the name of the file
+        :param brewer_id: the id of the brewer to get the file for
+        :param year: the year to get the file for
         :return: the file if found, None otherwise
         """
         try:
-            return next(file for file in self._parameter_files if file.file_name == parameter_file_name)
+            if brewer_id is None or brewer_id not in self._file_dict:
+                return None
+            parameter_files = self._file_dict[brewer_id].parameter_files
+            parameter_file_name = f"par_{year[-2:]}.{brewer_id}"
+            return next(file for file in parameter_files if file.file_name == parameter_file_name)
         except StopIteration:
             return None
 
@@ -448,12 +452,13 @@ class FileUtils:
 @dataclass
 class InstrumentFiles:
     """
-    The arf, uvr, uv and b files for one brewer instrument
+    The arf, uvr, uv, b and parameter files for one brewer instrument
     """
     arf_file: Optional[File]
     uvr_files: List[File] = field(default_factory=list)
     uv_files: List[File] = field(default_factory=list)
     b_files: List[File] = field(default_factory=list)
+    parameter_files: List[File] = field(default_factory=list)
 
 
 @dataclass

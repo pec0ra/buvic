@@ -20,7 +20,6 @@
 import unittest
 from datetime import date
 
-from buvic.logic.brewer_infos import StraylightCorrection
 from buvic.logic.calculation_input import CalculationInput
 from buvic.logic.file import File
 from buvic.logic.result import Result, Spectrum
@@ -40,7 +39,7 @@ class FileUtilsTestCase(unittest.TestCase):
                 File("dummy"),
                 File("dummy"),
                 File("dummy"),
-                StraylightCorrection.UNDEFINED
+                None
             ),
             44.4,
             Spectrum([], [70], [], [], [], [])
@@ -58,7 +57,7 @@ class FileUtilsTestCase(unittest.TestCase):
                 File("path/to/dummy"),
                 File("dummy"),
                 File("dummy"),
-                StraylightCorrection.UNDEFINED
+                None
             ),
             44.4,
             Spectrum([], [70], [], [], [], [])
@@ -76,7 +75,7 @@ class FileUtilsTestCase(unittest.TestCase):
                 File("path/to/b/dummy"),
                 File("dummy"),
                 File("dummy"),
-                StraylightCorrection.UNDEFINED
+                None
             ),
             44.4,
             Spectrum([], [70], [], [], [], [])
@@ -94,7 +93,7 @@ class FileUtilsTestCase(unittest.TestCase):
                 None,
                 File("dummy"),
                 File("dummy"),
-                StraylightCorrection.UNDEFINED
+                None
             ),
             44.4,
             Spectrum([], [70], [], [], [], [])
@@ -112,7 +111,7 @@ class FileUtilsTestCase(unittest.TestCase):
                 None,
                 File("dummy"),
                 File("dummy"),
-                StraylightCorrection.UNDEFINED
+                None
             ),
             44.4,
             Spectrum([], [70], [], [], [], [])

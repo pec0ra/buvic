@@ -35,7 +35,7 @@ from buvic.logic.ozone import Ozone, BFileOzoneProvider
 from buvic.logic.parameter_file import Parameters, read_parameter_file
 from buvic.logic.settings import Settings, DataSource
 from buvic.logic.utils import date_to_days
-from buvic.logic.uv_file import UVFileUVProvider, UVFileEntry, EubrewnetUVProvider
+from buvic.logic.uv_file import UVFileUVProvider, UVFileEntry, EubrewnetUVProvider, UVProvider
 from .arf_file import read_arf_file, ARF
 from .warnings import warn
 
@@ -61,7 +61,9 @@ class CalculationInput:
     @cached_property
     def uv_file_entries(self) -> List[UVFileEntry]:
         if self.settings.uv_data_source == DataSource.FILES:
-            uv_file_reader = UVFileUVProvider(self.uv_file_name.full_path)
+            if self.uv_file_name is None:
+                raise ValueError("UV file should not be None when the data source is FILES")
+            uv_file_reader: UVProvider = UVFileUVProvider(self.uv_file_name.full_path)
         else:
             uv_file_reader = EubrewnetUVProvider(self.brewer_id, self.date)
         return uv_file_reader.get_uv_file_entries()
@@ -76,6 +78,8 @@ class CalculationInput:
     @cached_property
     def calibration(self) -> Calibration:
         if self.settings.uvr_data_source == DataSource.FILES:
+            if self.calibration_file_name is None:
+                raise ValueError("UVR file should not be None when the data source is FILES")
             return UVRFileCalibrationProvider(self.calibration_file_name.full_path).get_calibration_data()
         else:
             return EubrewnetCalibrationProvider(self.brewer_id, self.date).get_calibration_data()
