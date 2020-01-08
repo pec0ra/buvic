@@ -72,7 +72,7 @@ class WeightedIrradianceCalculation:
             times.append(time)
             values.append(value)
 
-        return WeightedIrradiance(times, values)
+        return WeightedIrradiance(weighted_irradiance_type, times, values)
 
     @staticmethod
     def calculate_daily_dosis(weighted_irradiance: WeightedIrradiance) -> float:
@@ -135,10 +135,30 @@ class WeightedIrradianceCalculation:
                 else:
                     ret.append(spline(w))
             return ret
+        if weighted_irradiance_type == WeightedIrradianceType.UV:
+            ret = []
+            for w in wavelengths:
+                if 280 <= w <= 400:
+                    ret.append(1)
+                else:
+                    ret.append(0)
+            return ret
         if weighted_irradiance_type == WeightedIrradianceType.UVA:
-            pass
+            ret = []
+            for w in wavelengths:
+                if 280 <= w <= 315:
+                    ret.append(1)
+                else:
+                    ret.append(0)
+            return ret
         if weighted_irradiance_type == WeightedIrradianceType.UVB:
-            pass
+            ret = []
+            for w in wavelengths:
+                if 315 <= w <= 400:
+                    ret.append(1)
+                else:
+                    ret.append(0)
+            return ret
 
     @staticmethod
     def _integrate(wavelengths: List[float], values: List[float]) -> float:
@@ -147,6 +167,7 @@ class WeightedIrradianceCalculation:
 
 @dataclass
 class WeightedIrradiance:
+    type: WeightedIrradianceType
     times: List[float]
     values: List[float]
 
@@ -154,5 +175,6 @@ class WeightedIrradiance:
 class WeightedIrradianceType(str, Enum):
     ERYTHEMAL = "Erythemal"
     VITAMIN_D3 = "Vitamin D3"
+    UV = "UV"
     UVA = "UV A"
     UVB = "UV B"
