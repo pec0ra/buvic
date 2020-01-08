@@ -160,6 +160,8 @@ class CalculationUtils:
         with ThreadPoolExecutor(max_workers=self._get_thread_count()) as thread_pool:
             job_list_list = thread_pool.map(self._init_and_create_jobs, calculation_inputs, timeout=30)
 
+        LOG.debug("Finished initializing inputs and creating jobs")
+
         # Flatten the list of lists of jobs into a list of jobs
         job_list = list(itertools.chain(*list(job_list_list)))
 
@@ -196,6 +198,7 @@ class CalculationUtils:
         clear_warnings()
         calculation_input.init_properties()
         calculation_input.add_warnings(get_warnings())
+        LOG.debug("Finished initializing properties for %s", calculation_input.date.isoformat())
 
         if len(calculation_input.uv_file_entries) > 0:
             # Create `IrradianceCalculation` Jobs
@@ -206,6 +209,7 @@ class CalculationUtils:
         # Report progress to the progress bar
         self._make_progress()
 
+        LOG.debug("Finished creating jobs for %s", calculation_input.date.isoformat())
         return calculation_jobs
 
     def _on_new_file(self, file_type: str, days: str, year: str, brewer_id: str, settings: Settings) -> None:

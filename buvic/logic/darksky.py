@@ -46,7 +46,7 @@ def get_cloud_cover(latitude: float, longitude: float, d: date) -> CloudCover:
 
     t = datetime.combine(d, time(0, 0, 0, 0)).isoformat()
     url_string = f"https://api.darksky.net/forecast/{DARKSKY_TOKEN}/{latitude},{-longitude},{t}?exclude=minutely,currently,daily&units=si"
-    LOG.debug("Retrieved weather data from %s", url_string)
+    LOG.debug("Retrieving weather data from %s", url_string)
     try:
         with urllib.request.urlopen(url_string) as url:
             data = json.loads(url.read().decode())
