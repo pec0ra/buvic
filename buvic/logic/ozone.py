@@ -72,7 +72,7 @@ class EubrewnetOzoneProvider(OzoneProvider):
                 values.append(float(line[9]))
             return Ozone(times, values)
         except Exception as e:
-            raise Exception(f"Error while trying to access eubrewnet. {e}") from e
+            raise Exception(f"Error while trying to access eubrewnet ({self._url_string}). {e}") from e
 
 
 class BFileOzoneProvider(OzoneProvider):

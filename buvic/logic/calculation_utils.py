@@ -35,7 +35,7 @@ from buvic.brewer_infos import StraylightCorrection
 from buvic.const import ARF_FILES_SUBDIR, UV_FILES_SUBDIR, B_FILES_SUBDIR, PARAMETER_FILES_SUBDIR
 from buvic.logic.calculation_event_handler import CalculationEventHandler
 from buvic.logic.file import File
-from buvic.logic.output_utils import create_csv, create_woudc, create_uver
+from buvic.logic.output_utils import create_csv, create_uver
 from buvic.logic.result import Result
 from buvic.logic.settings import Settings
 from buvic.logic.utils import days_to_date
@@ -326,10 +326,10 @@ class CalculationUtils:
                 create_uver(self._output_dir, results[0].get_uver_name(), calculation)
 
                 # TODO: Deactivate WOUDC format for now
-                create_woudc(self._output_dir, list(result_iter))
-        print(f"Output duration: {time.time() - start}")
+                # create_woudc(self._output_dir, list(result_iter))
+        LOG.debug(f"File output creation in : {time.time() - start}s")
 
-        # At this point, we have finished waiting for all future_results (irradiance calculation)
+        # At this point, we have finished calculating the irradiance and writing the results
         LOG.debug("Finished irradiance calculation for '%s'", result_list[0].calculation_input.uv_file_name)
         return result_list
 

@@ -188,7 +188,7 @@ class EubrewnetUVProvider(UVProvider):
             with urllib.request.urlopen(url_string) as url:
                 scan_types = json.loads(url.read().decode())
         except HTTPError as e:
-            raise Exception(f"Error while trying to access eubrewnet. {e}") from e
+            raise Exception(f"Error while trying to access eubrewnet ({url_string}). {e}") from e
 
         file_entries = []
         for scan_type in scan_types:
@@ -237,7 +237,7 @@ class EubrewnetUVProvider(UVProvider):
                             self.mean_of_duplicates(values)
                         ))
             except HTTPError as e:
-                raise Exception(f"Error while trying to access eubrewnet. {e}") from e
+                raise Exception(f"Error while trying to access eubrewnet ({url_string}). {e}") from e
         return file_entries
 
 

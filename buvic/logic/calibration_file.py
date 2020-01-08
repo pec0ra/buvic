@@ -51,7 +51,7 @@ class EubrewnetCalibrationProvider(CalibrationProvider):
             with urllib.request.urlopen(self._url_string) as url:
                 data = json.loads(url.read().decode())
         except HTTPError as e:
-            raise Exception(f"Error while trying to access eubrewnet. {e}") from e
+            raise Exception(f"Error while trying to access eubrewnet ({self._url_string}). {e}") from e
         wavelengths = [value / 10 for value in data[1]]
         values = data[2]
 
