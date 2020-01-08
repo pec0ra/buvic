@@ -254,8 +254,7 @@ class UVFileHeader:
         r"(?P<place>(?: ?[a-zA-Z])+)\s+"  # The localisation name is composed of 1 or more words followed by spaces.
         # NOTE: special chars (é, ö, ä,etc) are not matched
         r"(?P<latitude>\S+) +(?P<longitude>\S+) +(?P<temperature>\S+)\s+"
-        # TODO: Check that this is really an int:
-        r"pr\s*(?P<pressure>\d+).*"  # Pressure is an integer
+        r"pr\s*(?P<pressure>\d+.?\d*).*"  # Pressure is a number
         r"dark\s*(?P<dark>\S+)\s*"  # We match any non blank chars ("\S") for the dark to allow scientific notation
         r"$"  # Matches the end of the line
     )

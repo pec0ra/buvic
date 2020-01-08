@@ -35,10 +35,11 @@ from buvic.brewer_infos import StraylightCorrection
 from buvic.const import ARF_FILES_SUBDIR, UV_FILES_SUBDIR, B_FILES_SUBDIR, PARAMETER_FILES_SUBDIR
 from buvic.logic.calculation_event_handler import CalculationEventHandler
 from buvic.logic.file import File
-from buvic.logic.output_utils import create_csv, create_woudc
+from buvic.logic.output_utils import create_csv, create_woudc, create_uver
 from buvic.logic.result import Result
 from buvic.logic.settings import Settings
 from buvic.logic.utils import days_to_date
+from buvic.logic.weighted_irradiance_calculation import WeightedIrradianceCalculation
 from .calculation_input import CalculationInput
 from .irradiance_calculation import IrradianceCalculation
 from .warnings import warn, get_warnings, clear_warnings
@@ -282,7 +283,7 @@ class CalculationUtils:
         We use a ThreadPoolExecutor to schedule the jobs since calling LibRadtran already creates a new process.
 
         :param jobs: The job to execute
-        :return: the results of the jobs.
+        :return: the result_iter of the jobs.
         """
 
         result_list: List[Result] = []
@@ -316,9 +317,17 @@ class CalculationUtils:
                     future.cancel()
                 raise e
 
+        start = time.time()
         sorted_results = sorted(result_list, key=lambda r: r.uv_file_entry.header.date)
-        for date, results in itertools.groupby(sorted_results, key=lambda r: r.uv_file_entry.header.date):
-            create_woudc(self._output_dir, list(results))
+        for date, result_iter in itertools.groupby(sorted_results, key=lambda r: r.uv_file_entry.header.date):
+            results = sorted(result_iter, key=lambda r: r.spectrum.measurement_times[0])
+            if len(results) != 0:
+                calculation = WeightedIrradianceCalculation(results)
+                create_uver(self._output_dir, results[0].get_uver_name(), calculation)
+
+                # TODO: Deactivate WOUDC format for now
+                create_woudc(self._output_dir, list(result_iter))
+        print(f"Output duration: {time.time() - start}")
 
         # At this point, we have finished waiting for all future_results (irradiance calculation)
         LOG.debug("Finished irradiance calculation for '%s'", result_list[0].calculation_input.uv_file_name)

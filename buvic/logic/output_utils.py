@@ -24,6 +24,7 @@ from typing import TextIO, List
 
 from buvic.logic.result import Result
 from buvic.logic.utils import minutes_to_time
+from buvic.logic.weighted_irradiance_calculation import WeightedIrradianceCalculation, WeightedIrradianceType
 from ..const import APP_VERSION
 
 lock = Lock()
@@ -113,3 +114,22 @@ def get_woudc_header(result: Result) -> str:
            "#LOCATION\n" \
            "Latitude,Longitude,Height\n" \
            f"{position.latitude}, {-position.longitude}, {altitude:.0f}\n"
+
+
+def create_uver(saving_dir: str, file_name: str, calculation: WeightedIrradianceCalculation) -> str:
+    full_path = Path(path.join(saving_dir, file_name))
+
+    with lock:
+        if not path.exists(full_path.parent):
+            makedirs(full_path.parent)
+
+    weighted_irradiance = calculation.calculate(WeightedIrradianceType.ERYTHEMAL)
+
+    with open(full_path, "w") as file:
+
+        file.write(f"Erythemal dosis [Jul/m2]: {4.444: 11.6f}\n")
+        file.write(f"Time Erythemal Weighted Irradiance [mW/m2]\n")
+
+        for i, time in enumerate(weighted_irradiance.times):
+            file.write(f"{time:11.6f}    {weighted_irradiance.values[i]:.6f}\n")
+    return file_name

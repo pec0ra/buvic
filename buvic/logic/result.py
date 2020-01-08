@@ -111,6 +111,17 @@ class Result:
                     f".{agency}.csv"
         return path.join(self.get_relative_path(), file_name)
 
+    def get_uver_name(self):
+        """
+        Create a UVER name specific to this result.
+
+        :return: the created file name
+        """
+        bid = self.calculation_input.brewer_id
+        d = self.uv_file_entry.header.date
+        file_name = f"UVER{date_to_days(d):03d}{d.year:02d}.{bid}"
+        return path.join(self.get_relative_path(), file_name)
+
     def get_relative_path(self):
         if self.calculation_input.uv_file_name is not None and self.calculation_input.b_file_name is not None:
             output_path = path.commonprefix([self.calculation_input.b_file_name.path, self.calculation_input.uv_file_name.path])
