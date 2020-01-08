@@ -24,7 +24,7 @@ from typing import TextIO, List
 
 from buvic.logic.result import Result
 from buvic.logic.utils import minutes_to_time
-from buvic.logic.weighted_irradiance_calculation import WeightedIrradianceCalculation, WeightedIrradianceType
+from buvic.logic.weighted_irradiance_calculation import WeightedIrradianceCalculation
 from ..const import APP_VERSION
 
 lock = Lock()
@@ -123,13 +123,13 @@ def create_uver(saving_dir: str, file_name: str, calculation: WeightedIrradiance
         if not path.exists(full_path.parent):
             makedirs(full_path.parent)
 
-    weighted_irradiance = calculation.calculate(WeightedIrradianceType.ERYTHEMAL)
+    weighted_irradiance = calculation.calculate()
     daily_dosis = calculation.calculate_daily_dosis(weighted_irradiance)
 
     with open(full_path, "w") as file:
 
-        file.write(f"Erythemal dosis [Jul/m2]: {daily_dosis: 11.6f}\n")
-        file.write(f"Time Erythemal Weighted Irradiance [mW/m2]\n")
+        file.write(f"{weighted_irradiance.type.value} dosis [Jul/m2]: {daily_dosis: 11.6f}\n")
+        file.write(f"Time {weighted_irradiance.type.value} Weighted Irradiance [mW/m2]\n")
 
         for i, time in enumerate(weighted_irradiance.times):
             file.write(f"{time:11.6f}    {weighted_irradiance.values[i]:.6f}\n")

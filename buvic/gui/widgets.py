@@ -33,6 +33,7 @@ from buvic.logic.parameter_file import Angstrom
 from buvic.logic.result import Result
 from buvic.logic.settings import Settings, DataSource
 from buvic.logic.utils import name_to_date_and_brewer_id
+from buvic.logic.weighted_irradiance import WeightedIrradianceType
 from .utils import show, hide
 from ..const import TMP_FILE_DIR, OUTPUT_DIR
 from ..logic.calculation_input import CalculationInput
@@ -613,6 +614,15 @@ class ResultWidget(VBox):
         info_label = gui.Label("Output files:", style="font-weight: bold")
         vbox.append(info_label)
 
+        # TODO: show WOUDC download button
+        # download_button = gui.FileDownloader(results[0].get_woudc_name(), path.join(OUTPUT_DIR, results[0].get_woudc_name()), width=330,
+        #                                      style="margin-top: 5px; margin-bottom: 5px")
+        # vbox.append(download_button)
+
+        download_button = gui.FileDownloader(results[0].get_uver_name(), path.join(OUTPUT_DIR, results[0].get_uver_name()), width=330,
+                                             style="margin-top: 5px; margin-bottom: 5px")
+        vbox.append(download_button)
+
         for result in results:
             download_button = gui.FileDownloader(result.get_name(), path.join(OUTPUT_DIR, result.get_name()), width=330,
                                                  style="margin-top: 5px")
@@ -723,6 +733,18 @@ class SettingsWidget(VBox):
                           style="margin-bottom: 10px")
         self.append(arf_input)
 
+        form_title = Title(Level.H4, "Daily file settings")
+        self.append(form_title)
+
+        self._weighted_irradiance_type_selection = gui.DropDown()
+        for source in WeightedIrradianceType:
+            self._weighted_irradiance_type_selection.append(gui.DropDownItem(source))
+        self._weighted_irradiance_type_selection.set_value(settings.weighted_irradiance_type)
+        weighted_irradiance_type_input = Input("Type of weight function to use for the weighted irradiance",
+                                               self._weighted_irradiance_type_selection,
+                                               style="margin-bottom: 10px")
+        self.append(weighted_irradiance_type_input)
+
         coscor_title = Title(Level.H4, "Cos correction")
         coscor_title.set_style("margin-top: 14px")
         self.append(coscor_title)
@@ -818,6 +840,8 @@ class SettingsWidget(VBox):
 
         arf_column = int(self._arf_selection.get_value())
 
+        weighted_irradiance_type = self._weighted_irradiance_type_selection.get_value()
+
         no_coscor = self._no_coscor_checkbox.get_value()
 
         albedo = self._albedo_spin.get_value()
@@ -839,6 +863,7 @@ class SettingsWidget(VBox):
         settings = Settings(
             manual_mode,
             arf_column,
+            WeightedIrradianceType(weighted_irradiance_type),
             no_coscor,
             albedo,
             Angstrom(alpha, beta),

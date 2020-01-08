@@ -27,6 +27,7 @@ from os import path
 
 from buvic.logic.brewer_infos import StraylightCorrection
 from buvic.logic.parameter_file import Angstrom
+from buvic.logic.weighted_irradiance import WeightedIrradianceType
 
 LOG = getLogger(__name__)
 
@@ -34,6 +35,7 @@ SETTINGS_FILE_PATH = path.join(path.expanduser("~"), '.buvic-settings.conf')
 
 DEFAULT_MANUAL_MODE = False
 DEFAULT_ARF_COLUMN = 3
+DEFAULT_WEIGHTED_IRRADIANCE_TYPE = WeightedIrradianceType.ERYTHEMAL
 DEFAULT_NO_COSCOR = False
 DEFAULT_ALBEDO_VALUE = 0.04
 DEFAULT_ALPHA_VALUE = 1.3
@@ -51,6 +53,8 @@ class Settings:
     manual_mode: bool = DEFAULT_MANUAL_MODE
 
     arf_column: int = DEFAULT_ARF_COLUMN
+
+    weighted_irradiance_type: WeightedIrradianceType = DEFAULT_WEIGHTED_IRRADIANCE_TYPE
 
     no_coscor: bool = DEFAULT_NO_COSCOR
 
@@ -80,6 +84,8 @@ class Settings:
             return Settings(
                 dict_settings["manual_mode"],
                 dict_settings["arf_column"],
+                WeightedIrradianceType(dict_settings["weighted_irradiance_type"])
+                if "weighted_irradiance_type" in dict_settings else DEFAULT_WEIGHTED_IRRADIANCE_TYPE,
                 dict_settings["no_coscor"],
                 dict_settings["default_albedo"],
                 Angstrom(dict_settings["default_aerosol"][0], dict_settings["default_aerosol"][1]),

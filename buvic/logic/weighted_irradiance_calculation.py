@@ -19,8 +19,6 @@
 #
 from __future__ import annotations
 
-from dataclasses import dataclass
-from enum import Enum
 from logging import getLogger
 from typing import List
 
@@ -29,6 +27,7 @@ from numpy import multiply, trapz
 from scipy.interpolate import UnivariateSpline
 
 from buvic.logic.result import Result
+from buvic.logic.weighted_irradiance import WeightedIrradiance, WeightedIrradianceType
 
 LOG = getLogger(__name__)
 
@@ -46,7 +45,7 @@ class WeightedIrradianceCalculation:
                      0.725, 0.763, 0.805, 0.842, 0.878, 0.903, 0.928, 0.952, 0.976, 0.983, 0.990, 0.996, 1, 0.977, 0.951, 0.917, 0.878,
                      0.771, 0.701, 0.634, 0.566, 0.488, 0.395, 0.306, 0.22, 0.156, 0.119, 0.083, 0.049, 0.034, 0.02, 1.41e-2, 9.76e-3,
                      6.52e-3, 4.36e-3, 2.92e-3, 1.95e-3, 1.31e-3, 8.73e-4, 5.84e-4, 3.9e-4, 2.61e-4, 1.75e-4, 1.17e-4, 7.8e-5]
-    VIT_D3_WAVELENGTHS = range(252, 330)
+    VIT_D3_WAVELENGTHS = range(252, 331)
 
     _result: List[Result]
 
@@ -56,13 +55,13 @@ class WeightedIrradianceCalculation:
     ):
         self._result = results
 
-    def calculate(self, weighted_irradiance_type: WeightedIrradianceType) -> WeightedIrradiance:
+    def calculate(self) -> WeightedIrradiance:
         """
         Calculate the weighted irradiance for the results
 
-        :param weighted_irradiance_type: the type of weight function to use
         :return: the weighted irradiance
         """
+        weighted_irradiance_type = self._result[0].calculation_input.settings.weighted_irradiance_type
         times = []
         values = []
         for result in self._result:
@@ -163,18 +162,3 @@ class WeightedIrradianceCalculation:
     @staticmethod
     def _integrate(wavelengths: List[float], values: List[float]) -> float:
         return trapz(values, wavelengths)
-
-
-@dataclass
-class WeightedIrradiance:
-    type: WeightedIrradianceType
-    times: List[float]
-    values: List[float]
-
-
-class WeightedIrradianceType(str, Enum):
-    ERYTHEMAL = "Erythemal"
-    VITAMIN_D3 = "Vitamin D3"
-    UV = "UV"
-    UVA = "UV A"
-    UVB = "UV B"
