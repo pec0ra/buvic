@@ -419,7 +419,7 @@ class Job(Generic[INPUT, RETURN]):
         Execute the job
         :return: the job's return value
         """
-        return self._fn(self._args) # type: ignore
+        return self._fn(self._args)  # type: ignore
 
 
 class ExecutionError(Exception):
