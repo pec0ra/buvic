@@ -351,7 +351,7 @@ python run_cmd.py --watch --input-dir measurements/
 ```
 Note that if `--input-dir` is not specified, the measurement files will be taken from `data/`.
 
-Alternatively, you can use the docker image as described in [the docker section](#2-uv-watch)
+Alternatively, you can use the docker image as described in [the docker section](#2-uv-watch-deprecated)
 
 ## Installer
 
@@ -473,7 +473,7 @@ docker run -d -p <HOST_PORT>:80 -e DARKSKY_TOKEN=your_darksky_token --name buvic
 
 ### 2. UV Watch (deprecated)
 
-This docker image contains the [UV Watchdog](#4-watchdog)
+This docker image contains the [UV Watchdog](#4-watchdog-deprecated)
 
 **Instructions:**
 
