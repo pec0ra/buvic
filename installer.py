@@ -247,6 +247,7 @@ def run_installer():
     print()
 
     if "DOCKER_REPOSITORY" in os.environ:
+        # If the environment variable `DOCKER_REPOSITORY` is defined, we use it as registry
         docker_repository = os.path.join(os.environ['DOCKER_REPOSITORY'], '')
         link = f"https://{docker_repository}v2/pmodwrc/buvic/tags/list"
         with urllib.request.urlopen(link) as url:

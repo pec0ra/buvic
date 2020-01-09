@@ -20,9 +20,8 @@
 from __future__ import annotations
 
 from logging import getLogger
-from typing import List
+from typing import List, Dict
 
-import numpy
 from numpy import multiply, trapz
 from scipy.interpolate import UnivariateSpline
 
@@ -32,6 +31,59 @@ from buvic.logic.weighted_irradiance import WeightedIrradiance, WeightedIrradian
 LOG = getLogger(__name__)
 
 
+class VitD3Spline:
+    """
+    A wrapper for the vitamin d3's `UnivariateSpline`.
+
+    Interpolated values can be retrieved with the method `get_value(wavelength)`.
+
+    This class uses a cache to improve the performance by interpolating each value only once.
+    """
+
+    VIT_D3_WAVELENGTH_START = 252
+    VIT_D3_WAVELENGTH_END = 330
+    VIT_D3_VALUES = [0.036, 0.039, 0.043, 0.047, 0.051, 0.056, 0.061, 0.066, 0.075, 0.084, 0.093, 0.102, 0.112, 0.122, 0.133, 0.146, 0.160,
+                     0.177, 0.195, 0.216, 0.238, 0.263, 0.289, 0.317, 0.346, 0.376, 0.408, 0.440, 0.474, 0.543, 0.583, 0.617, 0.652, 0.689,
+                     0.725, 0.763, 0.805, 0.842, 0.878, 0.903, 0.928, 0.952, 0.976, 0.983, 0.990, 0.996, 1, 0.977, 0.951, 0.917, 0.878,
+                     0.771, 0.701, 0.634, 0.566, 0.488, 0.395, 0.306, 0.22, 0.156, 0.119, 0.083, 0.049, 0.034, 0.02, 1.41e-2, 9.76e-3,
+                     6.52e-3, 4.36e-3, 2.92e-3, 1.95e-3, 1.31e-3, 8.73e-4, 5.84e-4, 3.9e-4, 2.61e-4, 1.75e-4, 1.17e-4, 7.8e-5]
+    VIT_D3_WAVELENGTHS = range(VIT_D3_WAVELENGTH_START, VIT_D3_WAVELENGTH_END + 1)
+
+    _spline: UnivariateSpline
+    _cache: Dict[float, float]
+
+    def __init__(self):
+        self._spline = UnivariateSpline(self.VIT_D3_WAVELENGTHS, self.VIT_D3_VALUES)
+        self._cache = {}
+
+    def get_value(self, wavelength: float) -> float:
+        """
+        Get an interpolated value at a given wavelength
+        :param wavelength: the wavelength to get the value for
+        :return: the interpolated value
+        """
+        if wavelength < self.get_min_wavelength() or wavelength > self.get_max_wavelength():
+            raise ValueError(f"The wavelength must be within the bounds {self.get_min_wavelength()} - {self.get_max_wavelength()}")
+
+        if wavelength not in self._cache:
+            self._cache[wavelength] = self._spline(wavelength)
+        return self._cache[wavelength]
+
+    def get_min_wavelength(self) -> float:
+        """
+        The minimum wavelength for which the value can be evaluated
+        :return: the minimum wavelength
+        """
+        return self.VIT_D3_WAVELENGTH_START
+
+    def get_max_wavelength(self) -> float:
+        """
+        The maximum wavelength for which the value can be evaluated
+        :return: the maximum wavelength
+        """
+        return self.VIT_D3_WAVELENGTH_END
+
+
 class WeightedIrradianceCalculation:
     """
     A utility to calculate weighted irradiance.
@@ -39,21 +91,16 @@ class WeightedIrradianceCalculation:
     The weighted irradiance is calculated for every available time of the day from a spectrum λ(w) and a weight function f(w) as their
     multiplication λ(w) * f(w). These weighted values are then integrated over the wavelengths ∫ λ(w) f(w) dw
     """
+    vit_d3_spline: VitD3Spline = VitD3Spline()
 
-    VIT_D3_VALUES = [0.036, 0.039, 0.043, 0.047, 0.051, 0.056, 0.061, 0.066, 0.075, 0.084, 0.093, 0.102, 0.112, 0.122, 0.133, 0.146, 0.160,
-                     0.177, 0.195, 0.216, 0.238, 0.263, 0.289, 0.317, 0.346, 0.376, 0.408, 0.440, 0.474, 0.543, 0.583, 0.617, 0.652, 0.689,
-                     0.725, 0.763, 0.805, 0.842, 0.878, 0.903, 0.928, 0.952, 0.976, 0.983, 0.990, 0.996, 1, 0.977, 0.951, 0.917, 0.878,
-                     0.771, 0.701, 0.634, 0.566, 0.488, 0.395, 0.306, 0.22, 0.156, 0.119, 0.083, 0.049, 0.034, 0.02, 1.41e-2, 9.76e-3,
-                     6.52e-3, 4.36e-3, 2.92e-3, 1.95e-3, 1.31e-3, 8.73e-4, 5.84e-4, 3.9e-4, 2.61e-4, 1.75e-4, 1.17e-4, 7.8e-5]
-    VIT_D3_WAVELENGTHS = range(252, 331)
-
-    _result: List[Result]
+    _results: List[Result]
 
     def __init__(
             self,
             results: List[Result]
     ):
-        self._result = results
+        self._results = results
+        self._weighted_irradiance_type = self._results[0].calculation_input.settings.weighted_irradiance_type
 
     def calculate(self) -> WeightedIrradiance:
         """
@@ -61,17 +108,20 @@ class WeightedIrradianceCalculation:
 
         :return: the weighted irradiance
         """
-        weighted_irradiance_type = self._result[0].calculation_input.settings.weighted_irradiance_type
+
+        LOG.debug(f"Calculating weighted irradiance for type '{self._weighted_irradiance_type.value}' for date "
+                  f"{self._results[0].calculation_input.date.isoformat()}")
+
         times = []
         values = []
-        for result in self._result:
-            time = result.uv_file_entry.times[0] / 60
-            value = self._calculate_value(result, weighted_irradiance_type)
+        for result in self._results:
+            t = result.uv_file_entry.times[0] / 60
+            value = self._calculate_value(result)
 
-            times.append(time)
+            times.append(t)
             values.append(value)
 
-        return WeightedIrradiance(weighted_irradiance_type, times, values)
+        return WeightedIrradiance(self._weighted_irradiance_type, times, values)
 
     @staticmethod
     def calculate_daily_dosis(weighted_irradiance: WeightedIrradiance) -> float:
@@ -88,17 +138,15 @@ class WeightedIrradianceCalculation:
 
         return trapz(values_watt, times_sec)
 
-    def _calculate_value(self, result: Result, weighted_irradiance_type: WeightedIrradianceType) -> float:
+    def _calculate_value(self, result: Result) -> float:
         """
         Calculate the weighted irradiance ∫ λ(w) f(w) dw for a given spectrum and a given weight function type
         :param result: the result containing the spectrum
-        :param weighted_irradiance_type: the type of weight function
         :return: the weighted irradiance
         """
-        LOG.debug(f"Calculating weighted irradiance for type '{weighted_irradiance_type.value}'")
 
         # get the weight function
-        f = self._get_function(result.uv_file_entry.wavelengths, weighted_irradiance_type)
+        f = self._get_function(result.uv_file_entry.wavelengths)
 
         # multiply λ(w) * f(w)
         combi = multiply(result.spectrum.cos_corrected_spectrum, f)
@@ -106,14 +154,13 @@ class WeightedIrradianceCalculation:
         # integrate over the wavelengths ∫ λ(w) f(w) dw
         return self._integrate(result.spectrum.wavelengths, combi)
 
-    def _get_function(self, wavelengths: List[float], weighted_irradiance_type: WeightedIrradianceType) -> List[float]:
+    def _get_function(self, wavelengths: List[float]) -> List[float]:
         """
         Get a given type of weight function
         :param wavelengths: the steps for which to evaluate the weight function
-        :param weighted_irradiance_type: the type of weight function
         :return: the values of the evaluation of the weight function for each wavelength
         """
-        if weighted_irradiance_type == WeightedIrradianceType.ERYTHEMAL:
+        if self._weighted_irradiance_type == WeightedIrradianceType.ERYTHEMAL:
             ret: List[float] = []
             for w in wavelengths:
                 if w <= 298:
@@ -125,16 +172,15 @@ class WeightedIrradianceCalculation:
                 else:
                     ret.append(0)
             return ret
-        if weighted_irradiance_type == WeightedIrradianceType.VITAMIN_D3:
-            spline = UnivariateSpline(self.VIT_D3_WAVELENGTHS, self.VIT_D3_VALUES)
+        if self._weighted_irradiance_type == WeightedIrradianceType.VITAMIN_D3:
             ret = []
             for w in wavelengths:
-                if w < numpy.min(self.VIT_D3_WAVELENGTHS) or w > numpy.max(self.VIT_D3_WAVELENGTHS):
+                if w < self.vit_d3_spline.get_min_wavelength() or w > self.vit_d3_spline.get_max_wavelength():
                     ret.append(0)
                 else:
-                    ret.append(spline(w))
+                    ret.append(self.vit_d3_spline.get_value(w))
             return ret
-        if weighted_irradiance_type == WeightedIrradianceType.UV:
+        if self._weighted_irradiance_type == WeightedIrradianceType.UV:
             ret = []
             for w in wavelengths:
                 if 280 <= w <= 400:
@@ -142,7 +188,7 @@ class WeightedIrradianceCalculation:
                 else:
                     ret.append(0)
             return ret
-        if weighted_irradiance_type == WeightedIrradianceType.UVA:
+        if self._weighted_irradiance_type == WeightedIrradianceType.UVA:
             ret = []
             for w in wavelengths:
                 if 280 <= w <= 315:
@@ -150,7 +196,7 @@ class WeightedIrradianceCalculation:
                 else:
                     ret.append(0)
             return ret
-        if weighted_irradiance_type == WeightedIrradianceType.UVB:
+        if self._weighted_irradiance_type == WeightedIrradianceType.UVB:
             ret = []
             for w in wavelengths:
                 if 315 <= w <= 400:
@@ -158,7 +204,7 @@ class WeightedIrradianceCalculation:
                 else:
                     ret.append(0)
             return ret
-        raise ValueError(f"Invalid weighted irradiance type provided: '{weighted_irradiance_type}'")
+        raise ValueError(f"Invalid weighted irradiance type provided: '{self._weighted_irradiance_type}'")
 
     @staticmethod
     def _integrate(wavelengths: List[float], values: List[float]) -> float:
