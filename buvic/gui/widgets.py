@@ -737,8 +737,8 @@ class SettingsWidget(VBox):
         self.append(form_title)
 
         self._weighted_irradiance_type_selection = gui.DropDown()
-        for source in WeightedIrradianceType:
-            self._weighted_irradiance_type_selection.append(gui.DropDownItem(source))
+        for t in WeightedIrradianceType:
+            self._weighted_irradiance_type_selection.append(gui.DropDownItem(t))
         self._weighted_irradiance_type_selection.set_value(settings.weighted_irradiance_type)
         weighted_irradiance_type_input = Input("Type of weight function to use for the weighted irradiance",
                                                self._weighted_irradiance_type_selection,

@@ -26,3 +26,7 @@ jobs:
         run: |
           pip install pytest
           pytest
+      - name: Type checking with mypy
+        run: |
+          pip install mypy
+          mypy run.py run_cmd.py --ignore-missing-imports

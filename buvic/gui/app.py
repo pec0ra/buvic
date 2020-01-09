@@ -20,7 +20,7 @@
 import multiprocessing
 from concurrent.futures import ThreadPoolExecutor
 from logging import getLogger
-from typing import List, Callable
+from typing import List, Callable, Optional
 
 import remi.gui as gui
 from remi import App, Label
@@ -48,7 +48,7 @@ class BUVIC(App):
     _result_container: ResultWidget
     _error_label: Label
     _lock = multiprocessing.Manager().Lock()
-    _modal: Modal = None
+    _modal: Optional[Modal] = None
 
     def __init__(self, *args):
         self._settings = Settings.load()

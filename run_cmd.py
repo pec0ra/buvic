@@ -27,7 +27,6 @@ from datetime import date
 from pprint import PrettyPrinter
 
 import progressbar
-from matplotlib import rcParams
 
 from buvic.const import TMP_FILE_DIR
 from buvic.logic.calculation_input import CalculationInput
@@ -39,9 +38,6 @@ from buvic.logic.parameter_file import Angstrom
 from buvic.logic.settings import Settings
 from buvic.logic.utils import name_to_date_and_brewer_id
 from buvic.logutils import init_logging
-
-rcParams.update({'figure.autolayout': True})
-rcParams['figure.figsize'] = 10, 7
 
 pp = PrettyPrinter(indent=2)
 
