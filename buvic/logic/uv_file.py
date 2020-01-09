@@ -130,7 +130,7 @@ class UVFileUVProvider(UVProvider):
                     new_value = RawUVValue.from_value_line(next_line)
                     old_value.time = (old_value.time + new_value.time) / 2
                     old_value.events = (old_value.events + new_value.events) / 2
-                    old_value.time = (old_value.step + new_value.step) / 2
+                    old_value.step = (old_value.step + new_value.step) / 2
                     old_value.std = divide(1, sqrt(old_value.events))
                     next_line = self.__read_line(file)
 
