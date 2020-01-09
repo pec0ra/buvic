@@ -246,24 +246,36 @@ def run_installer():
         darksky_token = input_check(check_darksky_token, none_default=True)
     print()
 
-    link = "https://registry.hub.docker.com/v1/repositories/pmodwrc/buvic/tags"
+    if "DOCKER_REPOSITORY" in os.environ:
+        docker_repository = os.path.join(os.environ['DOCKER_REPOSITORY'], '')
+        link = f"https://{docker_repository}v2/pmodwrc/buvic/tags/list"
+        with urllib.request.urlopen(link) as url:
+            data = json.loads(url.read().decode())
+        tags = data["tags"]
+    else:
+        docker_repository = ""
+        link = "https://registry.hub.docker.com/v1/repositories/pmodwrc/buvic/tags"
+        with urllib.request.urlopen(link) as url:
+            data = json.loads(url.read().decode())
+        tags = [d["name"] for d in data]
+
     with urllib.request.urlopen(link) as url:
         data = json.loads(url.read().decode())
 
     print("* Which version do you want to install?")
     print(" 0: Local copy (Default)")
-    for index, version in enumerate(data):
-        print(f" {index + 1}: {version['name']}")
+    for index, tag in enumerate(tags):
+        print(f" {index + 1}: {tag}")
     version_index = input_check(lambda value: check_version(value, data), default_value=0)
     if version_index == 0:
         version = ""
     else:
-        version = ":" + data[version_index - 1]["name"]
+        version = ":" + tags[version_index - 1]
 
     if version == ":latest":
         must_pull = True
-    elif not check_command(f"docker image inspect pmodwrc/buvic{version} >/dev/null 2>&1 || exit 1"):
-        print(f"* Docker image pmodwrc/buvic{version} does not exist locally")
+    elif not check_command(f"docker image inspect {docker_repository}pmodwrc/buvic{version} >/dev/null 2>&1 || exit 1"):
+        print(f"* Docker image {docker_repository}pmodwrc/buvic{version} does not exist locally")
         must_pull = True
     else:
         must_pull = False
@@ -271,7 +283,7 @@ def run_installer():
     if must_pull:
         print("* Pulling docker image")
         print(Colors.LIGHTGRAY, end='', flush=True)
-        result = call(["docker", "pull", f"pmodwrc/buvic{version}"])
+        result = call(["docker", "pull", f"{docker_repository}pmodwrc/buvic{version}"])
         print(Colors.ENDC, end='', flush=True)
         if result != 0:
             p("ERROR: An error occurred while pulling image!", Colors.ERROR)
@@ -319,7 +331,7 @@ def run_installer():
     if darksky_token is not None:
         docker_command.extend([f"-e DARKSKY_TOKEN={darksky_token}"])
 
-    docker_command.extend(["-e PORT=4444", f"--name {container_name}", f"pmodwrc/buvic{version}"])
+    docker_command.extend(["-e PORT=4444", f"--name {container_name}", f"{docker_repository}pmodwrc/buvic{version}"])
     print(" ".join(docker_command))
     print(Colors.LIGHTGRAY, end='', flush=True)
     result = run(" ".join(docker_command), shell=True)
