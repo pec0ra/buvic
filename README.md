@@ -375,7 +375,13 @@ Then follow the instructions on terminal
 
 Releases have a version in the form `vMAJOR.MINOR` (e.g `v1.2`).
 
-To create a new release, create a new tag with the version as a name:
+The recommended way to create a release is to do it in the [github](https://github.com/pec0ra/buvic/releases) interface.
+Click on the button `Draft a new release`, enter the version (e.g. `v1.2`) as tag and release title and the changelog as description.
+
+Docker hub will automatically build the corresponding docker image (Note: it takes about half an hour until the images are built).
+
+If you don't have access to github, it is also possible to create a release with git by creating a new tag with the
+ version as a name:
 ```
 git tag v1.2 -a -m "UV Server v1.2"
 ```
@@ -383,9 +389,8 @@ and push it to github:
 ```
 git push --tags
 ```
-Docker hub will automatically build the corresponding docker image (Note: it can take a few hours until the images are built).
 
-Alternatively, you can run the script `release.py <version>` which will do this automatically.
+Running the script `release.py <version>` will do these git steps automatically.
 
 ## Docker
 
