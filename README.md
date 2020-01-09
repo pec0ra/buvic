@@ -1,3 +1,6 @@
+![BUVIC](assets/logo_github_header.png)
+
+
 [![Python 3.7](https://img.shields.io/badge/python-3.7-blue.svg)](https://www.python.org/downloads/release/python-370/)
 [![GitHub](https://img.shields.io/github/license/pec0ra/buvic)](https://www.gnu.org/licenses/gpl-3.0) 
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/pec0ra/buvic)](https://github.com/pec0ra/buvic/releases/)
@@ -375,7 +378,7 @@ Then follow the instructions on terminal
 
 Releases have a version in the form `vMAJOR.MINOR` (e.g `v1.2`).
 
-The recommended way to create a release is to do it in the [github](https://github.com/pec0ra/buvic/releases) interface.
+**The recommended way** to create a release is to do it in the [github](https://github.com/pec0ra/buvic/releases) interface.
 Click on the button `Draft a new release`, enter the version (e.g. `v1.2`) as tag and release title and the changelog as description.
 
 Docker hub will automatically build the corresponding docker image (Note: it takes about half an hour until the images are built).

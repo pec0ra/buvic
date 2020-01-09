@@ -65,7 +65,14 @@ class BUVIC(App):
 
         self._main_container = gui.VBox()
 
+        logo_container = gui.HBox()
+        logo_container.set_style("width: 100%; justify-content: space-between; margin-bottom: 20px")
+        logo = gui.Image("/res:logo_buvic.png", width=300, style="align-self: flex-start")
         header_picture = gui.Image("/res:pmodwrc_logo.png", width=200, style="align-self: flex-start")
+        logo_container.append(logo)
+        logo_container.append(header_picture)
+        self._main_container.append(logo_container)
+
         title = Title(Level.H1, "Brewer UV Irradiance Calculator")
 
         self._forms = VBox()
@@ -84,7 +91,6 @@ class BUVIC(App):
 
         self._result_container = ResultWidget()
 
-        self._main_container.append(header_picture)
         self._main_container.append(title)
         self._main_container.append(self._loader)
         self._main_container.append(self._forms)
