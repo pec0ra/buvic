@@ -229,6 +229,7 @@ class WeightedIrradianceCalculation:
                 else:
                     ret.append(0)
             return ret
+
         if self._weighted_irradiance_type == WeightedIrradianceType.VITAMIN_D3:
             ret = []
             for w in wavelengths:
@@ -237,6 +238,7 @@ class WeightedIrradianceCalculation:
                 else:
                     ret.append(self.vit_d3_spline.get_value(w))
             return ret
+
         if self._weighted_irradiance_type == WeightedIrradianceType.UV:
             ret = []
             for w in wavelengths:
@@ -245,6 +247,7 @@ class WeightedIrradianceCalculation:
                 else:
                     ret.append(0)
             return ret
+
         if self._weighted_irradiance_type == WeightedIrradianceType.UVA:
             ret = []
             for w in wavelengths:
@@ -253,6 +256,7 @@ class WeightedIrradianceCalculation:
                 else:
                     ret.append(0)
             return ret
+
         if self._weighted_irradiance_type == WeightedIrradianceType.UVB:
             ret = []
             for w in wavelengths:

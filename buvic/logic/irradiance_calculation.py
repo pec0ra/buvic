@@ -73,8 +73,7 @@ class IrradianceCalculation:
             uv_file_entry: UVFileEntry = self._calculation_input.uv_file_entries[index]
 
             libradtran_result = self._execute_libradtran(uv_file_entry)
-            calibrated_spectrum = self._to_calibrated_spectrum(uv_file_entry, self._calculation_input.calibration,
-                                                               self._calculation_input.ozone)
+            calibrated_spectrum = self._to_calibrated_spectrum(uv_file_entry, self._calculation_input.calibration)
 
             # Apply temperature correction
             c = self._calculation_input.settings.temperature_correction_factor
@@ -125,7 +124,7 @@ class IrradianceCalculation:
             LOG.error("An error occurred while doing the calculation", exc_info=True)
             raise e
 
-    def _to_calibrated_spectrum(self, uv_file_entry: UVFileEntry, calibration: Calibration, ozone: Ozone) -> List[float]:
+    def _to_calibrated_spectrum(self, uv_file_entry: UVFileEntry, calibration: Calibration) -> List[float]:
         """
         Convert raw (count) measures to a calibrated spectrum
         :param uv_file_entry: the entry from which to get raw values
