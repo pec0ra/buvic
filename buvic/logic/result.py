@@ -81,8 +81,9 @@ class Result:
         file.write(f"% wavelength(nm)	spectral_irradiance(W m-2 nm-1)	time_hour_UTC\n")
 
         for i in range(len(self.spectrum.wavelengths)):
-            file.write(f"{self.spectrum.wavelengths[i]:.1f}\t {self.spectrum.cos_corrected_spectrum[i] / 1000:.9f}\t   "
-                       f"{self.spectrum.measurement_times[i] / 60:.5f}\n")
+            file.write(f"{self.spectrum.wavelengths[i]:.1f}\t "
+                       f"{self.spectrum.cos_corrected_spectrum[i] / 1000:.9f}\t   "  # converted to W m-2 nm-1
+                       f"{self.spectrum.measurement_times[i] / 60:.5f}\n")  # converted to hours
 
     def get_name(self, prefix: str = "", suffix: str = "") -> str:
         """
@@ -124,6 +125,25 @@ class Result:
         return path.join(self.get_relative_path(), file_name)
 
     def get_relative_path(self):
+        """
+        Get the path (relative to the output directory) in which to the output files for this result.
+
+        If a UV file and/or a B file exist, the common component of their path is used. Otherwise, the path is created from the brewer id
+        and the year.
+
+        If the option to skip cos correction is checked in the settings, a directory called 'nocoscor' is prepended to the path.
+
+        examples:
+            uv file: 033/2019/uv/UV11119.033 and b file: 033/2019/b/B11119.033 will give a relative path 033/2019/
+            uv file: 2019/033/uv/UV11119.033 and b file: 2019/033/b/B11119.033 will give a relative path 2019/033/
+            uv file: 033/2019/UV11119.033 and b file: 033/2019/B11119.033 will give a relative path 033/2019/
+            uv file: 033/2019/uv/UV11119.033 and b file not specified will give a relative path 033/2019/uv/
+            uv file and b file not specified will give a relative path 033/2019/
+
+            Any of this example will be prepended by 'nocoscor' if the option is checked (e.g. nocoscor/033/2019/ )
+
+        :return: the path
+        """
         if self.calculation_input.uv_file_name is not None and self.calculation_input.b_file_name is not None:
             output_path = path.commonprefix([self.calculation_input.b_file_name.path, self.calculation_input.uv_file_name.path])
         elif self.calculation_input.uv_file_name is not None:
@@ -146,8 +166,8 @@ class Result:
 @dataclass
 class Spectrum:
     wavelengths: List[float]
-    measurement_times: List[float]
+    measurement_times: List[float]  # in minutes
     uv_raw_values: List[float]
-    original_spectrum: List[float]
-    cos_corrected_spectrum: List[float]
+    original_spectrum: List[float]  # in mW m-2 nm-1
+    cos_corrected_spectrum: List[float]  # in mW m-2 nm-1
     cos_correction: List[float]

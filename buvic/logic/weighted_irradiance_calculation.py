@@ -277,8 +277,10 @@ class WeightedIrradianceCalculation:
         ozone = result.calculation_input.ozone.interpolated_ozone(minutes, result.calculation_input.settings.default_ozone)
 
         if max_wl <= 325:
-            # For spectra with values up to 325nm, we use the second last value of the spectrum
-            return result.spectrum.cos_corrected_spectrum[-2] * self.max_325_correction_spline.get_value(result.sza, ozone)
+            # For spectra with values up to 325nm, we don't use the last value of the spectrum but the value measured for 324nm.
+            # The reason for this is that the value measured at 324nm is less affected by ozone.
+            index_325 = result.spectrum.wavelengths.index(324.0)
+            return result.spectrum.cos_corrected_spectrum[index_325] * self.max_325_correction_spline.get_value(result.sza, ozone)
         elif max_wl <= 363:
             # For spectra with values up to 363nm, we use the last value of the spectrum
             return result.spectrum.cos_corrected_spectrum[-1] * self.max_363_correction_spline.get_value(result.sza, ozone)

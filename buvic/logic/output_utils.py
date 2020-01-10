@@ -86,7 +86,8 @@ def to_woudc(result: Result, file: TextIO) -> None:
 
     for i in range(len(result.spectrum.wavelengths)):
         time = minutes_to_time(result.spectrum.measurement_times[i])
-        file.write(f"{result.spectrum.wavelengths[i]:.1f},{'%E' % (result.spectrum.cos_corrected_spectrum[i] / 1000)},"
+        file.write(f"{result.spectrum.wavelengths[i]:.1f},"
+                   f"{'%E' % (result.spectrum.cos_corrected_spectrum[i] / 1000)},"  # convert to W m-2 nm-1
                    f"{time.hour:02d}:{time.minute:02d}:{time.second:02d}\n")
 
 
