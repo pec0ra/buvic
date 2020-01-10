@@ -755,6 +755,27 @@ class SettingsWidget(VBox):
         self._no_coscor_checkbox.onclick.do(lambda w: self._no_coscor_checkbox.set_value(not self._no_coscor_checkbox.get_value()))
         self.append(self._no_coscor_checkbox)
 
+        coscor_title = Title(Level.H4, "Temperature correction")
+        coscor_title.set_style("margin-top: 14px")
+        self.append(coscor_title)
+        temperature_explanation = IconLabel("Each value of the spectrum F for a temperature T (°C) will be corrected with a correction "
+                                            "factor C and a reference temperature Tref (°C) with the formula: F * [1 + C * (T - Tref)]",
+                                            "info_outline",
+                                            style="margin-bottom: 10px")
+        self.append(temperature_explanation)
+
+        # Temperature correction dual field
+        temp_correction = gui.HBox(style="justify-content: stretch; width: 260px")
+        self._temp_factor_spin = gui.SpinBox(settings.temperature_correction_factor, -4, 4, 0.01, style="width: 100px; height: 25px")
+        self._temp_ref_spin = gui.SpinBox(settings.temperature_correction_ref, -50, 50, 0.5, style="width: 100px; height: 25px")
+        temp_factor_label = gui.Label("C:", style="flex-grow: 1")
+        temp_correction.append(temp_factor_label)
+        temp_correction.append(self._temp_factor_spin)
+        temp_ref_label = gui.Label("Tref:", style="margin-left: 8px; flex-grow: 1")
+        temp_correction.append(temp_ref_label)
+        temp_correction.append(self._temp_ref_spin)
+        self.append(temp_correction)
+
         default_title = Title(Level.H4, "Default values")
         default_title.set_style("margin-top: 14px")
         self.append(default_title)
@@ -844,12 +865,15 @@ class SettingsWidget(VBox):
 
         no_coscor = self._no_coscor_checkbox.get_value()
 
-        albedo = self._albedo_spin.get_value()
+        temperature_correction_factor = float(self._temp_factor_spin.get_value())
+        temperature_correction_ref = float(self._temp_ref_spin.get_value())
 
-        alpha = self._alpha_spin.get_value()
-        beta = self._beta_spin.get_value()
+        albedo = float(self._albedo_spin.get_value())
 
-        ozone = self._ozone_spin.get_value()
+        alpha = float(self._alpha_spin.get_value())
+        beta = float(self._beta_spin.get_value())
+
+        ozone = float(self._ozone_spin.get_value())
 
         if self._straylight_checkbox.get_value():
             straylight_correction = StraylightCorrection.APPLIED
@@ -865,6 +889,8 @@ class SettingsWidget(VBox):
             arf_column,
             WeightedIrradianceType(weighted_irradiance_type),
             no_coscor,
+            temperature_correction_factor,
+            temperature_correction_ref,
             albedo,
             Angstrom(alpha, beta),
             ozone,

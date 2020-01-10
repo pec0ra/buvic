@@ -37,7 +37,7 @@ class UVFileReaderTestCase(unittest.TestCase):
         self.assertEqual(h.place, "Arenosillo")
         self.assertEqual(h.position.latitude, 37.1)
         self.assertEqual(h.position.longitude, 6.73)
-        self.assertEqual(h.temperature, 3)
+        self.assertEqual(h.temperature, -33.27 + 3 * 18.64)
         self.assertEqual(h.pressure, 1000)
         self.assertEqual(h.dark, 1.2)
 

@@ -37,6 +37,7 @@ class Result:
     index: int
     calculation_input: CalculationInput
     sza: float
+    temperature_correction: float
     spectrum: Spectrum
 
     def to_qasume(self, file: TextIO) -> None:
@@ -67,7 +68,7 @@ class Result:
         second_line_parts = {
             "type": self.uv_file_entry.header.type,
             "coscor": f"{cos_cor_to_apply.value}{cloud_cover_value}",
-            "tempcor": "false",
+            "tempcor": f"{self.temperature_correction}",
             "straylightcor": straylight_correction.value,
             "o3": f"{ozone}DU",
             "albedo": str(albedo),

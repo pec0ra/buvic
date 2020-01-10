@@ -76,6 +76,14 @@ class IrradianceCalculation:
             calibrated_spectrum = self._to_calibrated_spectrum(uv_file_entry, self._calculation_input.calibration,
                                                                self._calculation_input.ozone)
 
+            # Apply temperature correction
+            c = self._calculation_input.settings.temperature_correction_factor
+            tref = self._calculation_input.settings.temperature_correction_ref
+            temperature_correction = 1 + c * (uv_file_entry.header.temperature - tref)
+            LOG.debug(f"Temperature is {uv_file_entry.header.temperature:.2f}°C and corresponding correction is {temperature_correction}")
+            calibrated_spectrum = multiply(calibrated_spectrum, temperature_correction)
+
+            # Find cos correction and apply it
             minutes = uv_file_entry.raw_values[0].time
             cos_cor_to_apply = self._calculation_input.cos_correction_to_apply(minutes)
             if cos_cor_to_apply == CosCorrection.DIFFUSE:
@@ -109,6 +117,7 @@ class IrradianceCalculation:
                 index,
                 self._calculation_input,
                 self._get_sza(libradtran_result),
+                temperature_correction,
                 spectrum
             )
 

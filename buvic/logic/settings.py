@@ -37,6 +37,8 @@ DEFAULT_MANUAL_MODE = False
 DEFAULT_ARF_COLUMN = 3
 DEFAULT_WEIGHTED_IRRADIANCE_TYPE = WeightedIrradianceType.ERYTHEMAL
 DEFAULT_NO_COSCOR = False
+DEFAULT_TEMPERATURE_CORRECTION_FACTOR = 0.0
+DEFAULT_TEMPERATURE_CORRECTION_REF = 0.0
 DEFAULT_ALBEDO_VALUE = 0.04
 DEFAULT_ALPHA_VALUE = 1.3
 DEFAULT_BETA_VALUE = 0.1
@@ -57,6 +59,9 @@ class Settings:
     weighted_irradiance_type: WeightedIrradianceType = DEFAULT_WEIGHTED_IRRADIANCE_TYPE
 
     no_coscor: bool = DEFAULT_NO_COSCOR
+
+    temperature_correction_factor: float = DEFAULT_TEMPERATURE_CORRECTION_FACTOR
+    temperature_correction_ref: float = DEFAULT_TEMPERATURE_CORRECTION_REF
 
     default_albedo: float = DEFAULT_ALBEDO_VALUE
     default_aerosol: Angstrom = Angstrom(DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE)
@@ -87,6 +92,10 @@ class Settings:
                 WeightedIrradianceType(dict_settings["weighted_irradiance_type"])
                 if "weighted_irradiance_type" in dict_settings else DEFAULT_WEIGHTED_IRRADIANCE_TYPE,
                 dict_settings["no_coscor"],
+                dict_settings["temperature_correction_factor"]
+                if "temperature_correction_factor" in dict_settings else DEFAULT_TEMPERATURE_CORRECTION_FACTOR,
+                dict_settings["temperature_correction_ref"]
+                if "temperature_correction_ref" in dict_settings else DEFAULT_TEMPERATURE_CORRECTION_REF,
                 dict_settings["default_albedo"],
                 Angstrom(dict_settings["default_aerosol"][0], dict_settings["default_aerosol"][1]),
                 dict_settings["default_ozone"],

@@ -42,6 +42,7 @@ class FileUtilsTestCase(unittest.TestCase):
                 None
             ),
             44.4,
+            0.0,
             Spectrum([], [70], [], [], [], [])
         )
         name = result.get_name()
@@ -60,6 +61,7 @@ class FileUtilsTestCase(unittest.TestCase):
                 None
             ),
             44.4,
+            0.0,
             Spectrum([], [70], [], [], [], [])
         )
         name = result.get_name()
@@ -78,6 +80,7 @@ class FileUtilsTestCase(unittest.TestCase):
                 None
             ),
             44.4,
+            0.0,
             Spectrum([], [70], [], [], [], [])
         )
         name = result.get_name()
@@ -96,6 +99,7 @@ class FileUtilsTestCase(unittest.TestCase):
                 None
             ),
             44.4,
+            0.0,
             Spectrum([], [70], [], [], [], [])
         )
         name = result.get_name()
@@ -114,6 +118,7 @@ class FileUtilsTestCase(unittest.TestCase):
                 None
             ),
             44.4,
+            0.0,
             Spectrum([], [70], [], [], [], [])
         )
         name = result.get_name()
