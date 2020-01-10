@@ -20,10 +20,12 @@
 from __future__ import annotations
 
 from logging import getLogger
+from os import path
 from typing import List, Dict
 
+import numpy
 from numpy import multiply, trapz
-from scipy.interpolate import UnivariateSpline
+from scipy.interpolate import UnivariateSpline, RectBivariateSpline
 
 from buvic.logic.result import Result
 from buvic.logic.weighted_irradiance import WeightedIrradiance, WeightedIrradianceType
@@ -84,6 +86,52 @@ class VitD3Spline:
         return self.VIT_D3_WAVELENGTH_END
 
 
+class CorrectionSpline:
+    """
+    A wrapper for the correction spline.
+
+    This class makes 2 dimensional interpolation to retrieve the correction value for given sza and ozone level.
+    """
+
+    OZONE_LEVELS = range(200, 520, 20)  # From 0 to 500 in increments of 20
+    SZAS = range(0, 95, 5)  # From 0 to 90 in increments of 5
+
+    _spline: RectBivariateSpline
+
+    def __init__(self, file_name: str):
+
+        # Load the 2D array from the given file
+        correction_values = numpy.genfromtxt(path.join("buvic/logic/data", file_name))
+
+        # Initialize the spline
+        self._spline = RectBivariateSpline(self.SZAS, self.OZONE_LEVELS, correction_values)
+
+    def get_value(self, sza: float, ozone: float) -> float:
+        """
+        Get the interpolated correction value for given sza and ozone
+        :param sza: the sza to get the value for
+        :param ozone: the ozone level to get the value for
+        :return: the interpolated value
+        """
+        # We only interpolate within the sza and ozone bounds
+        if sza > 90:
+            LOG.debug(f"Value '{sza}' is greater than 90. Interpolation will use 90 instead")
+            sza = 90
+        elif sza < 0:
+            LOG.warning(f"Value '{sza}' is smaller than 0. Interpolation will use 0 instead")
+            sza = 0
+
+        if ozone > 500:
+            LOG.info(f"Value '{ozone}' is greater than 500. Interpolation will use 500 instead")
+            ozone = 500
+        elif ozone < 200:
+            LOG.info(f"Value '{ozone}' is smaller than 200. Interpolation will use 200 instead")
+            ozone = 200
+
+        spline_result = self._spline(sza, ozone)
+        return spline_result[0][0]
+
+
 class WeightedIrradianceCalculation:
     """
     A utility to calculate weighted irradiance.
@@ -91,7 +139,11 @@ class WeightedIrradianceCalculation:
     The weighted irradiance is calculated for every available time of the day from a spectrum λ(w) and a weight function f(w) as their
     multiplication λ(w) * f(w). These weighted values are then integrated over the wavelengths ∫ λ(w) f(w) dw
     """
+
     vit_d3_spline: VitD3Spline = VitD3Spline()
+
+    max_325_correction_spline = CorrectionSpline("max_325")
+    max_363_correction_spline = CorrectionSpline("max_363")
 
     _results: List[Result]
 
@@ -152,7 +204,12 @@ class WeightedIrradianceCalculation:
         combi = multiply(result.spectrum.cos_corrected_spectrum, f)
 
         # integrate over the wavelengths ∫ λ(w) f(w) dw
-        return self._integrate(result.spectrum.wavelengths, combi)
+        v = self._integrate(result.spectrum.wavelengths, combi)
+
+        # Add correction for spectra that don't cover all wavelengths
+        correction = self._get_correction(result)
+        LOG.debug(f"Integral correction: {correction}")
+        return v + correction
 
     def _get_function(self, wavelengths: List[float]) -> List[float]:
         """
@@ -209,3 +266,18 @@ class WeightedIrradianceCalculation:
     @staticmethod
     def _integrate(wavelengths: List[float], values: List[float]) -> float:
         return trapz(values, wavelengths)
+
+    def _get_correction(self, result: Result) -> float:
+        max_wl = result.spectrum.wavelengths[-1]
+        minutes = result.uv_file_entry.raw_values[0].time
+        ozone = result.calculation_input.ozone.interpolated_ozone(minutes, result.calculation_input.settings.default_ozone)
+
+        if max_wl <= 325:
+            # For spectra with values up to 325nm, we use the second last value of the spectrum
+            return result.spectrum.cos_corrected_spectrum[-2] * self.max_325_correction_spline.get_value(result.sza, ozone)
+        elif max_wl <= 363:
+            # For spectra with values up to 363nm, we use the last value of the spectrum
+            return result.spectrum.cos_corrected_spectrum[-1] * self.max_363_correction_spline.get_value(result.sza, ozone)
+        else:
+            return 0
+        pass
