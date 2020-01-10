@@ -213,7 +213,7 @@ class EubrewnetUVProvider(UVProvider):
                             date=date.fromisoformat(header_list[5]),
                             place=header_list[6],
                             position=Position(header_list[7], header_list[8]),
-                            temperature=header_list[9],  # TODO: Temperature might need a conversion
+                            temperature=_convert_temperature(header_list[9]),
                             pressure=header_list[10],
                             dark=header_list[11]
                         )
@@ -267,7 +267,7 @@ class UVFileHeader:
     date: date
     place: str
     position: Position
-    temperature: float
+    temperature: float  # The temperature in °C
     pressure: float
     dark: float
 
@@ -300,7 +300,7 @@ class UVFileHeader:
             date=date(int(2000 + int(res.group('year'))), int(res.group('month')), int(res.group('day'))),
             place=res.group('place'),
             position=Position(float(res.group('latitude')), float(res.group('longitude'))),
-            temperature=float(res.group('temperature')),  # TODO: Temperature might need a conversion
+            temperature=_convert_temperature(float(res.group('temperature'))),
             pressure=float(res.group('pressure')),
             dark=float(res.group('dark'))
         )
@@ -374,3 +374,12 @@ Position = namedtuple('Position', ['latitude', 'longitude'])
 
 class UVFileParsingError(ValueError):
     pass
+
+
+def _convert_temperature(temp_volts: float) -> float:
+    """
+    Converts a temperature from volts to degree Celsius
+    :param temp_volts: the temperature to convert
+    :return: the converted temperature
+    """
+    return -33.27 + temp_volts * 18.64

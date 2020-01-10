@@ -77,8 +77,8 @@ def to_woudc(result: Result, file: TextIO) -> None:
     file.write("\n")
     file.write("#GLOBAL_SUMMARY\n"
                "Time,IntACGIH,IntCIE,ZenAngle,MuValue,AzimAngle,Flag,TempC\n"
-               f"{time.hour:02d}:{time.minute:02d}:{time.second:02d},3.108E-05,1.737E-04,89.10,{result.sza},119.68,,"
-               f"{result.uv_file_entry.header.temperature}TODO CELSIUS\n")  # TODO
+               f"{time.hour:02d}:{time.minute:02d}:{time.second:02d},3.108E-05,1.737E-04,89.10,{result.sza},119.68,,"  # TODO
+               f"{result.uv_file_entry.header.temperature}\n")
     file.write("\n")
     file.write("#GLOBAL\n")
 
