@@ -1,4 +1,4 @@
-![BUVIC](https://raw.githubusercontent.com/pec0ra/buvic/master/assets/logo_github_header.png)
+<img src="https://raw.githubusercontent.com/pec0ra/buvic/master/assets/logo_github_header.png" width="100%" >
 
 
 # Brewer UV Irradiance Calculation
