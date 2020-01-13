@@ -44,7 +44,7 @@ class VitD3Spline:
 
     VIT_D3_WAVELENGTH_START = 252
     VIT_D3_WAVELENGTH_END = 330
-    VIT_D3_VALUES = numpy.genfromtxt(path.join("buvic/logic/data", 'vit_d3_values'))
+    VIT_D3_VALUES = numpy.genfromtxt(path.join("buvic/logic/data", "vit_d3_values"))
     VIT_D3_WAVELENGTHS = range(VIT_D3_WAVELENGTH_START, VIT_D3_WAVELENGTH_END + 1)
 
     _spline: UnivariateSpline
