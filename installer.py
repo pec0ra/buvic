@@ -20,6 +20,7 @@
 #
 import json
 import os
+import re
 import sys
 import urllib.request
 from subprocess import call, run, PIPE
@@ -260,14 +261,15 @@ def run_installer():
             data = json.loads(url.read().decode())
         tags = [d["name"] for d in data]
 
-    with urllib.request.urlopen(link) as url:
-        data = json.loads(url.read().decode())
+    if 'SHOW_DOCKER_PRERELEASES' not in os.environ:
+        tag_regex = re.compile(r"^v([0-9.]+)$")
+        tags = [t for t in tags if tag_regex.match(t) is not None]
 
     print("* Which version do you want to install?")
     print(" 0: Local copy (Default)")
     for index, tag in enumerate(tags):
         print(f" {index + 1}: {tag}")
-    version_index = input_check(lambda value: check_version(value, data), default_value=0)
+    version_index = input_check(lambda value: check_version(value, tags), default_value=0)
     if version_index == 0:
         version = ""
     else:
