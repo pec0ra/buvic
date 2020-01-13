@@ -7,6 +7,7 @@
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/pec0ra/buvic)](https://github.com/pec0ra/buvic/releases/)
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/pec0ra/buvic/Python%20checks)](https://github.com/pec0ra/buvic/actions)
 [![Docker Cloud Automated build](https://img.shields.io/docker/cloud/automated/pmodwrc/buvic)](https://hub.docker.com/r/pmodwrc/buvic/builds)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 
 # Brewer UV Irradiance Calculation
@@ -36,9 +37,11 @@ This repository contains a set of tools to calculate the cosine corrected irradi
          * [2. Job creation / handling](#2-job-creation--handling)
          * [3. Calculations](#3-calculations)
          * [4. Performance](#4-performance)
-      * [License](#license)
+      * [Contributing](#contributing)
+         * [License](#license)
+         * [Code style](#code-style)
 
-<!-- Added by: basile, at: Di Jan  7 16:37:21 CET 2020 -->
+<!-- Added by: basile, at: Mo Jan 13 17:05:03 CET 2020 -->
 
 <!--te-->
 
@@ -622,6 +625,25 @@ and `_execute_jobs` (calculation jobs). The number of threads used in the pool e
 threads.
 
 
-## License
+## Contributing
+
+Anybody is welcome to contribute to BUVIC. 
+
+### License
 
 BUVIC is published under the `GNU General Public License version 3` (GPL v3). See [LICENSE.md](LICENSE.md) for more details.
+
+
+### Code style
+
+We use [black](https://github.com/psf/black) code style since it is compliant with PEP guidelines and the black formatter makes it easy to
+format the code automatically. We choose a line length of 140 to better use modern wide screens.
+
+If you want to use the black formatter, install it with
+```
+pip install black
+```
+and then run the command
+```
+black --line-length 140 . -t py37
+```
