@@ -29,7 +29,6 @@ from buvic.logutils import init_logging
 
 
 class UVFileReaderTestCase(unittest.TestCase):
-
     def test_cache(self):
         init_logging(logging.DEBUG)
 
@@ -41,7 +40,7 @@ class UVFileReaderTestCase(unittest.TestCase):
             File("dummy"),
             File("buvic/logic/test/calibration_example"),
             File("dummy"),
-            None
+            None,
         )
 
         c = calculation_input.calibration
@@ -98,7 +97,7 @@ class UVFileReaderTestCase(unittest.TestCase):
             File("dummy"),
             File("dummy"),
             File("dummy"),
-            None
+            None,
         )
 
         entries = calculation_input.uv_file_entries
@@ -113,7 +112,7 @@ class UVFileReaderTestCase(unittest.TestCase):
             File("dummy"),
             File("dummy"),
             File("dummy"),
-            None
+            None,
         )
 
         # 13 sections are present on EUBREWNET for day 2019-06-20
@@ -129,7 +128,7 @@ class UVFileReaderTestCase(unittest.TestCase):
             File("dummy"),
             File("dummy"),
             None,
-            None
+            None,
         )
 
         calculation_input.init_properties()

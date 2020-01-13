@@ -31,7 +31,7 @@ from buvic.logic.weighted_irradiance import WeightedIrradianceType
 
 LOG = getLogger(__name__)
 
-SETTINGS_FILE_PATH = path.join(path.expanduser("~"), '.buvic-settings.conf')
+SETTINGS_FILE_PATH = path.join(path.expanduser("~"), ".buvic-settings.conf")
 
 DEFAULT_MANUAL_MODE = False
 DEFAULT_ARF_COLUMN = 3
@@ -73,7 +73,7 @@ class Settings:
     uvr_data_source: DataSource = DataSource.FILES
 
     def write(self):
-        with open(SETTINGS_FILE_PATH, 'w') as config_file:
+        with open(SETTINGS_FILE_PATH, "w") as config_file:
             json.dump(asdict(self), config_file)
         LOG.debug(f"Settings saved successfully to {SETTINGS_FILE_PATH}")
 
@@ -83,24 +83,27 @@ class Settings:
             LOG.debug(f"No setting file found, using default")
             return Settings()
 
-        with open(SETTINGS_FILE_PATH, 'r') as config_file:
+        with open(SETTINGS_FILE_PATH, "r") as config_file:
             dict_settings = json.load(config_file)
             LOG.debug(f"Settings loaded from {SETTINGS_FILE_PATH}")
             return Settings(
                 dict_settings["manual_mode"],
                 dict_settings["arf_column"],
                 WeightedIrradianceType(dict_settings["weighted_irradiance_type"])
-                if "weighted_irradiance_type" in dict_settings else DEFAULT_WEIGHTED_IRRADIANCE_TYPE,
+                if "weighted_irradiance_type" in dict_settings
+                else DEFAULT_WEIGHTED_IRRADIANCE_TYPE,
                 dict_settings["no_coscor"],
                 dict_settings["temperature_correction_factor"]
-                if "temperature_correction_factor" in dict_settings else DEFAULT_TEMPERATURE_CORRECTION_FACTOR,
+                if "temperature_correction_factor" in dict_settings
+                else DEFAULT_TEMPERATURE_CORRECTION_FACTOR,
                 dict_settings["temperature_correction_ref"]
-                if "temperature_correction_ref" in dict_settings else DEFAULT_TEMPERATURE_CORRECTION_REF,
+                if "temperature_correction_ref" in dict_settings
+                else DEFAULT_TEMPERATURE_CORRECTION_REF,
                 dict_settings["default_albedo"],
                 Angstrom(dict_settings["default_aerosol"][0], dict_settings["default_aerosol"][1]),
                 dict_settings["default_ozone"],
                 StraylightCorrection(dict_settings["default_straylight_correction"]),
                 DataSource(dict_settings["uv_data_source"]),
                 DataSource(dict_settings["ozone_data_source"]),
-                DataSource(dict_settings["uvr_data_source"])
+                DataSource(dict_settings["uvr_data_source"]),
             )

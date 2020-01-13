@@ -23,10 +23,10 @@ from ..uv_file import UVFileHeader, RawUVValue, UVProvider
 
 
 class UVFileReaderTestCase(unittest.TestCase):
-
     def test_header_parsing(self):
-        h = UVFileHeader.from_header_line("ux Integration time is 0.2294 seconds per sample dt 3.1E-08 cy 3 dh 20 02 17 Arenosillo  "
-                                          "37.1 6.73 3 pr 1000dark 1.2")
+        h = UVFileHeader.from_header_line(
+            "ux Integration time is 0.2294 seconds per sample dt 3.1E-08 cy 3 dh 20 02 17 Arenosillo  " "37.1 6.73 3 pr 1000dark 1.2"
+        )
         self.assertEqual(h.type, "ux")
         self.assertEqual(h.integration_time, 0.2294)
         self.assertEqual(h.dead_time, 0.000000031)
@@ -42,50 +42,60 @@ class UVFileReaderTestCase(unittest.TestCase):
         self.assertEqual(h.dark, 1.2)
 
         # Negative latitude / longitude
-        h = UVFileHeader.from_header_line("ux Integration time is 0.2294 seconds per sample dt 3.1E-08 cy 3 dh 20 02 17 Arenosillo "
-                                          "-6.7828 -9.6754 3 pr 1000dark 1.2")
+        h = UVFileHeader.from_header_line(
+            "ux Integration time is 0.2294 seconds per sample dt 3.1E-08 cy 3 dh 20 02 17 Arenosillo " "-6.7828 -9.6754 3 pr 1000dark 1.2"
+        )
         self.assertEqual(h.position.latitude, -6.7828)
         self.assertEqual(h.position.longitude, -9.6754)
 
         # Single space after place
-        h = UVFileHeader.from_header_line("ux Integration time is 0.2294 seconds per sample dt 3.1E-08 cy 3 dh 20 02 17 Arenosillo "
-                                          "37.1 6.73 3 pr 1000dark 1.2")
+        h = UVFileHeader.from_header_line(
+            "ux Integration time is 0.2294 seconds per sample dt 3.1E-08 cy 3 dh 20 02 17 Arenosillo " "37.1 6.73 3 pr 1000dark 1.2"
+        )
         self.assertEqual(h.place, "Arenosillo")
 
         # Double space before place
-        h = UVFileHeader.from_header_line("ux Integration time is 0.2294 seconds per sample dt 3.1E-08 cy 3 dh 20 02 17  Arenosillo "
-                                          "37.1 6.73 3 pr 1000dark 1.2")
+        h = UVFileHeader.from_header_line(
+            "ux Integration time is 0.2294 seconds per sample dt 3.1E-08 cy 3 dh 20 02 17  Arenosillo " "37.1 6.73 3 pr 1000dark 1.2"
+        )
         self.assertEqual(h.place, "Arenosillo")
 
         # Double space before and after place
-        h = UVFileHeader.from_header_line("ux Integration time is 0.2294 seconds per sample dt 3.1E-08 cy 3 dh 20 02 17  Arenosillo  "
-                                          "37.1 6.73 3 pr 1000dark 1.2")
+        h = UVFileHeader.from_header_line(
+            "ux Integration time is 0.2294 seconds per sample dt 3.1E-08 cy 3 dh 20 02 17  Arenosillo  " "37.1 6.73 3 pr 1000dark 1.2"
+        )
         self.assertEqual(h.place, "Arenosillo")
 
         # Scientific notation
-        UVFileHeader.from_header_line("ux Integration time is 3.1E-08 seconds per sample dt 3.1E-08 cy 3 dh 20 02 17 Arenosillo  "
-                                      "3.1E-08 3.1E-08 3 pr 1000dark 3.1E-08")
+        UVFileHeader.from_header_line(
+            "ux Integration time is 3.1E-08 seconds per sample dt 3.1E-08 cy 3 dh 20 02 17 Arenosillo  "
+            "3.1E-08 3.1E-08 3 pr 1000dark 3.1E-08"
+        )
 
         # Two words place
-        h = UVFileHeader.from_header_line("ux Integration time is 0.2294 seconds per sample dt 3.1E-08 cy 3 dh 20 02 17 Davos Dorf  "
-                                          "37.1 6.73 3 pr 1000dark 1.2")
+        h = UVFileHeader.from_header_line(
+            "ux Integration time is 0.2294 seconds per sample dt 3.1E-08 cy 3 dh 20 02 17 Davos Dorf  " "37.1 6.73 3 pr 1000dark 1.2"
+        )
         self.assertEqual(h.place, "Davos Dorf")
 
         # Two words place with single space after
-        h = UVFileHeader.from_header_line("ux Integration time is 0.2294 seconds per sample dt 3.1E-08 cy 3 dh 20 02 17 Davos Dorf "
-                                          "37.1 6.73 3 pr 1000dark 1.2")
+        h = UVFileHeader.from_header_line(
+            "ux Integration time is 0.2294 seconds per sample dt 3.1E-08 cy 3 dh 20 02 17 Davos Dorf " "37.1 6.73 3 pr 1000dark 1.2"
+        )
         self.assertEqual(h.place, "Davos Dorf")
 
         # Space between pr and dark
-        h = UVFileHeader.from_header_line("ux Integration time is 0.2294 seconds per sample dt 0.000000031 cy 3 dh 20 02 17 "
-                                          "Arenosillo  37.1 6.73 3 pr 44 dark 1.2")
+        h = UVFileHeader.from_header_line(
+            "ux Integration time is 0.2294 seconds per sample dt 0.000000031 cy 3 dh 20 02 17 " "Arenosillo  37.1 6.73 3 pr 44 dark 1.2"
+        )
         self.assertEqual(h.pressure, 44)
 
     def test_header_failures(self):
         # Three letter type
         with self.assertRaises(ValueError):
-            UVFileHeader.from_header_line("uvx Integration time is 0.2294 seconds per sample dt 3.1E-08 cy 3 dh 20 02 17 Arenosillo  "
-                                          "37.1 6.73 3 pr 1000dark 1.2")
+            UVFileHeader.from_header_line(
+                "uvx Integration time is 0.2294 seconds per sample dt 3.1E-08 cy 3 dh 20 02 17 Arenosillo  " "37.1 6.73 3 pr 1000dark 1.2"
+            )
 
     def test_value_parsing(self):
         v = RawUVValue.from_value_line("0 0 0 0")
@@ -116,7 +126,7 @@ class UVFileReaderTestCase(unittest.TestCase):
             RawUVValue(1, 1, 1, 1, 1),
             RawUVValue(2, 1, 3, 2, 2),
             RawUVValue(4, 2, 4, 4, 4),
-            RawUVValue(6, 2, 6, 6, 6)
+            RawUVValue(6, 2, 6, 6, 6),
         ]
         new_values = UVProvider.mean_of_duplicates(values)
         self.assertEqual(3, len(new_values))

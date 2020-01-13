@@ -59,8 +59,10 @@ class Result:
 
         file.write(f"% Generated with Brewer UV Irradiance Calculation {APP_VERSION} at {datetime.now().replace(microsecond=0)}\n")
 
-        file.write(f"% {self.uv_file_entry.header.place} {self.uv_file_entry.header.position.latitude}N "
-                   f"{self.uv_file_entry.header.position.longitude}W\n")
+        file.write(
+            f"% {self.uv_file_entry.header.place} {self.uv_file_entry.header.position.latitude}N "
+            f"{self.uv_file_entry.header.position.longitude}W\n"
+        )
 
         straylight_correction = correct_straylight(self.calculation_input.brewer_type)
         if straylight_correction == StraylightCorrection.UNDEFINED:
@@ -73,7 +75,7 @@ class Result:
             "o3": f"{ozone}DU",
             "albedo": str(albedo),
             "alpha": str(aerosol.alpha),
-            "beta": str(aerosol.beta)
+            "beta": str(aerosol.beta),
         }
         # We join the second line parts like <key>=<value> and separate them with a tabulation (\t)
         file.write("% " + ("\t".join("=".join(_) for _ in second_line_parts.items())) + "\n")
@@ -81,9 +83,11 @@ class Result:
         file.write(f"% wavelength(nm)	spectral_irradiance(W m-2 nm-1)	time_hour_UTC\n")
 
         for i in range(len(self.spectrum.wavelengths)):
-            file.write(f"{self.spectrum.wavelengths[i]:.1f}\t "
-                       f"{self.spectrum.cos_corrected_spectrum[i] / 1000:.9f}\t   "  # converted to W m-2 nm-1
-                       f"{self.spectrum.measurement_times[i] / 60:.5f}\n")  # converted to hours
+            file.write(
+                f"{self.spectrum.wavelengths[i]:.1f}\t "
+                f"{self.spectrum.cos_corrected_spectrum[i] / 1000:.9f}\t   "  # converted to W m-2 nm-1
+                f"{self.spectrum.measurement_times[i] / 60:.5f}\n"
+            )  # converted to hours
 
     def get_name(self, prefix: str = "", suffix: str = "") -> str:
         """
@@ -109,8 +113,7 @@ class Result:
         bid = self.calculation_input.brewer_id
         d = self.uv_file_entry.header.date
         agency = "TODO"  # TODO
-        file_name = f"{d.year:04d}{d.month:02d}{d.day:02d}.Brewer.{self.calculation_input.brewer_type.upper()}.{bid}" \
-                    f".{agency}.csv"
+        file_name = f"{d.year:04d}{d.month:02d}{d.day:02d}.Brewer.{self.calculation_input.brewer_type.upper()}.{bid}" f".{agency}.csv"
         return path.join(self.get_relative_path(), file_name)
 
     def get_uver_name(self):

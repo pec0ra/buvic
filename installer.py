@@ -34,17 +34,17 @@ CONTAINER_NAME_KEY = "container_name"
 PERSIST_KEY = "persist"
 DARKSKY_TOKEN_KEY = "darksky_token"
 
-CONFIG_FILE_PATH = os.path.join(os.path.expanduser("~"), '.buvic.conf')
-FNULL = open(os.devnull, 'w')
+CONFIG_FILE_PATH = os.path.join(os.path.expanduser("~"), ".buvic.conf")
+FNULL = open(os.devnull, "w")
 
 
 class Colors:
-    HEADER = '\x1b[37;44m'
-    LIGHTGRAY = '\x1b[37m'
-    OKBLUE = '\x1b[34m'
-    ERROR = '\x1b[31m'
-    WARNING = '\x1b[33m'
-    ENDC = '\x1b[0m'
+    HEADER = "\x1b[37;44m"
+    LIGHTGRAY = "\x1b[37m"
+    OKBLUE = "\x1b[34m"
+    ERROR = "\x1b[31m"
+    WARNING = "\x1b[33m"
+    ENDC = "\x1b[0m"
 
 
 def p(text, color):
@@ -60,9 +60,9 @@ def save_config(port, instr_path, uvdata_path, output_path, user, container_name
         USER_KEY: user,
         CONTAINER_NAME_KEY: container_name,
         PERSIST_KEY: persist,
-        DARKSKY_TOKEN_KEY: darksky_token
+        DARKSKY_TOKEN_KEY: darksky_token,
     }
-    with open(CONFIG_FILE_PATH, 'w') as config_file:
+    with open(CONFIG_FILE_PATH, "w") as config_file:
         json.dump(config, config_file)
     print(f"Config file saved to '{CONFIG_FILE_PATH}'.")
     print()
@@ -74,7 +74,7 @@ def load_config():
 
     print("* A config file was found from a previous install. Do you want to reuse its values? (Y/n)")
     if check_yes_no():
-        with open(CONFIG_FILE_PATH, 'r') as config_file:
+        with open(CONFIG_FILE_PATH, "r") as config_file:
             config = json.load(config_file)
             print("* Config loaded")
             return config
@@ -83,9 +83,9 @@ def load_config():
 
 
 def check_yes_no():
-    print(Colors.OKBLUE, end='')
+    print(Colors.OKBLUE, end="")
     value = input()
-    print(Colors.ENDC, end='')
+    print(Colors.ENDC, end="")
     if value.lower() == "n" or value.lower() == "no":
         return False
     else:
@@ -93,11 +93,11 @@ def check_yes_no():
 
 
 def run_command(command, show_std_err=False, pipe_stdout=True):
-    print(Colors.LIGHTGRAY, end='', flush=True)
+    print(Colors.LIGHTGRAY, end="", flush=True)
     stderr = None if show_std_err else FNULL
     stdout = PIPE if pipe_stdout else None
     result = run(command, stdout=stdout, stderr=stderr, shell=True)
-    print(Colors.ENDC, end='', flush=True)
+    print(Colors.ENDC, end="", flush=True)
     return result
 
 
@@ -114,9 +114,9 @@ def check_command(command, show_std_err=False):
 
 def input_check(check_value, error_message=None, default_value=None, none_default=False):
     while True:
-        print(Colors.OKBLUE, end='')
+        print(Colors.OKBLUE, end="")
         value = input()
-        print(Colors.ENDC, end='')
+        print(Colors.ENDC, end="")
         if not value and (default_value is not None or none_default):
             return default_value
         try:
@@ -129,7 +129,7 @@ def input_check(check_value, error_message=None, default_value=None, none_defaul
 
 
 def check_container_name(name):
-    if ' ' in name:
+    if " " in name:
         raise ValueError("Container name cannot contain spaces")
     return name
 
@@ -249,7 +249,7 @@ def run_installer():
 
     if "DOCKER_REPOSITORY" in os.environ:
         # If the environment variable `DOCKER_REPOSITORY` is defined, we use it as registry
-        docker_repository = os.path.join(os.environ['DOCKER_REPOSITORY'], '')
+        docker_repository = os.path.join(os.environ["DOCKER_REPOSITORY"], "")
         link = f"https://{docker_repository}v2/pmodwrc/buvic/tags/list"
         with urllib.request.urlopen(link) as url:
             data = json.loads(url.read().decode())
@@ -261,7 +261,7 @@ def run_installer():
             data = json.loads(url.read().decode())
         tags = [d["name"] for d in data]
 
-    if 'SHOW_DOCKER_PRERELEASES' not in os.environ:
+    if "SHOW_DOCKER_PRERELEASES" not in os.environ:
         tag_regex = re.compile(r"^v([0-9.]+)$")
         tags = [t for t in tags if tag_regex.match(t) is not None]
 
@@ -285,9 +285,9 @@ def run_installer():
 
     if must_pull:
         print("* Pulling docker image")
-        print(Colors.LIGHTGRAY, end='', flush=True)
+        print(Colors.LIGHTGRAY, end="", flush=True)
         result = call(["docker", "pull", f"{docker_repository}pmodwrc/buvic{version}"])
-        print(Colors.ENDC, end='', flush=True)
+        print(Colors.ENDC, end="", flush=True)
         if result != 0:
             p("ERROR: An error occurred while pulling image!", Colors.ERROR)
             print("Exiting")
@@ -295,7 +295,7 @@ def run_installer():
 
     print()
 
-    if check_command(f"docker ps -a | grep -q \" {container_name}$\""):
+    if check_command(f'docker ps -a | grep -q " {container_name}$"'):
         print(f"* A container with the name {container_name} already exist. Do you want to replace it? (Y/n)")
         if check_yes_no():
             print()
@@ -312,9 +312,9 @@ def run_installer():
 
     if not check_command(f"docker volume inspect buvic-settings >/dev/null 2>&1 || exit 1"):
         print("* Creating volume for settings")
-        print(Colors.LIGHTGRAY, end='', flush=True)
+        print(Colors.LIGHTGRAY, end="", flush=True)
         result = run("docker volume create --name buvic-settings", shell=True)
-        print(Colors.ENDC, end='', flush=True)
+        print(Colors.ENDC, end="", flush=True)
         if result.returncode != 0:
             p("ERROR: An error occurred while creating the buvic settings volume!", Colors.ERROR)
             print("Exiting")
@@ -322,8 +322,17 @@ def run_installer():
         print()
 
     print("* Starting server")
-    docker_command = ["docker", "run", "--init", "-d", f"-p {port}:4444", f"-v {instr_path}:/instr", f"-v {uvdata_path}:/uvdata",
-                      f"-v {output_path}:/out", "-v buvic-settings:/settings"]
+    docker_command = [
+        "docker",
+        "run",
+        "--init",
+        "-d",
+        f"-p {port}:4444",
+        f"-v {instr_path}:/instr",
+        f"-v {uvdata_path}:/uvdata",
+        f"-v {output_path}:/out",
+        "-v buvic-settings:/settings",
+    ]
 
     if user is not None:
         docker_command.extend(["--user", f"{user}"])
@@ -336,9 +345,9 @@ def run_installer():
 
     docker_command.extend(["-e PORT=4444", f"--name {container_name}", f"{docker_repository}pmodwrc/buvic{version}"])
     print(" ".join(docker_command))
-    print(Colors.LIGHTGRAY, end='', flush=True)
+    print(Colors.LIGHTGRAY, end="", flush=True)
     result = run(" ".join(docker_command), shell=True)
-    print(Colors.ENDC, end='', flush=True)
+    print(Colors.ENDC, end="", flush=True)
     if result.returncode != 0:
         p("ERROR: An error occurred while starting the server!", Colors.ERROR)
         print("Exiting")

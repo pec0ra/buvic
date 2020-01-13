@@ -68,39 +68,31 @@ class FileUtils:
             makedirs(self._uvdata_dir)
 
         # Find all arf files
-        self._find_file_recursive(
-            self._instr_dir,
-            self.ARF_FILE_NAME_REGEX,
-            self._match_arf_file
-        )
+        self._find_file_recursive(self._instr_dir, self.ARF_FILE_NAME_REGEX, self._match_arf_file)
 
         # Find all uvr files
         self._find_file_recursive(
             self._instr_dir,
             self.UVR_FILE_NAME_REGEX,
-            lambda file_path, res: self._match_file(file_path, res, self._instr_dir, lambda i: i.uvr_files)
+            lambda file_path, res: self._match_file(file_path, res, self._instr_dir, lambda i: i.uvr_files),
         )
 
         # Find all uv files
         self._find_file_recursive(
             self._uvdata_dir,
             self.UV_FILE_NAME_REGEX,
-            lambda file_path, res: self._match_file(file_path, res, self._uvdata_dir, lambda i: i.uv_files)
+            lambda file_path, res: self._match_file(file_path, res, self._uvdata_dir, lambda i: i.uv_files),
         )
 
         # Find all b files
         self._find_file_recursive(
             self._uvdata_dir,
             self.B_FILE_NAME_REGEX,
-            lambda file_path, res: self._match_file(file_path, res, self._uvdata_dir, lambda i: i.b_files)
+            lambda file_path, res: self._match_file(file_path, res, self._uvdata_dir, lambda i: i.b_files),
         )
 
         # Find all parameter files
-        self._find_file_recursive(
-            self._instr_dir,
-            self.PARAMETER_FILE_NAME_REGEX,
-            self._match_parameter_file
-        )
+        self._find_file_recursive(self._instr_dir, self.PARAMETER_FILE_NAME_REGEX, self._match_parameter_file)
 
         for brewer_id, instrument_files in list(self._file_dict.items()):
             if len(instrument_files.uvr_files) == 0:
@@ -112,8 +104,9 @@ class FileUtils:
                 LOG.warning(f"No UV file exists for brewer id {brewer_id}, skipping")
                 del self._file_dict[brewer_id]
 
-    def get_calculation_inputs_between(self, start_date: date, end_date: date, brewer_id, settings: Settings,
-                                       uvr_file: Optional[str] = None) -> List[CalculationInput]:
+    def get_calculation_inputs_between(
+        self, start_date: date, end_date: date, brewer_id, settings: Settings, uvr_file: Optional[str] = None
+    ) -> List[CalculationInput]:
         """
         Create inputs for all UV Files found for between a start date and an end date for a given brewer id.
 
@@ -181,12 +174,7 @@ class FileUtils:
         return None
 
     def _input_from_files(
-            self,
-            days: str,
-            year: str,
-            brewer_id: str,
-            settings: Settings,
-            uvr_file: Optional[str]
+        self, days: str, year: str, brewer_id: str, settings: Settings, uvr_file: Optional[str]
     ) -> Optional[CalculationInput]:
         """
         Create calculation inputs for a given date given as days since new year and the year, for a given brewer id, for given settings
@@ -233,7 +221,7 @@ class FileUtils:
             calibration_file,
             arf_file,
             brewer_type,
-            parameter_file_name=parameter_file
+            parameter_file_name=parameter_file,
         )
 
     def _find_file_recursive(self, directory: str, pattern: Pattern, match_handler: Callable[[str, Match[str]], None]) -> None:
@@ -267,13 +255,7 @@ class FileUtils:
             raise ValueError(f"Multiple ARF files found for brewer with id {brewer_id}.")
         self._file_dict[brewer_id] = InstrumentFiles(File(file_path, self._uvdata_dir))
 
-    def _match_file(
-            self,
-            file_path: str,
-            res: Match[str],
-            parent_dir: str,
-            field_getter: Callable[[InstrumentFiles], List[File]]
-    ) -> None:
+    def _match_file(self, file_path: str, res: Match[str], parent_dir: str, field_getter: Callable[[InstrumentFiles], List[File]]) -> None:
         """
         Action to perform when on matched files.
 
@@ -454,6 +436,7 @@ class InstrumentFiles:
     """
     The arf, uvr, uv, b and parameter files for one brewer instrument
     """
+
     arf_file: Optional[File]
     uvr_files: List[File] = field(default_factory=list)
     uv_files: List[File] = field(default_factory=list)

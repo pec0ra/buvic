@@ -53,12 +53,12 @@ class CalculationUtils:
     """
 
     def __init__(
-            self,
-            input_dir: str,
-            output_dir: str,
-            init_progress: Callable[[int, str], None] = None,
-            finish_progress: Callable[[float], None] = None,
-            progress_handler: Callable[[float], None] = None,
+        self,
+        input_dir: str,
+        output_dir: str,
+        init_progress: Callable[[int, str], None] = None,
+        finish_progress: Callable[[float], None] = None,
+        progress_handler: Callable[[float], None] = None,
     ):
         """
         Create an instance of JobUtils with the given parameters
@@ -85,9 +85,13 @@ class CalculationUtils:
         :return: the results of the calculation
         """
         start = time.time()
-        LOG.info("Starting calculation for '%s', '%s', '%s' and '%s'", calculation_input.uv_file_name,
-                 calculation_input.b_file_name, calculation_input.calibration_file_name,
-                 calculation_input.arf_file_name)
+        LOG.info(
+            "Starting calculation for '%s', '%s', '%s' and '%s'",
+            calculation_input.uv_file_name,
+            calculation_input.b_file_name,
+            calculation_input.calibration_file_name,
+            calculation_input.arf_file_name,
+        )
 
         # We collect all warnings and add them to the calculation input
         clear_warnings()
@@ -109,9 +113,14 @@ class CalculationUtils:
         duration = time.time() - start
         if self._finish_progress is not None:
             self._finish_progress(duration)
-        LOG.info("Finished calculations for '%s', '%s', '%s' and '%s' in %ds", calculation_input.uv_file_name,
-                 calculation_input.b_file_name, calculation_input.calibration_file_name,
-                 calculation_input.arf_file_name, duration)
+        LOG.info(
+            "Finished calculations for '%s', '%s', '%s' and '%s' in %ds",
+            calculation_input.uv_file_name,
+            calculation_input.b_file_name,
+            calculation_input.calibration_file_name,
+            calculation_input.arf_file_name,
+            duration,
+        )
         return result_list
 
     def watch(self, settings: Settings) -> None:
@@ -153,8 +162,10 @@ class CalculationUtils:
 
         # Initialize the progress bar
         if self._init_progress is not None:
-            self._init_progress(len(calculation_inputs), f"Collecting data for {len(calculation_inputs)} "
-                                                         f"day{'s' if len(calculation_inputs) > 1 else ''}...")
+            self._init_progress(
+                len(calculation_inputs),
+                f"Collecting data for {len(calculation_inputs)} " f"day{'s' if len(calculation_inputs) > 1 else ''}...",
+            )
 
         # We initialize the data (reading files / querying eubrewnet) and create the jobs on multiple threads for improved performance
         with ThreadPoolExecutor(max_workers=self._get_thread_count()) as thread_pool:
@@ -169,14 +180,18 @@ class CalculationUtils:
             return self._handle_empty_input()
 
         valid_input_count = len(
-            [calculation_input for calculation_input in calculation_inputs if len(calculation_input.uv_file_entries) > 0])
+            [calculation_input for calculation_input in calculation_inputs if len(calculation_input.uv_file_entries) > 0]
+        )
         LOG.info("Starting calculation of %d file sections in %d files", len(job_list), valid_input_count)
 
         # Init progress bar
         if self._init_progress is not None:
-            self._init_progress(len(job_list), f"Calculating irradiance for {len(job_list)} "
-                                               f"section{'s' if len(job_list) > 1 else ''} in {valid_input_count} "
-                                               f"file{'s' if valid_input_count > 1 else ''}...")
+            self._init_progress(
+                len(job_list),
+                f"Calculating irradiance for {len(job_list)} "
+                f"section{'s' if len(job_list) > 1 else ''} in {valid_input_count} "
+                f"file{'s' if valid_input_count > 1 else ''}...",
+            )
 
         # Execute the jobs
         ret = self._execute_jobs(job_list)
@@ -236,30 +251,34 @@ class CalculationUtils:
         arf_file_name = "arf_" + brewer_id + ".dat"
         parameter_file_name = year + ".par"
 
-        uv_file: File = File(path.join(self._input_dir, UV_FILES_SUBDIR, uv_file_name),
-                             path.join(self._input_dir, UV_FILES_SUBDIR))
+        uv_file: File = File(path.join(self._input_dir, UV_FILES_SUBDIR, uv_file_name), path.join(self._input_dir, UV_FILES_SUBDIR))
         if not path.exists(uv_file.full_path):
             LOG.info("UV file '" + str(uv_file) + "' not found, skipping")
             return None
 
-        b_file: Optional[File] = File(path.join(self._input_dir, B_FILES_SUBDIR, b_file_name),
-                                      path.join(self._input_dir, B_FILES_SUBDIR))
+        b_file: Optional[File] = File(path.join(self._input_dir, B_FILES_SUBDIR, b_file_name), path.join(self._input_dir, B_FILES_SUBDIR))
         if b_file is not None and not path.exists(b_file.full_path):
-            LOG.warning(f"Corresponding B file '{b_file}' not found for UV file '{uv_file}', will use default ozone "
-                        "values and straylight correction will be applied as default")
-            warn(f"Corresponding B file '{b_file}' not found for UV file '{uv_file}', default ozone value is used"
-                 f"and straylight correction is applied")
+            LOG.warning(
+                f"Corresponding B file '{b_file}' not found for UV file '{uv_file}', will use default ozone "
+                "values and straylight correction will be applied as default"
+            )
+            warn(
+                f"Corresponding B file '{b_file}' not found for UV file '{uv_file}', default ozone value is used"
+                f"and straylight correction is applied"
+            )
             b_file = None
 
-        arf_file: Optional[File] = File(path.join(self._input_dir, ARF_FILES_SUBDIR, arf_file_name),
-                                        path.join(self._input_dir, ARF_FILES_SUBDIR))
+        arf_file: Optional[File] = File(
+            path.join(self._input_dir, ARF_FILES_SUBDIR, arf_file_name), path.join(self._input_dir, ARF_FILES_SUBDIR)
+        )
         if arf_file is not None and not path.exists(arf_file.full_path):
             LOG.warning("ARF file was not found for UV file '" + uv_file.file_name + "', cos correction will not be applied")
             warn(f"ARF file was not found for UV file '{uv_file.file_name}', cos correction has not been applied")
             arf_file = None
 
-        parameter_file: Optional[File] = File(path.join(self._input_dir, PARAMETER_FILES_SUBDIR, parameter_file_name),
-                                              path.join(self._input_dir, PARAMETER_FILES_SUBDIR))
+        parameter_file: Optional[File] = File(
+            path.join(self._input_dir, PARAMETER_FILES_SUBDIR, parameter_file_name), path.join(self._input_dir, PARAMETER_FILES_SUBDIR)
+        )
         if parameter_file is not None and not path.exists(parameter_file.full_path):
             parameter_file = None
 
@@ -273,7 +292,7 @@ class CalculationUtils:
             uvr_file,
             arf_file,
             BFileOzoneProvider(b_file).get_brewer_type(),
-            parameter_file_name=parameter_file
+            parameter_file_name=parameter_file,
         )
 
     def _execute_jobs(self, jobs: List[Job[Any, Result]]) -> List[Result]:
@@ -346,17 +365,19 @@ class CalculationUtils:
         :return: a list of calculation job.
         """
 
-        LOG.debug("Calculating irradiance for '%s', '%s', '%s' and '%s'", calculation_input.uv_file_name,
-                  calculation_input.b_file_name, calculation_input.calibration_file_name,
-                  calculation_input.arf_file_name)
+        LOG.debug(
+            "Calculating irradiance for '%s', '%s', '%s' and '%s'",
+            calculation_input.uv_file_name,
+            calculation_input.b_file_name,
+            calculation_input.calibration_file_name,
+            calculation_input.arf_file_name,
+        )
 
         ie = IrradianceCalculation(calculation_input)
 
         job_list = []
         for entry_index in range(len(calculation_input.uv_file_entries)):
-            job_list.append(
-                Job(self._job_task, (ie, entry_index))
-            )
+            job_list.append(Job(self._job_task, (ie, entry_index)))
 
         return job_list
 
@@ -375,8 +396,7 @@ class CalculationUtils:
         :param result: the result for which to create the output
         """
 
-        LOG.debug("Starting creating output for section %d of '%s'", result.index,
-                  result.calculation_input.uv_file_name)
+        LOG.debug("Starting creating output for section %d of '%s'", result.index, result.calculation_input.uv_file_name)
 
         create_csv(output_dir, result)
 
@@ -405,8 +425,8 @@ class CalculationUtils:
         return min(20, (cpu_count if cpu_count is not None else 2) + 4)
 
 
-INPUT = TypeVar('INPUT')
-RETURN = TypeVar('RETURN')
+INPUT = TypeVar("INPUT")
+RETURN = TypeVar("RETURN")
 
 
 @dataclass

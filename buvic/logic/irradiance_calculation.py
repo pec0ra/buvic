@@ -49,10 +49,7 @@ class IrradianceCalculation:
 
     _calculation_input: CalculationInput
 
-    def __init__(
-            self,
-            calculation_input: CalculationInput
-    ):
+    def __init__(self, calculation_input: CalculationInput):
         """
         Create an instance from a given CalculationInput
 
@@ -87,8 +84,9 @@ class IrradianceCalculation:
             cos_cor_to_apply = self._calculation_input.cos_correction_to_apply(minutes)
             if cos_cor_to_apply == CosCorrection.DIFFUSE:
                 LOG.debug("Using diffuse correction for time %s", minutes_to_time(minutes).isoformat())
-                cos_correction = divide([1] * len(libradtran_result.columns["sza"]),
-                                        self._calculate_coscor_diff(self._calculation_input.arf))
+                cos_correction = divide(
+                    [1] * len(libradtran_result.columns["sza"]), self._calculate_coscor_diff(self._calculation_input.arf)
+                )
             elif cos_cor_to_apply == CosCorrection.CLEAR_SKY:
                 LOG.debug("Using clear sky correction for time %s", minutes_to_time(minutes).isoformat())
                 cos_correction = self._cos_correction(self._calculation_input.arf, libradtran_result)
@@ -107,18 +105,12 @@ class IrradianceCalculation:
                 uv_file_entry.events,
                 calibrated_spectrum,
                 cos_corrected_spectrum,
-                cos_correction
+                cos_correction,
             )
 
             LOG.debug("Finished calculation for section %d of %s", index, self._calculation_input.uv_file_name)
 
-            return Result(
-                index,
-                self._calculation_input,
-                self._get_sza(libradtran_result),
-                temperature_correction,
-                spectrum
-            )
+            return Result(index, self._calculation_input, self._get_sza(libradtran_result), temperature_correction, spectrum)
 
         except Exception as e:
             LOG.error("An error occurred while doing the calculation", exc_info=True)
@@ -205,31 +197,24 @@ class IrradianceCalculation:
 
         # We set LibRadtran to interpolate to exactly the values we have from the UV file
         step = uv_file_entry.wavelengths[1] - uv_file_entry.wavelengths[0]
-        libradtran.add_input(LibradtranInput.SPLINE,
-                             [uv_file_entry.wavelengths[0], uv_file_entry.wavelengths[-1], step])
+        libradtran.add_input(LibradtranInput.SPLINE, [uv_file_entry.wavelengths[0], uv_file_entry.wavelengths[-1], step])
 
         ozone: Ozone = self._calculation_input.ozone
-        libradtran.add_input(LibradtranInput.OZONE,
-                             [ozone.interpolated_ozone(minutes, self._calculation_input.settings.default_ozone)])
+        libradtran.add_input(LibradtranInput.OZONE, [ozone.interpolated_ozone(minutes, self._calculation_input.settings.default_ozone)])
 
-        libradtran.add_input(LibradtranInput.TIME, [
-            uv_file_header.date.year,
-            uv_file_header.date.month,
-            uv_file_header.date.day,
-            time.hour,
-            time.minute,
-            time.second
-        ])
+        libradtran.add_input(
+            LibradtranInput.TIME,
+            [uv_file_header.date.year, uv_file_header.date.month, uv_file_header.date.day, time.hour, time.minute, time.second],
+        )
 
         days = date_to_days(uv_file_header.date)
         libradtran.add_input(LibradtranInput.PRESSURE, [uv_file_header.pressure])
-        libradtran.add_input(LibradtranInput.ALBEDO, [self._calculation_input.parameters.interpolated_albedo(
-            days,
-            self._calculation_input.settings.default_albedo
-        )])
+        libradtran.add_input(
+            LibradtranInput.ALBEDO,
+            [self._calculation_input.parameters.interpolated_albedo(days, self._calculation_input.settings.default_albedo)],
+        )
         aerosol = self._calculation_input.parameters.interpolated_aerosol(days, self._calculation_input.settings.default_aerosol)
-        libradtran.add_input(LibradtranInput.AEROSOL,
-                             [aerosol.alpha, aerosol.beta])
+        libradtran.add_input(LibradtranInput.AEROSOL, [aerosol.alpha, aerosol.beta])
 
         libradtran.add_outputs(["sza", "edir", "edn", "eglo"])
         result = libradtran.calculate()

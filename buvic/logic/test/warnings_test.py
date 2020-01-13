@@ -24,7 +24,6 @@ from buvic.logic.warnings import warn, get_warnings, clear_warnings
 
 
 class FileUtilsTestCase(unittest.TestCase):
-
     def test(self):
         clear_warnings()
         self._test_warnings()

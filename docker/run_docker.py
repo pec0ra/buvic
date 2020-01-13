@@ -34,9 +34,9 @@ if not os.path.exists(OUTPUT_DIR):
 
 port = 80
 if "PORT" in os.environ:
-    port = int(os.environ['PORT'])
+    port = int(os.environ["PORT"])
 
 init_logging(logging.DEBUG)
 
 # starts the web server
-start(BUVIC, address='0.0.0.0', port=port, start_browser=False, multiple_instance=True, title="BUVIC | Brewer UV Irradiance Calculator")
+start(BUVIC, address="0.0.0.0", port=port, start_browser=False, multiple_instance=True, title="BUVIC | Brewer UV Irradiance Calculator")

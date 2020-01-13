@@ -39,20 +39,17 @@ LOG = getLogger(__name__)
 
 
 class OzoneProvider:
-
     def get_ozone_data(self) -> Ozone:
         raise NotImplementedError("'get_ozone_data' must be implemented in a descendent class")
 
     @staticmethod
     def convert_time(hour: float, minute: float, second: float) -> float:
-        td = timedelta(hours=hour, minutes=minute,
-                       seconds=second)
+        td = timedelta(hours=hour, minutes=minute, seconds=second)
         minutes_since_midnight = td.seconds / 60
         return minutes_since_midnight
 
 
 class EubrewnetOzoneProvider(OzoneProvider):
-
     def __init__(self, brewer_id: str, d: date):
         self._url_string = f"http://rbcce.aemet.es/eubrewnet/data/get/O3L1_5?brewerid={brewer_id}&date={d.isoformat()}"
 
@@ -60,14 +57,13 @@ class EubrewnetOzoneProvider(OzoneProvider):
 
         LOG.info("Retrieving ozone data from %s", self._url_string)
         try:
-            response = requests.get(self._url_string,
-                                    auth=requests.auth.HTTPBasicAuth('are2019', 'arework'))
+            response = requests.get(self._url_string, auth=requests.auth.HTTPBasicAuth("are2019", "arework"))
             data = json.loads(response.text)
             content = data[1:]
             times = []
             values = []
             for line in content:
-                dt = datetime.strptime(line[1][:-1], '%Y%m%dT%H%M%S')
+                dt = datetime.strptime(line[1][:-1], "%Y%m%dT%H%M%S")
                 times.append(self.convert_time(dt.hour, dt.minute, dt.second))
                 values.append(float(line[9]))
             return Ozone(times, values)
@@ -89,30 +85,25 @@ class BFileOzoneProvider(OzoneProvider):
         r"(?:\S+\s+){7}"
         r"(?P<ozone_std>\S+)"
     )
-    INSTRUMENT_CONSTANTS_LINE_REGEX = re.compile(
-        r"inst\s+"
-        r"(?:\S+\s+){22}"
-        r"(?P<brewer_type>\S+)\s+"
-    )
+    INSTRUMENT_CONSTANTS_LINE_REGEX = re.compile(r"inst\s+" r"(?:\S+\s+){22}" r"(?P<brewer_type>\S+)\s+")
 
     def __init__(self, file: Optional[File]):
         self._file = file
 
     def get_ozone_data(self) -> Ozone:
         if self._file is None or not path.exists(self._file.full_path):
-            warn(f"Corresponding B file not found. default ozone value is used "
-                 f"and straylight correction is applied.")
+            warn(f"Corresponding B file not found. default ozone value is used " f"and straylight correction is applied.")
             return Ozone([], [])
 
         LOG.debug("Parsing file: %s", self._file.file_name)
 
-        with open(self._file.full_path, newline='\r\n') as f:
+        with open(self._file.full_path, newline="\r\n") as f:
             try:
                 brewer_type = None
                 times = []
                 values = []
                 for raw_line in f:
-                    line = raw_line.replace('\r', ' ').replace('\n', '').strip()
+                    line = raw_line.replace("\r", " ").replace("\n", "").strip()
                     res = re.match(self.SUMMARY_LINE_REGEX, line)
                     res_constants = re.match(self.INSTRUMENT_CONSTANTS_LINE_REGEX, line)
                     if res is not None:
@@ -120,8 +111,9 @@ class BFileOzoneProvider(OzoneProvider):
                         if float(res.group("air_mass")) > 3.5 or float(res.group("ozone_std")) > 2.5:
                             continue
 
-                        td = timedelta(hours=float(res.group("hours")), minutes=float(res.group("minutes")),
-                                       seconds=float(res.group("seconds")))
+                        td = timedelta(
+                            hours=float(res.group("hours")), minutes=float(res.group("minutes")), seconds=float(res.group("seconds"))
+                        )
                         minutes_since_midnight = td.seconds / 60
                         times.append(minutes_since_midnight)
                         values.append(float(res.group("ozone")))
@@ -133,10 +125,7 @@ class BFileOzoneProvider(OzoneProvider):
                 if brewer_type is None:
                     raise ValueError(f"No brewer type found in b file {self._file.file_name}")
 
-                return Ozone(
-                    times,
-                    values
-                )
+                return Ozone(times, values)
             except Exception as e:
                 raise BFileParsingError("An error occurred while parsing the B File") from e
 
@@ -146,11 +135,11 @@ class BFileOzoneProvider(OzoneProvider):
 
         LOG.debug("Parsing file: %s", self._file.file_name)
 
-        with open(self._file.full_path, newline='\r\n') as f:
+        with open(self._file.full_path, newline="\r\n") as f:
             try:
                 brewer_type = None
                 for raw_line in f:
-                    line = raw_line.replace('\r', ' ').replace('\n', '').strip()
+                    line = raw_line.replace("\r", " ").replace("\n", "").strip()
                     res_constants = re.match(self.INSTRUMENT_CONSTANTS_LINE_REGEX, line)
                     if res_constants is not None:
                         brewer_type = res_constants.group("brewer_type")
@@ -179,7 +168,7 @@ class Ozone:
         if len(self.values) == 1:
             LOG.debug("Ozone object has only one value. Using it")
             return self.values[0]
-        interpolator = interp1d(self.times, self.values, kind='nearest', fill_value='extrapolate')
+        interpolator = interp1d(self.times, self.values, kind="nearest", fill_value="extrapolate")
         return interpolator(time)
 
 

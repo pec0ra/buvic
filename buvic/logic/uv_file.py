@@ -61,13 +61,7 @@ class UVProvider:
                     std = 0
                 else:
                     std = divide(1, sqrt(events))
-                ret_list.append(RawUVValue(
-                    time,
-                    wavelength,
-                    step,
-                    events,
-                    std
-                ))
+                ret_list.append(RawUVValue(time, wavelength, step, events, std))
         return ret_list
 
 
@@ -91,7 +85,7 @@ class UVFileUVProvider(UVProvider):
         """
 
         self._file_name: str = file_name
-        with open(file_name, newline='\r\n') as file:
+        with open(file_name, newline="\r\n") as file:
             self._uv_file_entries: List[UVFileEntry] = self.__parse(file)
 
     def __parse(self, file: TextIO) -> List[UVFileEntry]:
@@ -107,7 +101,7 @@ class UVFileUVProvider(UVProvider):
         header_line = self.__read_line(file)
 
         # Loop until end of file. Each iteration in the loop corresponds to one entry (header + values)
-        while header_line.strip() != '\x1A' and header_line.strip() != '':
+        while header_line.strip() != "\x1A" and header_line.strip() != "":
 
             # Parse the header
             header = UVFileHeader.from_header_line(header_line)
@@ -117,7 +111,7 @@ class UVFileUVProvider(UVProvider):
             # Parse the values
             values = []
             next_line = self.__read_line(file)
-            while "dark" not in next_line and "end" not in next_line and next_line != '':
+            while "dark" not in next_line and "end" not in next_line and next_line != "":
                 values.append(RawUVValue.from_value_line(next_line))
                 next_line = self.__read_line(file)
 
@@ -134,14 +128,11 @@ class UVFileUVProvider(UVProvider):
                     old_value.std = divide(1, sqrt(old_value.events))
                     next_line = self.__read_line(file)
 
-                if "end" not in next_line and next_line != '':
+                if "end" not in next_line and next_line != "":
                     raise UVFileParsingError("Failed parsing uv section. Expected 'end' but found " + next_line)
 
             # Create the resulting entry and add it to the result
-            entry = UVFileEntry(
-                header,
-                values
-            )
+            entry = UVFileEntry(header, values)
             entries.append(entry)
 
             header_line = self.__read_line(file)
@@ -170,19 +161,20 @@ class UVFileUVProvider(UVProvider):
         :param file: the file to read the line from
         :return: the line
         """
-        return file.readline().replace('\r', ' ').replace('\n', '')
+        return file.readline().replace("\r", " ").replace("\n", "")
 
 
 class EubrewnetUVProvider(UVProvider):
-
     def __init__(self, brewer_id: str, d: date):
         self._brewer_id = brewer_id
         self._date = d
 
     def get_uv_file_entries(self) -> List[UVFileEntry]:
 
-        url_string = f"http://rbcce.aemet.es/eubrewnet/getdataold/getUVAvailableScanTypes?brewerid={self._brewer_id}" \
-                     f"&date={self._date.isoformat()}"
+        url_string = (
+            f"http://rbcce.aemet.es/eubrewnet/getdataold/getUVAvailableScanTypes?brewerid={self._brewer_id}"
+            f"&date={self._date.isoformat()}"
+        )
         LOG.info("Retrieved scan types from %s", url_string)
         try:
             with urllib.request.urlopen(url_string) as url:
@@ -192,13 +184,15 @@ class EubrewnetUVProvider(UVProvider):
 
         file_entries = []
         for scan_type in scan_types:
-            url_string = f"http://rbcce.aemet.es/eubrewnet/getdataold/getUV?scantype={scan_type}" \
-                         f"&brewerid={self._brewer_id}&date={self._date.isoformat()}"
+            url_string = (
+                f"http://rbcce.aemet.es/eubrewnet/getdataold/getUV?scantype={scan_type}"
+                f"&brewerid={self._brewer_id}&date={self._date.isoformat()}"
+            )
             LOG.info("Retrieved uv data from %s", url_string)
             try:
                 with urllib.request.urlopen(url_string) as url:
                     data = json.loads(url.read().decode())
-                    for d in [data[i:i + 5] for i in range(0, len(data), 5)]:
+                    for d in [data[i : i + 5] for i in range(0, len(data), 5)]:
                         header_list = d[0]
                         times = d[1]
                         wavelengths = d[2]
@@ -215,7 +209,7 @@ class EubrewnetUVProvider(UVProvider):
                             position=Position(header_list[7], header_list[8]),
                             temperature=_convert_temperature(header_list[9]),
                             pressure=header_list[10],
-                            dark=header_list[11]
+                            dark=header_list[11],
                         )
                         values = []
                         for i in range(0, len(times)):
@@ -224,18 +218,9 @@ class EubrewnetUVProvider(UVProvider):
                                 std = 0
                             else:
                                 std = divide(1, sqrt(events))
-                            values.append(RawUVValue(
-                                times[i],
-                                wavelengths[i] / 10,
-                                steps[i],
-                                events,
-                                std
-                            ))
+                            values.append(RawUVValue(times[i], wavelengths[i] / 10, steps[i], events, std))
 
-                        file_entries.append(UVFileEntry(
-                            header,
-                            self.mean_of_duplicates(values)
-                        ))
+                        file_entries.append(UVFileEntry(header, self.mean_of_duplicates(values)))
             except HTTPError as e:
                 raise Exception(f"Error while trying to access eubrewnet ({url_string}). {e}") from e
         return file_entries
@@ -286,23 +271,25 @@ class UVFileHeader:
         if res is None:
             raise UVFileParsingError("Unable to parse header.\nHeader: '" + header_line + "'")
 
-        integration_time = float(res.group('integration_time'))
+        integration_time = float(res.group("integration_time"))
         if integration_time == 0.1147:
-            warn("Integration time is 0.1147. This might be correct but there is a high chance that the value that you"
-                 "want is 0.2294 instead.")
+            warn(
+                "Integration time is 0.1147. This might be correct but there is a high chance that the value that you"
+                "want is 0.2294 instead."
+            )
 
         return UVFileHeader(
             raw_header_line=header_line,
-            type=res.group('type'),
-            integration_time=float(res.group('integration_time')),
-            dead_time=float(res.group('dead_time')),
-            cycles=int(res.group('cycles')),
-            date=date(int(2000 + int(res.group('year'))), int(res.group('month')), int(res.group('day'))),
-            place=res.group('place'),
-            position=Position(float(res.group('latitude')), float(res.group('longitude'))),
-            temperature=_convert_temperature(float(res.group('temperature'))),
-            pressure=float(res.group('pressure')),
-            dark=float(res.group('dark'))
+            type=res.group("type"),
+            integration_time=float(res.group("integration_time")),
+            dead_time=float(res.group("dead_time")),
+            cycles=int(res.group("cycles")),
+            date=date(int(2000 + int(res.group("year"))), int(res.group("month")), int(res.group("day"))),
+            place=res.group("place"),
+            position=Position(float(res.group("latitude")), float(res.group("longitude"))),
+            temperature=_convert_temperature(float(res.group("temperature"))),
+            pressure=float(res.group("pressure")),
+            dark=float(res.group("dark")),
         )
 
 
@@ -342,13 +329,7 @@ class RawUVValue:
             std = 0
         else:
             std = divide(1, sqrt(events))
-        return RawUVValue(
-            time,
-            wavelength,
-            step,
-            events,
-            std
-        )
+        return RawUVValue(time, wavelength, step, events, std)
 
 
 @dataclass
@@ -369,7 +350,7 @@ class UVFileEntry:
         return [v.time for v in self.raw_values]
 
 
-Position = namedtuple('Position', ['latitude', 'longitude'])
+Position = namedtuple("Position", ["latitude", "longitude"])
 
 
 class UVFileParsingError(ValueError):

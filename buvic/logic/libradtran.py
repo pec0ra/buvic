@@ -32,7 +32,6 @@ from ..const import TMP_FILE_DIR
 
 
 class Libradtran:
-
     def __init__(self):
         self._outputs: List[str] = []
         self._inputs: Dict[LibradtranInput, List[Any]] = {}
@@ -45,8 +44,14 @@ class Libradtran:
         :param input_values: the values for the input
         """
         if not input_type.value.check_input_values(input_values):
-            raise ValueError("Wrong number of input given for input " + input_type.name + ". Expected " +
-                             str(input_type.value.value_count) + " but received " + str(len(input_values)))
+            raise ValueError(
+                "Wrong number of input given for input "
+                + input_type.name
+                + ". Expected "
+                + str(input_type.value.value_count)
+                + " but received "
+                + str(len(input_values))
+            )
         self._inputs[input_type] = input_values
 
     def add_output(self, output: str) -> None:
@@ -82,8 +87,9 @@ class Libradtran:
         command = LIBRADTRAN_COMMAND + " < " + input_file_name
         result = run(command, stdout=PIPE, universal_newlines=True, shell=True)
         if result.returncode != 0:
-            raise ChildProcessError("LibRadtran or docker returned an error. See logs or input file '" +
-                                    input_file_name + "' for more details")
+            raise ChildProcessError(
+                "LibRadtran or docker returned an error. See logs or input file '" + input_file_name + "' for more details"
+            )
 
         # Remove LibRadtran's input file
         os.remove(input_file_name)
@@ -145,8 +151,12 @@ class LibradtranResult:
             line_values = re.split(r"\s+", line.strip())
 
             if len(line_values) != len(column_names):
-                raise ValueError("LibRadtran din't produce the correct amount of columns. Expected: " +
-                                 str(len(column_names)) + ", actual: " + str(len(line_values)))
+                raise ValueError(
+                    "LibRadtran din't produce the correct amount of columns. Expected: "
+                    + str(len(column_names))
+                    + ", actual: "
+                    + str(len(line_values))
+                )
 
             # We add each of the values to the list of its corresponding output
             for i in range(len(column_names)):
@@ -164,52 +174,24 @@ class LibradtranInputInfo:
 
 
 class LibradtranInput(Enum):
-    AEROSOL = LibradtranInputInfo(
-        2,
-        "aerosol_angstrom {} {}"
-    )
-    ALBEDO = LibradtranInputInfo(
-        1,
-        "albedo {}"
-    )
-    LATITUDE = LibradtranInputInfo(
-        2,
-        "latitude {} {}"
-    )
-    LONGITUDE = LibradtranInputInfo(
-        2,
-        "longitude {} {}"
-    )
-    OZONE = LibradtranInputInfo(
-        1,
-        "mol_modify O3 {} DU"
-    )
-    PRESSURE = LibradtranInputInfo(
-        1,
-        "pressure {}"
-    )
-    SPLINE = LibradtranInputInfo(
-        3,
-        "spline {} {} {}"
-    )
-    SZA = LibradtranInputInfo(
-        1,
-        "sza {}"
-    )
-    TIME = LibradtranInputInfo(
-        6,
-        "time {} {} {} {} {} {}"
-    )
-    WAVELENGTH = LibradtranInputInfo(
-        2,
-        "wavelength {} {}"
-    )
+    AEROSOL = LibradtranInputInfo(2, "aerosol_angstrom {} {}")
+    ALBEDO = LibradtranInputInfo(1, "albedo {}")
+    LATITUDE = LibradtranInputInfo(2, "latitude {} {}")
+    LONGITUDE = LibradtranInputInfo(2, "longitude {} {}")
+    OZONE = LibradtranInputInfo(1, "mol_modify O3 {} DU")
+    PRESSURE = LibradtranInputInfo(1, "pressure {}")
+    SPLINE = LibradtranInputInfo(3, "spline {} {} {}")
+    SZA = LibradtranInputInfo(1, "sza {}")
+    TIME = LibradtranInputInfo(6, "time {} {} {} {} {} {}")
+    WAVELENGTH = LibradtranInputInfo(2, "wavelength {} {}")
 
 
-LIBRADTRAN_STATIC_START = "data_files_path /opt/libRadtran/data/\n" \
-                          "atmosphere_file /opt/libRadtran/data/atmmod/afglus.dat # Location of the extraterrestrial spectrum\n" \
-                          "source solar /opt/libRadtran/data/solar_flux/atlas_plus_modtran\n" \
-                          "aerosol_default          # Aerosol\n" \
-                          "rte_solver disort        # Radiative transfer equation solver\n" \
-                          "number_of_streams  8     # Number of streams\n" \
-                          "quiet\n"
+LIBRADTRAN_STATIC_START = (
+    "data_files_path /opt/libRadtran/data/\n"
+    "atmosphere_file /opt/libRadtran/data/atmmod/afglus.dat # Location of the extraterrestrial spectrum\n"
+    "source solar /opt/libRadtran/data/solar_flux/atlas_plus_modtran\n"
+    "aerosol_default          # Aerosol\n"
+    "rte_solver disort        # Radiative transfer equation solver\n"
+    "number_of_streams  8     # Number of streams\n"
+    "quiet\n"
+)

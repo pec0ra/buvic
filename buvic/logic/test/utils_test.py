@@ -24,7 +24,6 @@ from buvic.logic.utils import days_to_date, date_to_days, minutes_to_time, time_
 
 
 class UtilsTestCase(unittest.TestCase):
-
     def test_days_to_date(self):
         d = days_to_date(1, 2019)
         self.assertEqual(d.year, 2019)

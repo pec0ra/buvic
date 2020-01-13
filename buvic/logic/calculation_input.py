@@ -47,6 +47,7 @@ class CalculationInput:
     """
     An input for the `IrradianceCalculation`
     """
+
     brewer_id: str
     date: date
     settings: Settings

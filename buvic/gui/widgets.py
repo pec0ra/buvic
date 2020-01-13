@@ -71,8 +71,7 @@ class Title(gui.Label):
         elif level == Level.H2:
             self.set_style("font-size: 19pt; margin-top: 10px; margin-bottom: 30px")
         elif level == Level.H3:
-            self.set_style(
-                "font-size: 16pt; margin-top: 10px; margin-bottom: 20px")
+            self.set_style("font-size: 16pt; margin-top: 10px; margin-bottom: 20px")
         else:
             self.set_style("font-size: 12pt; margin-top: 5px; margin-bottom: 8px; font-weight: bold")
 
@@ -184,8 +183,7 @@ class MainForm(VBox):
         self._calculate_button = gui.Button("Calculate", style="margin-bottom: 20px")
         self._calculate_button.set_enabled(False)
 
-        self._calculate_button.onclick.do(
-            lambda w: calculate(self.start_calculation))
+        self._calculate_button.onclick.do(lambda w: calculate(self.start_calculation))
 
         self.append(self._calculate_button)
 
@@ -292,14 +290,14 @@ class PathMainForm(MainForm):
 
     def check_fields(self):
         self.clean_warnings()
-        if (self._uv_file is not None and
-                self._calibration_file is not None):
+        if self._uv_file is not None and self._calibration_file is not None:
 
             d, brewer_id = name_to_date_and_brewer_id(self._uv_file)
             brewer_type = BFileOzoneProvider(File(self._b_file) if self._b_file is not None else None).get_brewer_type()
             if brewer_type is None:
-                self.show_warning(f"Straylight correction cannot be determined. Using default:"
-                                  f"{self.settings.default_straylight_correction.value}")
+                self.show_warning(
+                    f"Straylight correction cannot be determined. Using default:" f"{self.settings.default_straylight_correction.value}"
+                )
             # If all fields are valid, we initialize a CalculationInput and enable the button
             self._calculation_input = CalculationInput(
                 brewer_id,
@@ -309,7 +307,7 @@ class PathMainForm(MainForm):
                 File(self._b_file) if self._b_file is not None else None,
                 File(self._calibration_file),
                 File(self._arf_file) if self._arf_file is not None else None,
-                brewer_type
+                brewer_type,
             )
             self._calculate_button.set_enabled(True)
         else:
@@ -452,7 +450,7 @@ class SimpleMainForm(MainForm):
 
     def _on_date_start_change(self, widget: gui.Widget, value: str):
         del widget  # remove unused parameter
-        if value != '' and value is not None:
+        if value != "" and value is not None:
             self._date_start = date.fromisoformat(value)
         else:
             self._date_start = None
@@ -460,7 +458,7 @@ class SimpleMainForm(MainForm):
 
     def _on_date_end_change(self, widget: gui.Widget, value: str):
         del widget  # remove unused parameter
-        if value != '' and value is not None:
+        if value != "" and value is not None:
             self._date_end = date.fromisoformat(value)
         else:
             self._date_end = None
@@ -498,9 +496,9 @@ class SimpleMainForm(MainForm):
     def start_calculation(self, calculation_utils: CalculationUtils) -> List[Result]:
         if self._brewer_id is None or self._date_start is None or self._date_end is None:
             raise Exception("Calculation should not be available with None values")
-        calculation_inputs = self._file_utils.get_calculation_inputs_between(self._date_start, self._date_end, self._brewer_id,
-                                                                             self.settings,
-                                                                             self._uvr_file)
+        calculation_inputs = self._file_utils.get_calculation_inputs_between(
+            self._date_start, self._date_end, self._brewer_id, self.settings, self._uvr_file
+        )
         return calculation_utils.calculate_for_inputs(calculation_inputs)
 
 
@@ -595,8 +593,9 @@ class ResultWidget(VBox):
         """
         vbox = VBox(style="margin-bottom: 20px")
 
-        result_title = Title(Level.H3,
-                             f"{results[0].calculation_input.date.isoformat()} ({date_to_days(results[0].calculation_input.date)})")
+        result_title = Title(
+            Level.H3, f"{results[0].calculation_input.date.isoformat()} ({date_to_days(results[0].calculation_input.date)})"
+        )
         vbox.append(result_title)
 
         if len(results) > 0 and len(results[0].calculation_input.warnings) > 0:
@@ -619,20 +618,24 @@ class ResultWidget(VBox):
         #                                      style="margin-top: 5px; margin-bottom: 5px")
         # vbox.append(download_button)
 
-        download_button = gui.FileDownloader(results[0].get_uver_name(), path.join(OUTPUT_DIR, results[0].get_uver_name()), width=330,
-                                             style="margin-top: 5px; margin-bottom: 5px")
+        download_button = gui.FileDownloader(
+            results[0].get_uver_name(),
+            path.join(OUTPUT_DIR, results[0].get_uver_name()),
+            width=330,
+            style="margin-top: 5px; margin-bottom: 5px",
+        )
         vbox.append(download_button)
 
         for result in results:
-            download_button = gui.FileDownloader(result.get_name(), path.join(OUTPUT_DIR, result.get_name()), width=330,
-                                                 style="margin-top: 5px")
+            download_button = gui.FileDownloader(
+                result.get_name(), path.join(OUTPUT_DIR, result.get_name()), width=330, style="margin-top: 5px"
+            )
             vbox.append(download_button)
 
         return vbox
 
 
 class Icon(gui.Label):
-
     def __init__(self, icon_name, *args, **kwargs):
         """
         Args:
@@ -640,7 +643,7 @@ class Icon(gui.Label):
             kwargs: See Container.__init__()
         """
         super(Icon, self).__init__(icon_name, *args, **kwargs)
-        self.type = 'i'
+        self.type = "i"
         self.attributes["class"] = "material-icons"
         self.set_text(icon_name)
 
@@ -671,8 +674,9 @@ class Modal(Backdrop):
     _extra_buttons: Dict[str, gui.Button]
     _is_closed: bool = False
 
-    def __init__(self, title: str, content: gui.Widget, extra_buttons: List[Tuple[str, Callable[[gui.Widget], None]]] = [], *args,
-                 **kwargs):
+    def __init__(
+        self, title: str, content: gui.Widget, extra_buttons: List[Tuple[str, Callable[[gui.Widget], None]]] = [], *args, **kwargs
+    ):
         super().__init__(*args, **kwargs)
         modal = VBox()
         modal.add_class("modal")
@@ -729,8 +733,9 @@ class SettingsWidget(VBox):
         self._arf_selection.append(gui.DropDownItem("3"))
         self._arf_selection.append(gui.DropDownItem("4"))
         self._arf_selection.set_value(str(settings.arf_column))
-        arf_input = Input("Column of the ARF file to use for the cos correction (column 0 is sza)", self._arf_selection,
-                          style="margin-bottom: 10px")
+        arf_input = Input(
+            "Column of the ARF file to use for the cos correction (column 0 is sza)", self._arf_selection, style="margin-bottom: 10px"
+        )
         self.append(arf_input)
 
         form_title = Title(Level.H4, "Daily file settings")
@@ -740,9 +745,11 @@ class SettingsWidget(VBox):
         for t in WeightedIrradianceType:
             self._weighted_irradiance_type_selection.append(gui.DropDownItem(t))
         self._weighted_irradiance_type_selection.set_value(settings.weighted_irradiance_type)
-        weighted_irradiance_type_input = Input("Type of weight function to use for the weighted irradiance",
-                                               self._weighted_irradiance_type_selection,
-                                               style="margin-bottom: 10px")
+        weighted_irradiance_type_input = Input(
+            "Type of weight function to use for the weighted irradiance",
+            self._weighted_irradiance_type_selection,
+            style="margin-bottom: 10px",
+        )
         self.append(weighted_irradiance_type_input)
 
         coscor_title = Title(Level.H4, "Cos correction")
@@ -758,10 +765,12 @@ class SettingsWidget(VBox):
         coscor_title = Title(Level.H4, "Temperature correction")
         coscor_title.set_style("margin-top: 14px")
         self.append(coscor_title)
-        temperature_explanation = IconLabel("Each value of the spectrum F for a temperature T (°C) will be corrected with a correction "
-                                            "factor C and a reference temperature Tref (°C) with the formula: F * [1 + C * (T - Tref)]",
-                                            "info_outline",
-                                            style="margin-bottom: 10px")
+        temperature_explanation = IconLabel(
+            "Each value of the spectrum F for a temperature T (°C) will be corrected with a correction "
+            "factor C and a reference temperature Tref (°C) with the formula: F * [1 + C * (T - Tref)]",
+            "info_outline",
+            style="margin-bottom: 10px",
+        )
         self.append(temperature_explanation)
 
         # Temperature correction dual field
@@ -779,8 +788,9 @@ class SettingsWidget(VBox):
         default_title = Title(Level.H4, "Default values")
         default_title.set_style("margin-top: 14px")
         self.append(default_title)
-        default_explanation = IconLabel("Will be used if no value is found in the files or via api", "info_outline",
-                                        style="margin-bottom: 10px")
+        default_explanation = IconLabel(
+            "Will be used if no value is found in the files or via api", "info_outline", style="margin-bottom: 10px"
+        )
         self.append(default_explanation)
 
         # Albedo field
@@ -806,8 +816,9 @@ class SettingsWidget(VBox):
         ozone_input = Input("Ozone", self._ozone_spin, style="margin-bottom: 10px")
         self.append(ozone_input)
 
-        self._straylight_checkbox = gui.CheckBoxLabel("Apply straylight correction",
-                                                      style="height: 30px; width: 260px; padding-right: 20px")
+        self._straylight_checkbox = gui.CheckBoxLabel(
+            "Apply straylight correction", style="height: 30px; width: 260px; padding-right: 20px"
+        )
         self._straylight_checkbox.set_value(settings.default_straylight_correction == StraylightCorrection.APPLIED)
         # Click didn't work correctly for checkboxes due to a bug with onclick.
         self._straylight_checkbox.onclick.do(lambda w: self._straylight_checkbox.set_value(not self._straylight_checkbox.get_value()))
@@ -816,12 +827,16 @@ class SettingsWidget(VBox):
         source_title = Title(Level.H4, "Data source")
         source_title.set_style("margin-top: 14px")
         self.append(source_title)
-        source_explanation = IconLabel("Data can either come from files on disk or from the online database eubrewnet.", "info_outline",
-                                       style="margin-bottom: 10px; line-height: 14pt")
+        source_explanation = IconLabel(
+            "Data can either come from files on disk or from the online database eubrewnet.",
+            "info_outline",
+            style="margin-bottom: 10px; line-height: 14pt",
+        )
         self.append(source_explanation)
 
-        self._form_selection_checkbox = gui.CheckBoxLabel("Specify files manually instead of giving a date and a brewer id",
-                                                          style="min-height: 30px; margin-bottom: 6px")
+        self._form_selection_checkbox = gui.CheckBoxLabel(
+            "Specify files manually instead of giving a date and a brewer id", style="min-height: 30px; margin-bottom: 6px"
+        )
         self._form_selection_checkbox.set_value(settings.manual_mode)
         # Click didn't work correctly for checkboxes due to a bug with onclick.
         self._form_selection_checkbox.onclick.do(lambda w: self._form_selection_checkbox_change())
@@ -833,24 +848,21 @@ class SettingsWidget(VBox):
         for source in DataSource:
             self._uv_source_selection.append(gui.DropDownItem(source))
         self._uv_source_selection.set_value(settings.uv_data_source)
-        uv_source_input = Input("UV data source", self._uv_source_selection,
-                                style="margin-bottom: 10px")
+        uv_source_input = Input("UV data source", self._uv_source_selection, style="margin-bottom: 10px")
         self._source_container.append(uv_source_input)
 
         self._ozone_source_selection = gui.DropDown()
         for source in DataSource:
             self._ozone_source_selection.append(gui.DropDownItem(source))
         self._ozone_source_selection.set_value(settings.ozone_data_source)
-        ozone_source_input = Input("Ozone data source", self._ozone_source_selection,
-                                   style="margin-bottom: 10px")
+        ozone_source_input = Input("Ozone data source", self._ozone_source_selection, style="margin-bottom: 10px")
         self._source_container.append(ozone_source_input)
 
         self._uvr_source_selection = gui.DropDown()
         for source in DataSource:
             self._uvr_source_selection.append(gui.DropDownItem(source))
         self._uvr_source_selection.set_value(settings.uvr_data_source)
-        uvr_source_input = Input("UVR data source", self._uvr_source_selection,
-                                 style="margin-bottom: 10px")
+        uvr_source_input = Input("UVR data source", self._uvr_source_selection, style="margin-bottom: 10px")
         self._source_container.append(uvr_source_input)
 
         self.append(self._source_container)
@@ -897,7 +909,7 @@ class SettingsWidget(VBox):
             straylight_correction,
             DataSource(uv_data_source),
             DataSource(ozone_data_source),
-            DataSource(uvr_data_source)
+            DataSource(uvr_data_source),
         )
         settings.write()
         self._show_success()

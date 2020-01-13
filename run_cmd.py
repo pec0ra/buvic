@@ -48,28 +48,49 @@ settings = Settings()
 
 parser = ArgumentParser(description="Calculate irradiance spectra")
 group = parser.add_mutually_exclusive_group(required=True)
-group.add_argument("--dates-and-brewer-id", "-d", nargs=3, metavar=("DATE_START", "DATE_END", "BREWER_ID"),
-                   help="The dates, in iso format (e.g. 2019-03-24, and the id of the brewer to get the data from")
+group.add_argument(
+    "--dates-and-brewer-id",
+    "-d",
+    nargs=3,
+    metavar=("DATE_START", "DATE_END", "BREWER_ID"),
+    help="The dates, in iso format (e.g. 2019-03-24, and the id of the brewer to get the data from",
+)
 
-group.add_argument("--paths", "-p", nargs=4, metavar=("UV_FILE", "B_FILE", "UVR_FILE", "ARF_FILE"),
-                   help="The paths to the files. UV_FILE: The file containing the raw uv measurements. B_FILE: The "
-                        "file containing the ozone measurements. UVR_FILE: The UVR file containing calibration "
-                        "data. ARF_FILE: The file containing the arf data")
+group.add_argument(
+    "--paths",
+    "-p",
+    nargs=4,
+    metavar=("UV_FILE", "B_FILE", "UVR_FILE", "ARF_FILE"),
+    help="The paths to the files. UV_FILE: The file containing the raw uv measurements. B_FILE: The "
+    "file containing the ozone measurements. UVR_FILE: The UVR file containing calibration "
+    "data. ARF_FILE: The file containing the arf data",
+)
 
 group.add_argument("--all", action="store_true", help="Finds and converts all UV files in the input directory")
 
-group.add_argument("--watch", "-w", action="store_true",
-                   help="Watches the input directory for file changes and automatically converts changed UV files")
+group.add_argument(
+    "--watch", "-w", action="store_true", help="Watches the input directory for file changes and automatically converts changed UV files"
+)
 
 parser.add_argument("--input-dir", "-i", help="The directory to get the files from")
 parser.add_argument("--output-dir", "-o", help="The directory to save the results in", default=DEFAULT_OUTPUT)
-parser.add_argument("--albedo", "-a", type=float, help="The albedo value to use for the calculations",
-                    default=settings.default_albedo)
-parser.add_argument("--aerosol", "-e", type=float, nargs=2, metavar=("ALPHA", "BETA"),
-                    default=settings.default_aerosol,
-                    help="The aerosol angstrom's alpha and beta values to use for the calculations.")
-parser.add_argument("--ozone", "-z", type=float, help="The ozone value in DU to use for the calculations if no value is found in a B file",
-                    default=settings.default_ozone)
+parser.add_argument("--albedo", "-a", type=float, help="The albedo value to use for the calculations", default=settings.default_albedo)
+parser.add_argument(
+    "--aerosol",
+    "-e",
+    type=float,
+    nargs=2,
+    metavar=("ALPHA", "BETA"),
+    default=settings.default_aerosol,
+    help="The aerosol angstrom's alpha and beta values to use for the calculations.",
+)
+parser.add_argument(
+    "--ozone",
+    "-z",
+    type=float,
+    help="The ozone value in DU to use for the calculations if no value is found in a B file",
+    default=settings.default_ozone,
+)
 parser.add_argument("--no-coscor", "-c", help="Don't apply cos correction", action="store_true")
 
 args = parser.parse_args()
@@ -94,14 +115,18 @@ if not os.path.exists(TMP_FILE_DIR):
     os.makedirs(TMP_FILE_DIR)
 
 widgets = [
-    " ", progressbar.RotatingMarker(),
-    " ", progressbar.Percentage(), " ",
+    " ",
+    progressbar.RotatingMarker(),
+    " ",
+    progressbar.Percentage(),
+    " ",
     progressbar.Bar("#", "[", "]"),
-    " | ", progressbar.Timer(),
-    " | ", progressbar.ETA(),
+    " | ",
+    progressbar.Timer(),
+    " | ",
+    progressbar.ETA(),
 ]
-progress = progressbar.ProgressBar(initial_value=0, min_value=0, max_value=0,
-                                   widgets=widgets)
+progress = progressbar.ProgressBar(initial_value=0, min_value=0, max_value=0, widgets=widgets)
 m = multiprocessing.Manager()
 lock = m.Lock()
 
@@ -125,8 +150,7 @@ def show_progress(value: float):
 
 if input_dir is None:
     input_dir = DEFAULT_DATA_DIR
-cmd = CalculationUtils(input_dir, output_dir, init_progress=init_progress, progress_handler=show_progress,
-                       finish_progress=finish_progress)
+cmd = CalculationUtils(input_dir, output_dir, init_progress=init_progress, progress_handler=show_progress, finish_progress=finish_progress)
 
 file_utils = FileUtils(input_dir)
 
@@ -156,7 +180,7 @@ elif paths is not None:
         b_file,
         File(input_dir + paths[2], input_dir),
         arf_file,
-        BFileOzoneProvider(b_file).get_brewer_type()
+        BFileOzoneProvider(b_file).get_brewer_type(),
     )
 
     cmd.calculate_for_input(calculation_input)

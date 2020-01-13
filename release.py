@@ -22,7 +22,7 @@ import os
 import sys
 from subprocess import PIPE, run
 
-FNULL = open(os.devnull, 'w')
+FNULL = open(os.devnull, "w")
 
 
 def run_command(command, show_std_err=False, pipe_stdout=True):
@@ -54,7 +54,7 @@ def make_release(new_version):
 
     print()
     print("* Creating git tag")
-    res = run_command(f"git tag {new_version} -a -m \"UV Server {new_version}\"", True)
+    res = run_command(f'git tag {new_version} -a -m "UV Server {new_version}"', True)
     if res.returncode != 0:
         print("An error occurred while creating the tag")
         exit(1)

@@ -44,11 +44,87 @@ class VitD3Spline:
 
     VIT_D3_WAVELENGTH_START = 252
     VIT_D3_WAVELENGTH_END = 330
-    VIT_D3_VALUES = [0.036, 0.039, 0.043, 0.047, 0.051, 0.056, 0.061, 0.066, 0.075, 0.084, 0.093, 0.102, 0.112, 0.122, 0.133, 0.146, 0.160,
-                     0.177, 0.195, 0.216, 0.238, 0.263, 0.289, 0.317, 0.346, 0.376, 0.408, 0.440, 0.474, 0.543, 0.583, 0.617, 0.652, 0.689,
-                     0.725, 0.763, 0.805, 0.842, 0.878, 0.903, 0.928, 0.952, 0.976, 0.983, 0.990, 0.996, 1, 0.977, 0.951, 0.917, 0.878,
-                     0.771, 0.701, 0.634, 0.566, 0.488, 0.395, 0.306, 0.22, 0.156, 0.119, 0.083, 0.049, 0.034, 0.02, 1.41e-2, 9.76e-3,
-                     6.52e-3, 4.36e-3, 2.92e-3, 1.95e-3, 1.31e-3, 8.73e-4, 5.84e-4, 3.9e-4, 2.61e-4, 1.75e-4, 1.17e-4, 7.8e-5]
+    VIT_D3_VALUES = [
+        0.036,
+        0.039,
+        0.043,
+        0.047,
+        0.051,
+        0.056,
+        0.061,
+        0.066,
+        0.075,
+        0.084,
+        0.093,
+        0.102,
+        0.112,
+        0.122,
+        0.133,
+        0.146,
+        0.160,
+        0.177,
+        0.195,
+        0.216,
+        0.238,
+        0.263,
+        0.289,
+        0.317,
+        0.346,
+        0.376,
+        0.408,
+        0.440,
+        0.474,
+        0.543,
+        0.583,
+        0.617,
+        0.652,
+        0.689,
+        0.725,
+        0.763,
+        0.805,
+        0.842,
+        0.878,
+        0.903,
+        0.928,
+        0.952,
+        0.976,
+        0.983,
+        0.990,
+        0.996,
+        1,
+        0.977,
+        0.951,
+        0.917,
+        0.878,
+        0.771,
+        0.701,
+        0.634,
+        0.566,
+        0.488,
+        0.395,
+        0.306,
+        0.22,
+        0.156,
+        0.119,
+        0.083,
+        0.049,
+        0.034,
+        0.02,
+        1.41e-2,
+        9.76e-3,
+        6.52e-3,
+        4.36e-3,
+        2.92e-3,
+        1.95e-3,
+        1.31e-3,
+        8.73e-4,
+        5.84e-4,
+        3.9e-4,
+        2.61e-4,
+        1.75e-4,
+        1.17e-4,
+        7.8e-5,
+    ]
     VIT_D3_WAVELENGTHS = range(VIT_D3_WAVELENGTH_START, VIT_D3_WAVELENGTH_END + 1)
 
     _spline: UnivariateSpline
@@ -147,10 +223,7 @@ class WeightedIrradianceCalculation:
 
     _results: List[Result]
 
-    def __init__(
-            self,
-            results: List[Result]
-    ):
+    def __init__(self, results: List[Result]):
         self._results = results
         self._weighted_irradiance_type = self._results[0].calculation_input.settings.weighted_irradiance_type
 
@@ -161,8 +234,10 @@ class WeightedIrradianceCalculation:
         :return: the weighted irradiance
         """
 
-        LOG.debug(f"Calculating weighted irradiance for type '{self._weighted_irradiance_type.value}' for date "
-                  f"{self._results[0].calculation_input.date.isoformat()}")
+        LOG.debug(
+            f"Calculating weighted irradiance for type '{self._weighted_irradiance_type.value}' for date "
+            f"{self._results[0].calculation_input.date.isoformat()}"
+        )
 
         times = []
         values = []

@@ -24,14 +24,8 @@ from buvic.logic.parameter_file import Parameters, read_parameter_file, Paramete
 
 
 class UVFileReaderTestCase(unittest.TestCase):
-
     def test_interpolation(self):
-        parameters = Parameters(
-            [10, 12, 14],
-            [0.1, 0.3, 0.5],
-            [Angstrom(1, 0.1), Angstrom(1.2, 0.3), Angstrom(1.5, 0.5)],
-            [0, None, 1]
-        )
+        parameters = Parameters([10, 12, 14], [0.1, 0.3, 0.5], [Angstrom(1, 0.1), Angstrom(1.2, 0.3), Angstrom(1.5, 0.5)], [0, None, 1])
 
         self.assertEqual(0.1, parameters.interpolated_albedo(10, 0))
         self.assertEqual(0.1, parameters.interpolated_albedo(9, 0))
@@ -65,12 +59,7 @@ class UVFileReaderTestCase(unittest.TestCase):
         self.assertEqual(None, parameters.cloud_cover(13))
         self.assertEqual(None, parameters.cloud_cover(15))
 
-        parameters = Parameters(
-            [],
-            [],
-            [],
-            []
-        )
+        parameters = Parameters([], [], [], [])
 
         self.assertEqual(0, parameters.interpolated_albedo(0, 0))
         self.assertEqual(0, parameters.interpolated_albedo(10, 0))

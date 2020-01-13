@@ -27,23 +27,13 @@ from buvic.logic.settings import Settings
 
 
 class FileUtilsTestCase(unittest.TestCase):
-
     def test(self):
         result = Result(
             0,
-            CalculationInput(
-                "033",
-                date(2019, 1, 1),
-                Settings(),
-                File("dummy"),
-                File("dummy"),
-                File("dummy"),
-                File("dummy"),
-                None
-            ),
+            CalculationInput("033", date(2019, 1, 1), Settings(), File("dummy"), File("dummy"), File("dummy"), File("dummy"), None),
             44.4,
             0.0,
-            Spectrum([], [70], [], [], [], [])
+            Spectrum([], [70], [], [], [], []),
         )
         name = result.get_name()
         self.assertEqual("0010110G.033", name)
@@ -51,75 +41,41 @@ class FileUtilsTestCase(unittest.TestCase):
         result = Result(
             0,
             CalculationInput(
-                "033",
-                date(2019, 1, 1),
-                Settings(),
-                File("path/to/dummy"),
-                File("path/to/dummy"),
-                File("dummy"),
-                File("dummy"),
-                None
+                "033", date(2019, 1, 1), Settings(), File("path/to/dummy"), File("path/to/dummy"), File("dummy"), File("dummy"), None
             ),
             44.4,
             0.0,
-            Spectrum([], [70], [], [], [], [])
+            Spectrum([], [70], [], [], [], []),
         )
         name = result.get_name()
         self.assertEqual("path/to/0010110G.033", name)
 
         result = Result(
             0,
-            CalculationInput(
-                "033",
-                date(2019, 1, 1),
-                Settings(),
-                None,
-                File("path/to/b/dummy"),
-                File("dummy"),
-                File("dummy"),
-                None
-            ),
+            CalculationInput("033", date(2019, 1, 1), Settings(), None, File("path/to/b/dummy"), File("dummy"), File("dummy"), None),
             44.4,
             0.0,
-            Spectrum([], [70], [], [], [], [])
+            Spectrum([], [70], [], [], [], []),
         )
         name = result.get_name()
         self.assertEqual("path/to/b/0010110G.033", name)
 
         result = Result(
             0,
-            CalculationInput(
-                "033",
-                date(2019, 1, 1),
-                Settings(),
-                File("path/to/uv/dummy"),
-                None,
-                File("dummy"),
-                File("dummy"),
-                None
-            ),
+            CalculationInput("033", date(2019, 1, 1), Settings(), File("path/to/uv/dummy"), None, File("dummy"), File("dummy"), None),
             44.4,
             0.0,
-            Spectrum([], [70], [], [], [], [])
+            Spectrum([], [70], [], [], [], []),
         )
         name = result.get_name()
         self.assertEqual("path/to/uv/0010110G.033", name)
 
         result = Result(
             0,
-            CalculationInput(
-                "033",
-                date(2019, 1, 1),
-                Settings(),
-                None,
-                None,
-                File("dummy"),
-                File("dummy"),
-                None
-            ),
+            CalculationInput("033", date(2019, 1, 1), Settings(), None, None, File("dummy"), File("dummy"), None),
             44.4,
             0.0,
-            Spectrum([], [70], [], [], [], [])
+            Spectrum([], [70], [], [], [], []),
         )
         name = result.get_name()
         self.assertEqual("033/2019/0010110G.033", name)

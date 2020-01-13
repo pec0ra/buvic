@@ -52,7 +52,7 @@ class BUVIC(App):
 
     def __init__(self, *args):
         self._settings = Settings.load()
-        super(BUVIC, self).__init__(*args, static_file_path={'plots': OUTPUT_DIR, 'res': ASSETS_DIR})
+        super(BUVIC, self).__init__(*args, static_file_path={"plots": OUTPUT_DIR, "res": ASSETS_DIR})
 
         self._executor = ThreadPoolExecutor(1)
         self._duration = 0
@@ -101,8 +101,9 @@ class BUVIC(App):
 
         self._main_container.append(self._result_container)
 
-        version = gui.Link("https://github.com/pec0ra/buvic", f"BUVIC {APP_VERSION}",
-                           style="color: #999; align-self: flex-end; margin-top: 30px")
+        version = gui.Link(
+            "https://github.com/pec0ra/buvic", f"BUVIC {APP_VERSION}", style="color: #999; align-self: flex-end; margin-top: 30px"
+        )
         self._main_container.append(version)
 
         self._on_settings_changed()
@@ -135,8 +136,13 @@ class BUVIC(App):
         :param calculation: the calculation to execute
         """
         try:
-            job_utils = CalculationUtils(DATA_DIR, OUTPUT_DIR, init_progress=self._init_progress, progress_handler=self._make_progress,
-                                         finish_progress=self._finish_progress)
+            job_utils = CalculationUtils(
+                DATA_DIR,
+                OUTPUT_DIR,
+                init_progress=self._init_progress,
+                progress_handler=self._make_progress,
+                finish_progress=self._finish_progress,
+            )
             results = calculation(job_utils)
             self._show_result(results)
         except Exception as e:

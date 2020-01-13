@@ -93,12 +93,7 @@ def read_parameter_file(file: Optional[File]) -> Parameters:
 
             LOG.debug("Finished parsing file: %s", file.file_name)
 
-            return Parameters(
-                days,
-                albedos,
-                aerosols,
-                cloud_covers
-            )
+            return Parameters(days, albedos, aerosols, cloud_covers)
         except Exception as e:
             raise ParameterFileParsingError("An error occurred while parsing the parameter File") from e
 
@@ -114,7 +109,7 @@ class Parameters:
         if len(self.albedos) == 0:
             LOG.debug("Parameter object has no albedo value. Using default")
             return default_value
-        interpolator = interp1d(self.days, self.albedos, kind='previous', fill_value='extrapolate')
+        interpolator = interp1d(self.days, self.albedos, kind="previous", fill_value="extrapolate")
         interpolator1 = interpolator(day)
         return interpolator1
 
@@ -122,8 +117,8 @@ class Parameters:
         if len(self.albedos) == 0:
             LOG.debug("Parameter object has no aerosol value. Using default")
             return default_value
-        alpha_interpolator = interp1d(self.days, [a.alpha for a in self.aerosols], kind='previous', fill_value='extrapolate')
-        beta_interpolator = interp1d(self.days, [a.beta for a in self.aerosols], kind='previous', fill_value='extrapolate')
+        alpha_interpolator = interp1d(self.days, [a.alpha for a in self.aerosols], kind="previous", fill_value="extrapolate")
+        beta_interpolator = interp1d(self.days, [a.beta for a in self.aerosols], kind="previous", fill_value="extrapolate")
         return Angstrom(alpha_interpolator(day), beta_interpolator(day))
 
     def cloud_cover(self, day: int) -> Optional[float]:
@@ -134,7 +129,7 @@ class Parameters:
         return self.cloud_covers[index]
 
 
-Angstrom = namedtuple('Angstrom', ['alpha', 'beta'])
+Angstrom = namedtuple("Angstrom", ["alpha", "beta"])
 
 
 class ParameterFileParsingError(ValueError):

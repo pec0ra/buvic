@@ -34,13 +34,11 @@ LOG = getLogger(__name__)
 
 
 class CalibrationProvider:
-
     def get_calibration_data(self) -> Calibration:
         raise NotImplementedError("'get_calibration_data' must be implemented in a descendent class")
 
 
 class EubrewnetCalibrationProvider(CalibrationProvider):
-
     def __init__(self, brewer_id: str, d: date):
         self._url_string = f"http://rbcce.aemet.es/eubrewnet/getdataold/getUVR?brewerid={brewer_id}&date={d.isoformat()}"
 
@@ -55,10 +53,7 @@ class EubrewnetCalibrationProvider(CalibrationProvider):
         wavelengths = [value / 10 for value in data[1]]
         values = data[2]
 
-        return Calibration(
-            wavelengths,
-            values
-        )
+        return Calibration(wavelengths, values)
 
 
 class UVRFileCalibrationProvider(CalibrationProvider):
@@ -88,10 +83,7 @@ class UVRFileCalibrationProvider(CalibrationProvider):
 
             LOG.debug("Finished parsing file: %s", self._file_name)
 
-            return Calibration(
-                wavelengths,
-                values
-            )
+            return Calibration(wavelengths, values)
 
 
 @dataclass

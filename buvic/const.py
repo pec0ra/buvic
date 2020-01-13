@@ -44,4 +44,4 @@ else:
 if "DARKSKY_TOKEN" not in os.environ:
     DARKSKY_TOKEN = None
 else:
-    DARKSKY_TOKEN = os.environ['DARKSKY_TOKEN']
+    DARKSKY_TOKEN = os.environ["DARKSKY_TOKEN"]
