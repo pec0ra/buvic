@@ -192,7 +192,7 @@ class EubrewnetUVProvider(UVProvider):
             try:
                 with urllib.request.urlopen(url_string) as url:
                     data = json.loads(url.read().decode())
-                    for d in [data[i : i + 5] for i in range(0, len(data), 5)]:
+                    for d in [data[i : i + 5] for i in range(0, len(data), 5)]:  # noqa: E203
                         header_list = d[0]
                         times = d[1]
                         wavelengths = d[2]
