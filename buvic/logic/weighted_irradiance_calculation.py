@@ -54,7 +54,7 @@ class VitD3Spline:
     _spline: UnivariateSpline
     _cache: Dict[float, float]
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._spline = UnivariateSpline(self.VIT_D3_WAVELENGTHS, self.VIT_D3_VALUES)
         self._cache = {}
 
@@ -98,7 +98,7 @@ class CorrectionSpline:
 
     _spline: RectBivariateSpline
 
-    def __init__(self, file_name: str):
+    def __init__(self, file_name: str) -> None:
 
         # Load the 2D array from the given file
         correction_values = numpy.genfromtxt(path.join("buvic/logic/data", file_name))

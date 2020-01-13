@@ -22,8 +22,8 @@ import os
 
 from remi import start
 
-from buvic.gui.app import BUVIC
 from buvic.const import TMP_FILE_DIR, OUTPUT_DIR
+from buvic.gui.app import BUVIC
 from buvic.logutils import init_logging
 
 if not os.path.exists(TMP_FILE_DIR):

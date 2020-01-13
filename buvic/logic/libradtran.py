@@ -124,7 +124,7 @@ class Libradtran:
             raise ValueError("At least one output must be set")
 
 
-@dataclass()
+@dataclass
 class LibradtranResult:
     columns: Dict[str, List[float]]
 
