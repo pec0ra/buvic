@@ -35,7 +35,7 @@ class FileUtilsTestCase(unittest.TestCase):
             0.0,
             Spectrum([], [70], [], [], [], []),
         )
-        name = result.get_name()
+        name = result.get_qasume_name()
         self.assertEqual("0010110G.033", name)
 
         result = Result(
@@ -47,7 +47,7 @@ class FileUtilsTestCase(unittest.TestCase):
             0.0,
             Spectrum([], [70], [], [], [], []),
         )
-        name = result.get_name()
+        name = result.get_qasume_name()
         self.assertEqual("path/to/0010110G.033", name)
 
         result = Result(
@@ -57,7 +57,7 @@ class FileUtilsTestCase(unittest.TestCase):
             0.0,
             Spectrum([], [70], [], [], [], []),
         )
-        name = result.get_name()
+        name = result.get_qasume_name()
         self.assertEqual("path/to/b/0010110G.033", name)
 
         result = Result(
@@ -67,7 +67,7 @@ class FileUtilsTestCase(unittest.TestCase):
             0.0,
             Spectrum([], [70], [], [], [], []),
         )
-        name = result.get_name()
+        name = result.get_qasume_name()
         self.assertEqual("path/to/uv/0010110G.033", name)
 
         result = Result(
@@ -77,5 +77,5 @@ class FileUtilsTestCase(unittest.TestCase):
             0.0,
             Spectrum([], [70], [], [], [], []),
         )
-        name = result.get_name()
+        name = result.get_qasume_name()
         self.assertEqual("033/2019/0010110G.033", name)

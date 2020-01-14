@@ -20,16 +20,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
 from os import path
-from typing import TextIO, List
+from typing import List
 
-from buvic.logic.brewer_infos import StraylightCorrection, correct_straylight
-from buvic.logic.darksky import DarkskyCloudCover
 from buvic.logic.utils import date_to_days, minutes_to_time
-from .calculation_input import CalculationInput, CosCorrection
+from .calculation_input import CalculationInput
 from .uv_file import UVFileEntry
-from ..const import APP_VERSION
 
 
 @dataclass
@@ -40,56 +36,7 @@ class Result:
     temperature_correction: float
     spectrum: Spectrum
 
-    def to_qasume(self, file: TextIO) -> None:
-        """
-        Convert this results value into qasume format and write it to a given file
-        :param file: the file to write the qasume content to
-        """
-        minutes = self.uv_file_entry.raw_values[0].time
-        days = date_to_days(self.uv_file_entry.header.date)
-        ozone = self.calculation_input.ozone.interpolated_ozone(minutes, self.calculation_input.settings.default_ozone)
-        albedo = self.calculation_input.parameters.interpolated_albedo(days, self.calculation_input.settings.default_albedo)
-        aerosol = self.calculation_input.parameters.interpolated_aerosol(days, self.calculation_input.settings.default_aerosol)
-        cos_cor_to_apply = self.calculation_input.cos_correction_to_apply(minutes)
-
-        # If the value comes from Darksky, we add the cloud cover in parenthesis after the coscor type
-        cloud_cover_value = ""
-        if cos_cor_to_apply != CosCorrection.NONE and isinstance(self.calculation_input.cloud_cover, DarkskyCloudCover):
-            cloud_cover_value = f"(darksky:{self.calculation_input.cloud_cover.darksky_value(minutes)})"
-
-        file.write(f"% Generated with Brewer UV Irradiance Calculation {APP_VERSION} at {datetime.now().replace(microsecond=0)}\n")
-
-        file.write(
-            f"% {self.uv_file_entry.header.place} {self.uv_file_entry.header.position.latitude}N "
-            f"{self.uv_file_entry.header.position.longitude}W\n"
-        )
-
-        straylight_correction = correct_straylight(self.calculation_input.brewer_type)
-        if straylight_correction == StraylightCorrection.UNDEFINED:
-            straylight_correction = self.calculation_input.settings.default_straylight_correction
-        second_line_parts = {
-            "type": self.uv_file_entry.header.type,
-            "coscor": f"{cos_cor_to_apply.value}{cloud_cover_value}",
-            "tempcor": f"{self.temperature_correction}",
-            "straylightcor": straylight_correction.value,
-            "o3": f"{ozone}DU",
-            "albedo": str(albedo),
-            "alpha": str(aerosol.alpha),
-            "beta": str(aerosol.beta),
-        }
-        # We join the second line parts like <key>=<value> and separate them with a tabulation (\t)
-        file.write("% " + ("\t".join("=".join(_) for _ in second_line_parts.items())) + "\n")
-
-        file.write(f"% wavelength(nm)	spectral_irradiance(W m-2 nm-1)	time_hour_UTC\n")
-
-        for i in range(len(self.spectrum.wavelengths)):
-            file.write(
-                f"{self.spectrum.wavelengths[i]:.1f}\t "
-                f"{self.spectrum.cos_corrected_spectrum[i] / 1000:.9f}\t   "  # converted to W m-2 nm-1
-                f"{self.spectrum.measurement_times[i] / 60:.5f}\n"
-            )  # converted to hours
-
-    def get_name(self, prefix: str = "", suffix: str = "") -> str:
+    def get_qasume_name(self, prefix: str = "", suffix: str = "") -> str:
         """
         Create a name specific to this result.
 

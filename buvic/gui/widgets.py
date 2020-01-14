@@ -628,7 +628,7 @@ class ResultWidget(VBox):
 
         for result in results:
             download_button = gui.FileDownloader(
-                result.get_name(), path.join(OUTPUT_DIR, result.get_name()), width=330, style="margin-top: 5px"
+                result.get_qasume_name(), path.join(OUTPUT_DIR, result.get_qasume_name()), width=330, style="margin-top: 5px"
             )
             vbox.append(download_button)
 

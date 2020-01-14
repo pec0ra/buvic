@@ -24,24 +24,23 @@ import itertools
 import os
 import time
 from concurrent.futures.thread import ThreadPoolExecutor
-from dataclasses import dataclass
 from logging import getLogger
 from os import path
-from typing import Callable, List, Any, TypeVar, Generic, Optional, Tuple
+from typing import Callable, List, Any, Optional, Tuple
 
 from watchdog.observers import Observer
 
 from buvic.const import ARF_FILES_SUBDIR, UV_FILES_SUBDIR, B_FILES_SUBDIR, PARAMETER_FILES_SUBDIR
 from buvic.logic.calculation_event_handler import CalculationEventHandler
 from buvic.logic.file import File
-from buvic.logic.output_utils import create_csv, create_uver
 from buvic.logic.ozone import BFileOzoneProvider
 from buvic.logic.result import Result
 from buvic.logic.settings import Settings
 from buvic.logic.utils import days_to_date
-from buvic.logic.weighted_irradiance_calculation import WeightedIrradianceCalculation
 from .calculation_input import CalculationInput
 from .irradiance_calculation import IrradianceCalculation
+from .job import Job
+from .output import QasumeOutput, UverOutput
 from .warnings import warn, get_warnings, clear_warnings
 
 LOG = getLogger(__name__)
@@ -340,17 +339,7 @@ class CalculationUtils:
                     future.cancel()
                 raise e
 
-        start = time.time()
-        sorted_results = sorted(result_list, key=lambda r: r.uv_file_entry.header.date)
-        for date, result_iter in itertools.groupby(sorted_results, key=lambda r: r.uv_file_entry.header.date):
-            results = sorted(result_iter, key=lambda r: r.spectrum.measurement_times[0])
-            if len(results) != 0:
-                calculation = WeightedIrradianceCalculation(results)
-                create_uver(self._output_dir, results[0].get_uver_name(), calculation)
-
-                # TODO: Deactivate WOUDC format for now
-                # create_woudc(self._output_dir, list(result_iter))
-        LOG.debug(f"File output creation in : {time.time() - start}s")
+        self._generate_output(result_list)
 
         # At this point, we have finished calculating the irradiance and writing the results
         LOG.debug("Finished irradiance calculation for '%s'", result_list[0].calculation_input.uv_file_name)
@@ -385,20 +374,9 @@ class CalculationUtils:
         ie = args[0]
         entry_index = args[1]
         result = ie.calculate(entry_index)
-        self._create_output(result, self._output_dir)
+        # TODO: update doc
+        # self._create_output(result, self._output_dir)
         return result
-
-    @staticmethod
-    def _create_output(result: Result, output_dir: str) -> None:
-        """
-        Create the csv for a given result.
-        The created csv will be saved as file.
-        :param result: the result for which to create the output
-        """
-
-        LOG.debug("Starting creating output for section %d of '%s'", result.index, result.calculation_input.uv_file_name)
-
-        create_csv(output_dir, result)
 
     def _make_progress(self) -> None:
         """
@@ -419,27 +397,61 @@ class CalculationUtils:
 
         return []
 
+    def _generate_output(self, results: List[Result]):
+        start = time.time()
+        output_jobs = []
+        sorted_results = sorted(results, key=lambda r: r.uv_file_entry.header.date)
+
+        for date, result_iter in itertools.groupby(sorted_results, key=lambda r: r.uv_file_entry.header.date):
+            results = sorted(result_iter, key=lambda r: r.spectrum.measurement_times[0])
+            if len(results) != 0:
+                qasume_jobs = QasumeOutput(self._output_dir, results).get_jobs()
+                output_jobs.extend(qasume_jobs)
+
+                uver_jobs = UverOutput(self._output_dir, results).get_jobs()
+                output_jobs.extend(uver_jobs)
+
+                # TODO: Deactivate WOUDC format for now
+                # woudc_jobs = WoudcOutput(self._output_dir, results).get_jobs()
+                # output_jobs.extend(woudc_jobs)
+
+        # Initialize the progress bar
+        if self._init_progress is not None:
+            self._init_progress(
+                len(output_jobs), f"Generating output files",
+            )
+
+        # Create the thread pool
+        with ThreadPoolExecutor(self._get_thread_count()) as thread_pool:
+
+            future_result = []
+            try:
+                # Submit the jobs to the thread pool
+                for job in output_jobs:
+                    future_result.append(thread_pool.submit(job.run))
+
+                try:
+                    for future in future_result:
+                        # Wait for each job to finish
+                        future.result(timeout=40)
+
+                        # Notify the progress bar
+                        self._make_progress()
+
+                except concurrent.futures.TimeoutError as e:
+                    raise ExecutionError("One of the threads took too long to do its calculations.") from e
+
+            except Exception as e:
+                LOG.info("Exception caught in child thread, cancelling all remaining tasks")
+                for future in future_result:
+                    future.cancel()
+                raise e
+        LOG.debug(f"File output creation in : {time.time() - start}s")
+
     @staticmethod
     def _get_thread_count() -> int:
         cpu_count = os.cpu_count() if os.cpu_count() is not None else 2
         return min(20, (cpu_count if cpu_count is not None else 2) + 4)
-
-
-INPUT = TypeVar("INPUT")
-RETURN = TypeVar("RETURN")
-
-
-@dataclass
-class Job(Generic[INPUT, RETURN]):
-    _fn: Callable[[INPUT], RETURN]
-    _args: INPUT
-
-    def run(self) -> RETURN:
-        """
-        Execute the job
-        :return: the job's return value
-        """
-        return self._fn(self._args)  # type: ignore
 
 
 class ExecutionError(Exception):
