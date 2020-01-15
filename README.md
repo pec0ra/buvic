@@ -26,32 +26,19 @@ or retrieved from eubrewnet.
 
 Information about BUVIC's usage and implementation can be found in the [wiki](https://github.com/pec0ra/buvic/wiki)
 
-   * [Home](https://github.com/pec0ra/buvic/wiki)
-   * [About](https://github.com/pec0ra/buvic/wiki/about)
-       * [What is BUVIC](https://github.com/pec0ra/buvic/wiki/about#what-is-buvic)
-       * [What can it do](https://github.com/pec0ra/buvic/wiki/about#what-can-it-do)
-   * [Usage](https://github.com/pec0ra/buvic/wiki/usage)
-       * [Docker](https://github.com/pec0ra/buvic/wiki/usage#docker)
-          * [Requirements](https://github.com/pec0ra/buvic/wiki/usage#requirements)
-          * [Installer](https://github.com/pec0ra/buvic/wiki/usage#installer)
-          * [Demo command](https://github.com/pec0ra/buvic/wiki/usage#demo-command)
-          * [Mapping directories](https://github.com/pec0ra/buvic/wiki/usage#mapping-directories)
-          * [Permissions](https://github.com/pec0ra/buvic/wiki/usage#permissions)
-          * [Darksky](https://github.com/pec0ra/buvic/wiki/usage#darksky)
-       * [Python App](https://github.com/pec0ra/buvic/wiki/usage#python-app)
-          * [Requirements](https://github.com/pec0ra/buvic/wiki/usage#requirements-1)
-   * [Contributing](https://github.com/pec0ra/buvic/wiki/contributing)
-       * [License](https://github.com/pec0ra/buvic/wiki/contributing#license)
-       * [Code style](https://github.com/pec0ra/buvic/wiki/contributing#code-style)
-       * [Releases](https://github.com/pec0ra/buvic/wiki/contributing#releases)
-       * [Implementation Details](https://github.com/pec0ra/buvic/wiki/contributing#implementation-details)
-          * [User Interface](https://github.com/pec0ra/buvic/wiki/contributing#1-user-interface)
-          * [Job creation / handling](https://github.com/pec0ra/buvic/wiki/contributing#2-job-creation--handling)
-          * [Calculations](https://github.com/pec0ra/buvic/wiki/contributing#3-calculations)
-          * [Performance](https://github.com/pec0ra/buvic/wiki/contributing#4-performance)
-
-
-
+  * [Home](https://github.com/pec0ra/buvic/wiki)
+  * [About](https://github.com/pec0ra/buvic/wiki/About)
+  * [Usage](https://github.com/pec0ra/buvic/wiki/Usage)
+    * [Requirements](https://github.com/pec0ra/buvic/wiki/Usage%3A-Requirements)
+    * [Docker](https://github.com/pec0ra/buvic/wiki/Usage%3A-Docker)
+    * [Python App](https://github.com/pec0ra/buvic/wiki/Usage%3A-Python-App)
+  * [Contributing](https://github.com/pec0ra/buvic/wiki/Contributing)
+    * [License](https://github.com/pec0ra/buvic/wiki/Contributing%3A-License)
+    * [Code Style](https://github.com/pec0ra/buvic/wiki/Contributing%3A-Code-Style)
+    * [Releases](https://github.com/pec0ra/buvic/wiki/Contributing%3A-Releases)
+    * [Implementation Details](https://github.com/pec0ra/buvic/wiki/Contributing%3A-Implementation-Details)
+    * [Adding Data Sources](https://github.com/pec0ra/buvic/wiki/Contributing%3A-Adding-Data-Sources)
+    * [Adding Output Formats](https://github.com/pec0ra/buvic/wiki/Contributing%3A-Adding-Output-Formats)
 
 
 # License
