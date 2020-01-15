@@ -5,6 +5,7 @@
 
 Brewer UV Irradiance Calculation (BUVIC) is a tool to calculate the cosine corrected irradiance from brewer raw UV measurements.
 
+A more complete documentation can be found on [BUVIC's wiki](https://github.com/pec0ra/buvic/wiki)
 
 ## Requirements
 
