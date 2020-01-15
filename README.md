@@ -22,6 +22,16 @@ or retrieved from eubrewnet.
 ![GUI](assets/gui2.png)
 
 
+# Usage
+
+To install BUVIC, run the [`installer.py`](installer.py) and follow the instructions. This requires python 3+.
+```
+python installer.py
+```
+
+More information about how to use BUVIC can be found in the [wiki](https://github.com/pec0ra/buvic/wiki/Usage)
+
+
 # Documentation
 
 Information about BUVIC's usage and implementation can be found in the [wiki](https://github.com/pec0ra/buvic/wiki)
