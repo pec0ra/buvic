@@ -296,16 +296,12 @@ class CalculationUtils:
 
     def _execute_jobs(self, jobs: List[Job[Any, Result]]) -> List[Result]:
         """
-        Execute given jobs and create output qasume files for them.
+        Execute given jobs.
 
-        For each one of the given jobs, two things are done:
-            1. The irradiance is calculated
-            2. Qasume files are created and written to the output directory
-
-        We use a ThreadPoolExecutor to schedule the jobs since calling LibRadtran already creates a new process.
+        We use a ThreadPoolExecutor to schedule the jobs to improve performance.
 
         :param jobs: The job to execute
-        :return: the result_iter of the jobs.
+        :return: the results of the jobs.
         """
 
         result_list: List[Result] = []
@@ -370,12 +366,11 @@ class CalculationUtils:
 
         return job_list
 
-    def _job_task(self, args: Tuple[IrradianceCalculation, int]) -> Result:
+    @staticmethod
+    def _job_task(args: Tuple[IrradianceCalculation, int]) -> Result:
         ie = args[0]
         entry_index = args[1]
         result = ie.calculate(entry_index)
-        # TODO: update doc
-        # self._create_output(result, self._output_dir)
         return result
 
     def _make_progress(self) -> None:

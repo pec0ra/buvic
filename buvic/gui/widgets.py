@@ -618,6 +618,7 @@ class ResultWidget(VBox):
         #                                      style="margin-top: 5px; margin-bottom: 5px")
         # vbox.append(download_button)
 
+        # UVER file download button
         download_button = gui.FileDownloader(
             results[0].get_uver_name(),
             path.join(OUTPUT_DIR, results[0].get_uver_name()),
@@ -626,6 +627,7 @@ class ResultWidget(VBox):
         )
         vbox.append(download_button)
 
+        # qasume files download buttons
         for result in results:
             download_button = gui.FileDownloader(
                 result.get_qasume_name(), path.join(OUTPUT_DIR, result.get_qasume_name()), width=330, style="margin-top: 5px"

@@ -20,7 +20,7 @@
 import unittest
 
 from buvic.logic.file import File
-from buvic.logic.parameter_file import Parameters, read_parameter_file, ParameterFileParsingError, Angstrom
+from buvic.logic.parameter_file import Parameters, ParameterFileParsingError, Angstrom, FileParameterProvider
 
 
 class UVFileReaderTestCase(unittest.TestCase):
@@ -77,7 +77,7 @@ class UVFileReaderTestCase(unittest.TestCase):
         self.assertEqual(None, parameters.cloud_cover(1000))
 
     def test_file_loading(self):
-        parameters = read_parameter_file(File("buvic/logic/test/parameter_example"))
+        parameters = FileParameterProvider(File("buvic/logic/test/parameter_example")).get_parameters()
 
         self.assertEqual(0.1, parameters.interpolated_albedo(10, 0))
         self.assertEqual(0.1, parameters.interpolated_albedo(9, 0))
@@ -113,7 +113,7 @@ class UVFileReaderTestCase(unittest.TestCase):
 
     def test_file_failures(self):
         with self.assertRaises(ParameterFileParsingError):
-            read_parameter_file(File("buvic/logic/test/parameter_example_failure_1"))
+            FileParameterProvider(File("buvic/logic/test/parameter_example_failure_1")).get_parameters()
 
         with self.assertRaises(ParameterFileParsingError):
-            read_parameter_file(File("buvic/logic/test/parameter_example_failure_2"))
+            FileParameterProvider(File("buvic/logic/test/parameter_example_failure_2")).get_parameters()

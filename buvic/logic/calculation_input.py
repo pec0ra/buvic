@@ -32,11 +32,11 @@ from buvic.logic.darksky import get_cloud_cover, CloudCover, ParameterCloudCover
 from buvic.logic.file import File
 from buvic.logic.ozone import EubrewnetOzoneProvider
 from buvic.logic.ozone import Ozone, BFileOzoneProvider
-from buvic.logic.parameter_file import Parameters, read_parameter_file
+from buvic.logic.parameter_file import Parameters, FileParameterProvider
 from buvic.logic.settings import Settings, DataSource
 from buvic.logic.utils import date_to_days
 from buvic.logic.uv_file import UVFileUVProvider, UVFileEntry, EubrewnetUVProvider, UVProvider
-from .arf_file import read_arf_file, ARF
+from .arf_file import ARF, FileARFProvider
 from .warnings import warn
 
 LOG = getLogger(__name__)
@@ -91,11 +91,11 @@ class CalculationInput:
             LOG.warning("No arf file specified. Cos correction will not be applied")
             warn(f"ARF file was not found. Cos correction has not been applied")
             return None
-        return read_arf_file(self.arf_file_name.full_path, self.settings.arf_column)
+        return FileARFProvider(self.arf_file_name.full_path, self.settings.arf_column).get_arf()
 
     @cached_property
     def parameters(self) -> Parameters:
-        return read_parameter_file(self.parameter_file_name)
+        return FileParameterProvider(self.parameter_file_name).get_parameters()
 
     @cached_property
     def cloud_cover(self) -> CloudCover:

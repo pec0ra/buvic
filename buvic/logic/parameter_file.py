@@ -33,69 +33,83 @@ from .warnings import warn
 LOG = getLogger(__name__)
 
 
-def read_parameter_file(file: Optional[File]) -> Parameters:
-    """
-    Parse a given B file to read ozone values into a `Ozone` object.
-    :param file: the file to parse
-    :return: the ozone values
-    """
+class ParameterProvider:
+    def get_parameters(self) -> Parameters:
+        """
+        Get the parameters
+        :return: the parameters
+        """
+        raise NotImplementedError("Method must be implemented in subclass")
 
-    if file is None or not path.exists(file.full_path):
-        LOG.warning("Parameter File not found. Using default parameter values")
-        warn(f"Parameter File not found. Using default parameter values")
-        return Parameters([], [], [], [])
 
-    LOG.debug("Parsing file: %s", file.file_name)
+class FileParameterProvider(ParameterProvider):
+    _file: Optional[File]
 
-    with open(file.full_path) as f:
-        try:
+    def __init__(self, file: Optional[File]):
+        self._file = file
 
-            prev_albedo = None
-            prev_aerosol = None
-            days = []
-            albedos = []
-            aerosols = []
-            cloud_covers: List[Optional[float]] = []
-            for raw_line in f:
-                # Each line consists of 5 values separated by one semicolon
-                line_values = raw_line.strip().split(";")
+    def get_parameters(self) -> Parameters:
+        """
+        Parse a given B file to read ozone values into a `Ozone` object.
+        :return: the ozone values
+        """
 
-                if len(line_values) != 5:
-                    raise ValueError("Each line of the parameter file must contain 5 values")
+        if self._file is None or not path.exists(self._file.full_path):
+            LOG.warning("Parameter File not found. Using default parameter values")
+            warn(f"Parameter File not found. Using default parameter values")
+            return Parameters([], [], [], [])
 
-                days.append(int(line_values[0]))
+        LOG.debug("Parsing file: %s", self._file.file_name)
 
-                new_albedo = line_values[1]
-                if new_albedo != "":
-                    albedos.append(float(new_albedo))
-                    prev_albedo = float(new_albedo)
-                else:
-                    if prev_albedo is None:
-                        raise ValueError("The albedo must be defined in the first line of the file")
-                    albedos.append(prev_albedo)
+        with open(self._file.full_path) as f:
+            try:
 
-                new_aerosol_alpha = line_values[2]
-                new_aerosol_beta = line_values[3]
-                if new_aerosol_alpha != "" and new_aerosol_beta != "":
-                    new_aerosol = Angstrom(float(new_aerosol_alpha), float(new_aerosol_beta))
-                    aerosols.append(new_aerosol)
-                    prev_aerosol = new_aerosol
-                else:
-                    if prev_aerosol is None:
-                        raise ValueError("The aerosol must be defined in the first line of the file")
-                    aerosols.append(prev_aerosol)
+                prev_albedo = None
+                prev_aerosol = None
+                days = []
+                albedos = []
+                aerosols = []
+                cloud_covers: List[Optional[float]] = []
+                for raw_line in f:
+                    # Each line consists of 5 values separated by one semicolon
+                    line_values = raw_line.strip().split(";")
 
-                cloud_cover = line_values[4]
-                if cloud_cover != "":
-                    cloud_covers.append(float(cloud_cover))
-                else:
-                    cloud_covers.append(None)
+                    if len(line_values) != 5:
+                        raise ValueError("Each line of the parameter file must contain 5 values")
 
-            LOG.debug("Finished parsing file: %s", file.file_name)
+                    days.append(int(line_values[0]))
 
-            return Parameters(days, albedos, aerosols, cloud_covers)
-        except Exception as e:
-            raise ParameterFileParsingError("An error occurred while parsing the parameter File") from e
+                    new_albedo = line_values[1]
+                    if new_albedo != "":
+                        albedos.append(float(new_albedo))
+                        prev_albedo = float(new_albedo)
+                    else:
+                        if prev_albedo is None:
+                            raise ValueError("The albedo must be defined in the first line of the file")
+                        albedos.append(prev_albedo)
+
+                    new_aerosol_alpha = line_values[2]
+                    new_aerosol_beta = line_values[3]
+                    if new_aerosol_alpha != "" and new_aerosol_beta != "":
+                        new_aerosol = Angstrom(float(new_aerosol_alpha), float(new_aerosol_beta))
+                        aerosols.append(new_aerosol)
+                        prev_aerosol = new_aerosol
+                    else:
+                        if prev_aerosol is None:
+                            raise ValueError("The aerosol must be defined in the first line of the file")
+                        aerosols.append(prev_aerosol)
+
+                    cloud_cover = line_values[4]
+                    if cloud_cover != "":
+                        cloud_covers.append(float(cloud_cover))
+                    else:
+                        cloud_covers.append(None)
+
+                LOG.debug("Finished parsing file: %s", self._file.file_name)
+
+                return Parameters(days, albedos, aerosols, cloud_covers)
+            except Exception as e:
+                raise ParameterFileParsingError("An error occurred while parsing the parameter File") from e
 
 
 @dataclass
