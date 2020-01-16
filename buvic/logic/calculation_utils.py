@@ -40,7 +40,7 @@ from buvic.logic.utils import days_to_date
 from .calculation_input import CalculationInput
 from .irradiance_calculation import IrradianceCalculation
 from .job import Job
-from .output import QasumeOutput, UverOutput
+from .output import QasumeOutput, UverOutput, WoudcOutput
 from .warnings import warn, get_warnings, clear_warnings
 
 LOG = getLogger(__name__)
@@ -411,9 +411,9 @@ class CalculationUtils:
                 uver_jobs = UverOutput(self._output_dir, results).get_jobs()
                 output_jobs.extend(uver_jobs)
 
-                # TODO: Deactivate WOUDC format for now
-                # woudc_jobs = WoudcOutput(self._output_dir, results).get_jobs()
-                # output_jobs.extend(woudc_jobs)
+                if results[0].calculation_input.settings.activate_woudc:
+                    woudc_jobs = WoudcOutput(self._output_dir, results).get_jobs()
+                    output_jobs.extend(woudc_jobs)
 
         # Initialize the progress bar
         if self._init_progress is not None:

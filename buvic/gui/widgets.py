@@ -613,10 +613,10 @@ class ResultWidget(VBox):
         info_label = gui.Label("Output files:", style="font-weight: bold")
         vbox.append(info_label)
 
-        # TODO: show WOUDC download button
-        # download_button = gui.FileDownloader(results[0].get_woudc_name(), path.join(OUTPUT_DIR, results[0].get_woudc_name()), width=330,
-        #                                      style="margin-top: 5px; margin-bottom: 5px")
-        # vbox.append(download_button)
+        if results[0].calculation_input.settings.activate_woudc:
+            download_button = gui.FileDownloader(results[0].get_woudc_name(), path.join(OUTPUT_DIR, results[0].get_woudc_name()), width=330,
+                                                 style="margin-top: 5px; margin-bottom: 5px")
+            vbox.append(download_button)
 
         # UVER file download button
         download_button = gui.FileDownloader(
@@ -706,7 +706,9 @@ class Modal(Backdrop):
         modal.append(buttons)
         self.add_child("modal", modal)
         self.onclick.do(lambda w: self.close())
-        modal.onclick.do(lambda w: "Hello World")
+
+        # Add dummy onclick to stop click event propagation which would close the modal
+        modal.onclick.do(lambda w: True)
 
     def close(self):
         parent: gui.Container = self.get_parent()
@@ -760,8 +762,6 @@ class SettingsWidget(VBox):
 
         self._no_coscor_checkbox = gui.CheckBoxLabel("Skip cos correction", style="height: 30px; width: 260px; padding-right: 20px")
         self._no_coscor_checkbox.set_value(settings.no_coscor)
-        # Click didn't work correctly for checkboxes due to a bug with onclick.
-        self._no_coscor_checkbox.onclick.do(lambda w: self._no_coscor_checkbox.set_value(not self._no_coscor_checkbox.get_value()))
         self.append(self._no_coscor_checkbox)
 
         coscor_title = Title(Level.H4, "Temperature correction")
@@ -822,8 +822,6 @@ class SettingsWidget(VBox):
             "Apply straylight correction", style="height: 30px; width: 260px; padding-right: 20px"
         )
         self._straylight_checkbox.set_value(settings.default_straylight_correction == StraylightCorrection.APPLIED)
-        # Click didn't work correctly for checkboxes due to a bug with onclick.
-        self._straylight_checkbox.onclick.do(lambda w: self._straylight_checkbox.set_value(not self._straylight_checkbox.get_value()))
         self.append(self._straylight_checkbox)
 
         source_title = Title(Level.H4, "Data source")
@@ -840,8 +838,7 @@ class SettingsWidget(VBox):
             "Specify files manually instead of giving a date and a brewer id", style="min-height: 30px; margin-bottom: 6px"
         )
         self._form_selection_checkbox.set_value(settings.manual_mode)
-        # Click didn't work correctly for checkboxes due to a bug with onclick.
-        self._form_selection_checkbox.onclick.do(lambda w: self._form_selection_checkbox_change())
+        self._form_selection_checkbox.onchange.do(lambda w, v: self._update_manual_mode(v))
         self.append(self._form_selection_checkbox)
 
         self._source_container = VBox()
@@ -868,7 +865,26 @@ class SettingsWidget(VBox):
         self._source_container.append(uvr_source_input)
 
         self.append(self._source_container)
-        self._update_manual_mode()
+        self._update_manual_mode(settings.manual_mode)
+
+        woudc_title = Title(Level.H4, "WOUDC output")
+        woudc_title.set_style("margin-top: 14px")
+        self.append(woudc_title)
+        gawsis_link = gui.Link("https://gawsis.meteoswiss.ch/", "GAWSIS")
+        woudc_explanation = IconLabel(
+            "Create files in the WOUDC format which can be submitted to\xa0",
+            "info_outline",
+            style="margin-bottom: 10px",
+        )
+        woudc_explanation.append(gawsis_link)
+
+        self.append(woudc_explanation)
+
+        self._woudc_checkbox = gui.CheckBoxLabel(
+            "Create WOUDC files", style="min-height: 30px; margin-bottom: 6px"
+        )
+        self._woudc_checkbox.set_value(settings.activate_woudc)
+        self.append(self._woudc_checkbox)
 
     def save(self) -> Settings:
         manual_mode = self._form_selection_checkbox.get_value()
@@ -898,6 +914,8 @@ class SettingsWidget(VBox):
         ozone_data_source = self._ozone_source_selection.get_value()
         uvr_data_source = self._uvr_source_selection.get_value()
 
+        activate_woudc = self._woudc_checkbox.get_value()
+
         settings = Settings(
             manual_mode,
             arf_column,
@@ -912,6 +930,7 @@ class SettingsWidget(VBox):
             DataSource(uv_data_source),
             DataSource(ozone_data_source),
             DataSource(uvr_data_source),
+            activate_woudc,
         )
         settings.write()
         self._show_success()
@@ -929,12 +948,8 @@ class SettingsWidget(VBox):
         if self._save_button is not None:
             self._save_button.set_enabled(False)
 
-    def _form_selection_checkbox_change(self):
-        self._form_selection_checkbox.set_value(not self._form_selection_checkbox.get_value())
-        self._update_manual_mode()
-
-    def _update_manual_mode(self):
-        if self._form_selection_checkbox.get_value():
+    def _update_manual_mode(self, value):
+        if value:
             hide(self._source_container)
         else:
             show(self._source_container)

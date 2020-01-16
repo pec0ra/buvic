@@ -43,6 +43,7 @@ DEFAULT_ALBEDO_VALUE = 0.04
 DEFAULT_ALPHA_VALUE = 1.3
 DEFAULT_BETA_VALUE = 0.1
 DEFAULT_OZONE_VALUE = 300
+DEFAULT_ACTIVATE_WOUDC = False
 
 
 class DataSource(str, Enum):
@@ -71,6 +72,8 @@ class Settings:
     uv_data_source: DataSource = DataSource.FILES
     ozone_data_source: DataSource = DataSource.FILES
     uvr_data_source: DataSource = DataSource.FILES
+
+    activate_woudc: bool = DEFAULT_ACTIVATE_WOUDC
 
     def write(self):
         with open(SETTINGS_FILE_PATH, "w") as config_file:
@@ -106,4 +109,7 @@ class Settings:
                 DataSource(dict_settings["uv_data_source"]),
                 DataSource(dict_settings["ozone_data_source"]),
                 DataSource(dict_settings["uvr_data_source"]),
+                dict_settings["activate_woudc"]
+                if "activate_woudc" in dict_settings
+                else DEFAULT_ACTIVATE_WOUDC,
             )

@@ -859,8 +859,7 @@ progress {
 }
 
 .CheckBoxLabel {
-    display: flex;
-    align-items: center;
+    justify-content: unset !important;
 }
 
 .CheckBoxLabel > input {
