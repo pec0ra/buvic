@@ -363,7 +363,7 @@ class SimpleMainForm(MainForm):
 
         self.append(file_form)
 
-        self._refresh_button = gui.Button("Refresh", style="margin-bottom: 10px")
+        self._refresh_button = gui.Button("Refresh files", style="margin-bottom: 10px")
         self._refresh_button.onclick.do(self._refresh)
 
         self.append(self._refresh_button)
