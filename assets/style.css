@@ -858,6 +858,15 @@ progress {
     justify-content: unset !important;
 }
 
+.FileDownloadLink {
+    margin-top: 5px !important;
+}
+
+.LabeledInput > * {
+    width: -moz-available;
+    width: -webkit-fill-available;
+}
+
 .CheckBoxLabel {
     justify-content: unset !important;
 }

@@ -341,20 +341,20 @@ class SimpleMainForm(MainForm):
         self._brewer_dd = gui.DropDown()
         self._update_brewer_ids()
         self._brewer_dd.onchange.do(self._on_bid_change)
-        self._brewer_input = Input("Brewer id", self._brewer_dd, style="margin-right: 20px")
+        self._brewer_input = LabeledInput("Brewer id", self._brewer_dd, style="margin-right: 20px")
 
         self._uvr_dd = gui.DropDown()
         self._update_uvr_files()
         self._uvr_dd.onchange.do(self._on_uvr_change)
-        self._uvr_input = Input("UVR file", self._uvr_dd, style="margin-right: 20px")
+        self._uvr_input = LabeledInput("UVR file", self._uvr_dd, style="margin-right: 20px")
 
         self._date_start_selector = gui.Date(default_value="2019-06-24")
         self._date_start_selector.onchange.do(self._on_date_start_change)
-        self._date_start_input = Input("Start date", self._date_start_selector, style="margin-right: 20px")
+        self._date_start_input = LabeledInput("Start date", self._date_start_selector, style="margin-right: 20px")
 
         self._date_end_selector = gui.Date(default_value="2019-06-27")
         self._date_end_selector.onchange.do(self._on_date_end_change)
-        self._date_end_input = Input("End date", self._date_end_selector, style="margin-right: 20px")
+        self._date_end_input = LabeledInput("End date", self._date_end_selector, style="margin-right: 20px")
 
         file_form.append(self._brewer_input)
         file_form.append(self._uvr_input)
@@ -502,7 +502,7 @@ class SimpleMainForm(MainForm):
         return calculation_utils.calculate_for_inputs(calculation_inputs)
 
 
-class Input(VBox):
+class LabeledInput(VBox):
     """
     An input with a label above an input widget
     """
@@ -512,7 +512,8 @@ class Input(VBox):
         lw = gui.Label(label + ":")
         self.append(lw)
         self.append(input_widget)
-        input_widget.set_style("width: 260px; height: 25px")
+        input_widget.set_style("height: 25px")
+        self.set_style("width: 260px")
 
 
 class ResultWidget(VBox):
@@ -614,31 +615,38 @@ class ResultWidget(VBox):
         vbox.append(info_label)
 
         if results[0].calculation_input.settings.activate_woudc:
-            download_button = gui.FileDownloader(
+            download_button = FileDownloadLink(
                 results[0].get_woudc_name(),
-                path.join(OUTPUT_DIR, results[0].get_woudc_name()),
-                width=330,
-                style="margin-top: 5px; margin-bottom: 5px",
+                True
             )
             vbox.append(download_button)
 
         # UVER file download button
-        download_button = gui.FileDownloader(
+        download_button = FileDownloadLink(
             results[0].get_uver_name(),
-            path.join(OUTPUT_DIR, results[0].get_uver_name()),
-            width=330,
-            style="margin-top: 5px; margin-bottom: 5px",
+            True
         )
         vbox.append(download_button)
 
         # qasume files download buttons
         for result in results:
-            download_button = gui.FileDownloader(
-                result.get_qasume_name(), path.join(OUTPUT_DIR, result.get_qasume_name()), width=330, style="margin-top: 5px"
+            download_button = FileDownloadLink(
+                result.get_qasume_name(),
+                False
             )
             vbox.append(download_button)
 
         return vbox
+
+
+class FileDownloadLink(gui.FileDownloader):
+
+    def __init__(self, filename: str, extra_margin: bool = False):
+        super().__init__(filename, path.join(OUTPUT_DIR, filename), style=self._get_style(extra_margin))
+
+    @staticmethod
+    def _get_style(extra_margin: bool) -> Optional[str]:
+        return "margin-bottom: 5px" if extra_margin else None
 
 
 class Icon(gui.Label):
@@ -681,7 +689,7 @@ class Modal(Backdrop):
     _is_closed: bool = False
 
     def __init__(
-        self, title: str, content: gui.Widget, extra_buttons: List[Tuple[str, Callable[[gui.Widget], None]]] = [], *args, **kwargs
+            self, title: str, content: gui.Widget, extra_buttons: List[Tuple[str, Callable[[gui.Widget], None]]] = [], *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
         modal = VBox()
@@ -741,7 +749,7 @@ class SettingsWidget(VBox):
         self._arf_selection.append(gui.DropDownItem("3"))
         self._arf_selection.append(gui.DropDownItem("4"))
         self._arf_selection.set_value(str(settings.arf_column))
-        arf_input = Input(
+        arf_input = LabeledInput(
             "Column of the ARF file to use for the cos correction (column 0 is sza)", self._arf_selection, style="margin-bottom: 10px"
         )
         self.append(arf_input)
@@ -753,7 +761,7 @@ class SettingsWidget(VBox):
         for t in WeightedIrradianceType:
             self._weighted_irradiance_type_selection.append(gui.DropDownItem(t))
         self._weighted_irradiance_type_selection.set_value(settings.weighted_irradiance_type)
-        weighted_irradiance_type_input = Input(
+        weighted_irradiance_type_input = LabeledInput(
             "Type of weight function to use for the weighted irradiance",
             self._weighted_irradiance_type_selection,
             style="margin-bottom: 10px",
@@ -764,7 +772,7 @@ class SettingsWidget(VBox):
         coscor_title.set_style("margin-top: 14px")
         self.append(coscor_title)
 
-        self._no_coscor_checkbox = gui.CheckBoxLabel("Skip cos correction", style="height: 30px; width: 260px; padding-right: 20px")
+        self._no_coscor_checkbox = gui.CheckBoxLabel("Skip cos correction", style="height: 30px")
         self._no_coscor_checkbox.set_value(settings.no_coscor)
         self.append(self._no_coscor_checkbox)
 
@@ -801,7 +809,7 @@ class SettingsWidget(VBox):
 
         # Albedo field
         self._albedo_spin = gui.SpinBox(settings.default_albedo, 0, 1, 0.01)
-        albedo_input = Input("Albedo", self._albedo_spin, style="margin-bottom: 10px")
+        albedo_input = LabeledInput("Albedo", self._albedo_spin, style="margin-bottom: 10px")
         self.append(albedo_input)
 
         # Aerosol dual field
@@ -814,16 +822,16 @@ class SettingsWidget(VBox):
         beta_label = gui.Label("β:", style="margin-left: 8px; flex-grow: 1")
         aerosol.append(beta_label)
         aerosol.append(self._beta_spin)
-        aerosol_input = Input("Aerosol", aerosol, style="margin-bottom: 10px")
+        aerosol_input = LabeledInput("Aerosol", aerosol, style="margin-bottom: 10px")
         self.append(aerosol_input)
 
         # Ozone field
         self._ozone_spin = gui.SpinBox(settings.default_ozone, 200, 600, 0.5)
-        ozone_input = Input("Ozone", self._ozone_spin, style="margin-bottom: 10px")
+        ozone_input = LabeledInput("Ozone", self._ozone_spin, style="margin-bottom: 10px")
         self.append(ozone_input)
 
         self._straylight_checkbox = gui.CheckBoxLabel(
-            "Apply straylight correction", style="height: 30px; width: 260px; padding-right: 20px"
+            "Apply straylight correction", style="min-height: 30px"
         )
         self._straylight_checkbox.set_value(settings.default_straylight_correction == StraylightCorrection.APPLIED)
         self.append(self._straylight_checkbox)
@@ -851,21 +859,21 @@ class SettingsWidget(VBox):
         for source in DataSource:
             self._uv_source_selection.append(gui.DropDownItem(source))
         self._uv_source_selection.set_value(settings.uv_data_source)
-        uv_source_input = Input("UV data source", self._uv_source_selection, style="margin-bottom: 10px")
+        uv_source_input = LabeledInput("UV data source", self._uv_source_selection, style="margin-bottom: 10px")
         self._source_container.append(uv_source_input)
 
         self._ozone_source_selection = gui.DropDown()
         for source in DataSource:
             self._ozone_source_selection.append(gui.DropDownItem(source))
         self._ozone_source_selection.set_value(settings.ozone_data_source)
-        ozone_source_input = Input("Ozone data source", self._ozone_source_selection, style="margin-bottom: 10px")
+        ozone_source_input = LabeledInput("Ozone data source", self._ozone_source_selection, style="margin-bottom: 10px")
         self._source_container.append(ozone_source_input)
 
         self._uvr_source_selection = gui.DropDown()
         for source in DataSource:
             self._uvr_source_selection.append(gui.DropDownItem(source))
         self._uvr_source_selection.set_value(settings.uvr_data_source)
-        uvr_source_input = Input("UVR data source", self._uvr_source_selection, style="margin-bottom: 10px")
+        uvr_source_input = LabeledInput("UVR data source", self._uvr_source_selection, style="margin-bottom: 10px")
         self._source_container.append(uvr_source_input)
 
         self.append(self._source_container)
@@ -891,35 +899,35 @@ class SettingsWidget(VBox):
         self._woudc_info_container = VBox()
 
         self._agency_input = gui.Input(default_value=woudc_info.agency)
-        agency_input = Input("Agency", self._agency_input)
+        agency_input = LabeledInput("Agency", self._agency_input)
         self._woudc_info_container.append(agency_input)
 
         self._version_input = gui.Input(default_value=woudc_info.version)
-        version_input = Input("Version", self._version_input)
+        version_input = LabeledInput("Version", self._version_input)
         self._woudc_info_container.append(version_input)
 
         self._scientific_authority_input = gui.Input(default_value=woudc_info.scientific_authority)
-        scientific_authority_input = Input("Scientific Authority", self._scientific_authority_input)
+        scientific_authority_input = LabeledInput("Scientific Authority", self._scientific_authority_input)
         self._woudc_info_container.append(scientific_authority_input)
 
         self._platform_id_input = gui.Input(default_value=woudc_info.platform_id)
-        platform_id_input = Input("Platform ID", self._platform_id_input)
+        platform_id_input = LabeledInput("Platform ID", self._platform_id_input)
         self._woudc_info_container.append(platform_id_input)
 
         self._platform_name_input = gui.Input(default_value=woudc_info.platform_name)
-        platform_name_input = Input("Platform Name", self._platform_name_input)
+        platform_name_input = LabeledInput("Platform Name", self._platform_name_input)
         self._woudc_info_container.append(platform_name_input)
 
         self._country_input = gui.Input(default_value=woudc_info.country_iso3)
-        country_input = Input("Country (ISO 3)", self._country_input)
+        country_input = LabeledInput("Country (ISO 3)", self._country_input)
         self._woudc_info_container.append(country_input)
 
         self._gaw_id_input = gui.Input(default_value=woudc_info.gaw_id)
-        gaw_id_input = Input("GAW Id", self._gaw_id_input)
+        gaw_id_input = LabeledInput("GAW Id", self._gaw_id_input)
         self._woudc_info_container.append(gaw_id_input)
 
         self._altitude_spin = gui.SpinBox(woudc_info.altitude, 0, 6000, 1)
-        altitude_input = Input("Altitude", self._altitude_spin, style="margin-bottom: 10px")
+        altitude_input = LabeledInput("Altitude", self._altitude_spin, style="margin-bottom: 10px")
         self._woudc_info_container.append(altitude_input)
 
         self.append(self._woudc_info_container)
