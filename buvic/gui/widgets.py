@@ -706,7 +706,9 @@ class Modal(Backdrop):
         modal.append(buttons)
         self.add_child("modal", modal)
         self.onclick.do(lambda w: self.close())
-        modal.onclick.do(lambda w: "Hello World")
+        
+        # Add dummy onclick to stop click event propagation which would close the modal
+        modal.onclick.do(lambda w: True)
 
     def close(self):
         parent: gui.Container = self.get_parent()
