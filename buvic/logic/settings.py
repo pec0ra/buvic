@@ -109,7 +109,5 @@ class Settings:
                 DataSource(dict_settings["uv_data_source"]),
                 DataSource(dict_settings["ozone_data_source"]),
                 DataSource(dict_settings["uvr_data_source"]),
-                dict_settings["activate_woudc"]
-                if "activate_woudc" in dict_settings
-                else DEFAULT_ACTIVATE_WOUDC,
+                dict_settings["activate_woudc"] if "activate_woudc" in dict_settings else DEFAULT_ACTIVATE_WOUDC,
             )

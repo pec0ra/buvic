@@ -614,8 +614,12 @@ class ResultWidget(VBox):
         vbox.append(info_label)
 
         if results[0].calculation_input.settings.activate_woudc:
-            download_button = gui.FileDownloader(results[0].get_woudc_name(), path.join(OUTPUT_DIR, results[0].get_woudc_name()), width=330,
-                                                 style="margin-top: 5px; margin-bottom: 5px")
+            download_button = gui.FileDownloader(
+                results[0].get_woudc_name(),
+                path.join(OUTPUT_DIR, results[0].get_woudc_name()),
+                width=330,
+                style="margin-top: 5px; margin-bottom: 5px",
+            )
             vbox.append(download_button)
 
         # UVER file download button
@@ -872,17 +876,13 @@ class SettingsWidget(VBox):
         self.append(woudc_title)
         gawsis_link = gui.Link("https://gawsis.meteoswiss.ch/", "GAWSIS")
         woudc_explanation = IconLabel(
-            "Create files in the WOUDC format which can be submitted to\xa0",
-            "info_outline",
-            style="margin-bottom: 10px",
+            "Create files in the WOUDC format which can be submitted to\xa0", "info_outline", style="margin-bottom: 10px",
         )
         woudc_explanation.append(gawsis_link)
 
         self.append(woudc_explanation)
 
-        self._woudc_checkbox = gui.CheckBoxLabel(
-            "Create WOUDC files", style="min-height: 30px; margin-bottom: 6px"
-        )
+        self._woudc_checkbox = gui.CheckBoxLabel("Create WOUDC files", style="min-height: 30px; margin-bottom: 6px")
         self._woudc_checkbox.set_value(settings.activate_woudc)
         self.append(self._woudc_checkbox)
 
