@@ -25,6 +25,8 @@ from enum import Enum
 from logging import getLogger
 from os import path
 
+from dataclasses_json import dataclass_json
+
 from buvic.logic.brewer_infos import StraylightCorrection
 from buvic.logic.parameter_file import Angstrom
 from buvic.logic.weighted_irradiance import WeightedIrradianceType
@@ -44,6 +46,7 @@ DEFAULT_ALPHA_VALUE = 1.3
 DEFAULT_BETA_VALUE = 0.1
 DEFAULT_OZONE_VALUE = 300
 DEFAULT_ACTIVATE_WOUDC = False
+DEFAULT_WOUDC_VERSION = "1.0"
 
 
 class DataSource(str, Enum):
@@ -51,6 +54,24 @@ class DataSource(str, Enum):
     EUBREWNET = "EUBREWNET"
 
 
+@dataclass_json
+@dataclass
+class WOUDCInfo:
+
+    # Data generation info
+    agency: str = ""
+    version: str = DEFAULT_WOUDC_VERSION
+    scientific_authority: str = ""
+
+    # Platform info
+    platform_id: str = ""
+    platform_name: str = ""
+    country_iso3: str = ""
+    gaw_id: str = ""
+    altitude: int = 0
+
+
+@dataclass_json
 @dataclass
 class Settings:
     manual_mode: bool = DEFAULT_MANUAL_MODE
@@ -74,10 +95,11 @@ class Settings:
     uvr_data_source: DataSource = DataSource.FILES
 
     activate_woudc: bool = DEFAULT_ACTIVATE_WOUDC
+    woudc_info: WOUDCInfo = WOUDCInfo()
 
     def write(self):
         with open(SETTINGS_FILE_PATH, "w") as config_file:
-            json.dump(asdict(self), config_file)
+            config_file.write(self.to_json())
         LOG.debug(f"Settings saved successfully to {SETTINGS_FILE_PATH}")
 
     @staticmethod
@@ -89,25 +111,10 @@ class Settings:
         with open(SETTINGS_FILE_PATH, "r") as config_file:
             dict_settings = json.load(config_file)
             LOG.debug(f"Settings loaded from {SETTINGS_FILE_PATH}")
-            return Settings(
-                dict_settings["manual_mode"],
-                dict_settings["arf_column"],
-                WeightedIrradianceType(dict_settings["weighted_irradiance_type"])
-                if "weighted_irradiance_type" in dict_settings
-                else DEFAULT_WEIGHTED_IRRADIANCE_TYPE,
-                dict_settings["no_coscor"],
-                dict_settings["temperature_correction_factor"]
-                if "temperature_correction_factor" in dict_settings
-                else DEFAULT_TEMPERATURE_CORRECTION_FACTOR,
-                dict_settings["temperature_correction_ref"]
-                if "temperature_correction_ref" in dict_settings
-                else DEFAULT_TEMPERATURE_CORRECTION_REF,
-                dict_settings["default_albedo"],
-                Angstrom(dict_settings["default_aerosol"][0], dict_settings["default_aerosol"][1]),
-                dict_settings["default_ozone"],
-                StraylightCorrection(dict_settings["default_straylight_correction"]),
-                DataSource(dict_settings["uv_data_source"]),
-                DataSource(dict_settings["ozone_data_source"]),
-                DataSource(dict_settings["uvr_data_source"]),
-                dict_settings["activate_woudc"] if "activate_woudc" in dict_settings else DEFAULT_ACTIVATE_WOUDC,
-            )
+            try:
+                settings = Settings.from_dict(dict_settings)
+                LOG.debug(f"Settings loaded from {SETTINGS_FILE_PATH}")
+                return settings
+            except AttributeError:
+                LOG.warning("Setting file could not be parsed. Using default settings")
+                return Settings()

@@ -59,7 +59,7 @@ class Result:
         """
         bid = self.calculation_input.brewer_id
         d = self.uv_file_entry.header.date
-        agency = "TODO"  # TODO
+        agency = self.calculation_input.settings.woudc_info.agency
         file_name = f"{d.year:04d}{d.month:02d}{d.day:02d}.Brewer.{self.calculation_input.brewer_type.upper()}.{bid}" f".{agency}.csv"
         return path.join(self.get_relative_path(), file_name)
 

@@ -31,7 +31,7 @@ from buvic.logic.file_utils import FileUtils
 from buvic.logic.ozone import BFileOzoneProvider
 from buvic.logic.parameter_file import Angstrom
 from buvic.logic.result import Result
-from buvic.logic.settings import Settings, DataSource
+from buvic.logic.settings import Settings, DataSource, WOUDCInfo
 from buvic.logic.utils import name_to_date_and_brewer_id
 from buvic.logic.weighted_irradiance import WeightedIrradianceType
 from .utils import show, hide
@@ -884,7 +884,46 @@ class SettingsWidget(VBox):
 
         self._woudc_checkbox = gui.CheckBoxLabel("Create WOUDC files", style="min-height: 30px; margin-bottom: 6px")
         self._woudc_checkbox.set_value(settings.activate_woudc)
+        self._woudc_checkbox.onchange.do(lambda w, v: self._update_woudc(v))
         self.append(self._woudc_checkbox)
+
+        woudc_info = settings.woudc_info
+        self._woudc_info_container = VBox()
+
+        self._agency_input = gui.Input(default_value=woudc_info.agency)
+        agency_input = Input("Agency", self._agency_input)
+        self._woudc_info_container.append(agency_input)
+
+        self._version_input = gui.Input(default_value=woudc_info.version)
+        version_input = Input("Version", self._version_input)
+        self._woudc_info_container.append(version_input)
+
+        self._scientific_authority_input = gui.Input(default_value=woudc_info.scientific_authority)
+        scientific_authority_input = Input("Scientific Authority", self._scientific_authority_input)
+        self._woudc_info_container.append(scientific_authority_input)
+
+        self._platform_id_input = gui.Input(default_value=woudc_info.platform_id)
+        platform_id_input = Input("Platform ID", self._platform_id_input)
+        self._woudc_info_container.append(platform_id_input)
+
+        self._platform_name_input = gui.Input(default_value=woudc_info.platform_name)
+        platform_name_input = Input("Platform Name", self._platform_name_input)
+        self._woudc_info_container.append(platform_name_input)
+
+        self._country_input = gui.Input(default_value=woudc_info.country_iso3)
+        country_input = Input("Country (ISO 3)", self._country_input)
+        self._woudc_info_container.append(country_input)
+
+        self._gaw_id_input = gui.Input(default_value=woudc_info.gaw_id)
+        gaw_id_input = Input("GAW Id", self._gaw_id_input)
+        self._woudc_info_container.append(gaw_id_input)
+
+        self._altitude_spin = gui.SpinBox(woudc_info.altitude, 0, 6000, 1)
+        altitude_input = Input("Altitude", self._altitude_spin, style="margin-bottom: 10px")
+        self._woudc_info_container.append(altitude_input)
+
+        self.append(self._woudc_info_container)
+        self._update_woudc(settings.activate_woudc)
 
     def save(self) -> Settings:
         manual_mode = self._form_selection_checkbox.get_value()
@@ -916,6 +955,17 @@ class SettingsWidget(VBox):
 
         activate_woudc = self._woudc_checkbox.get_value()
 
+        agency = self._agency_input.get_value()
+        version = self._version_input.get_value()
+        scientific_authority = self._scientific_authority_input.get_value()
+        platform_id = self._platform_id_input.get_value()
+        platform_name = self._platform_name_input.get_value()
+        country = self._country_input.get_value()
+        gaw_id = self._gaw_id_input.get_value()
+        altitude = int(self._altitude_spin.get_value())
+
+        woudc_info = WOUDCInfo(agency, version, scientific_authority, platform_id, platform_name, country, gaw_id, altitude)
+
         settings = Settings(
             manual_mode,
             arf_column,
@@ -931,6 +981,7 @@ class SettingsWidget(VBox):
             DataSource(ozone_data_source),
             DataSource(uvr_data_source),
             activate_woudc,
+            woudc_info,
         )
         settings.write()
         self._show_success()
@@ -953,3 +1004,9 @@ class SettingsWidget(VBox):
             hide(self._source_container)
         else:
             show(self._source_container)
+
+    def _update_woudc(self, value):
+        if not value:
+            hide(self._woudc_info_container)
+        else:
+            show(self._woudc_info_container)

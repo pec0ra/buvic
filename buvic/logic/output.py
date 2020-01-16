@@ -19,7 +19,7 @@
 #
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, date
 from enum import Enum
 from logging import getLogger
 from os import path, makedirs
@@ -326,7 +326,7 @@ class WoudcOutput(Output):
         content += (
             "#GLOBAL_SUMMARY\n"
             "Time,IntACGIH,IntCIE,ZenAngle,MuValue,AzimAngle,Flag,TempC\n"
-            f"{time.hour:02d}:{time.minute:02d}:{time.second:02d},3.108E-05,1.737E-04,89.10,{result.sza},119.68,,"  # TODO
+            f"{time.hour:02d}:{time.minute:02d}:{time.second:02d},3.108E-05,1.737E-04,{result.sza},TODO-mu,TODO-azim,,"  # TODO
             f"{result.uv_file_entry.header.temperature:.1f}\n"
         )
         content += "\n"
@@ -346,8 +346,8 @@ class WoudcOutput(Output):
 
     @staticmethod
     def _get_woudc_header(result: Result) -> str:
+        woudc_info = result.calculation_input.settings.woudc_info
         position = result.uv_file_entry.header.position
-        altitude = (1 - pow(result.uv_file_entry.header.pressure / 1013.25, 0.190284)) * 44307.69396
         brewer_type = result.calculation_input.brewer_type.upper() if result.calculation_input.brewer_type is not None else "UNKNOWN"
         return (
             f"*SOFTWARE: BUVIC {APP_VERSION}\n"
@@ -358,11 +358,11 @@ class WoudcOutput(Output):
             "\n"
             "#DATA_GENERATION\n"
             "Date,Agency,Version,ScientificAuthority\n"
-            f"{result.uv_file_entry.header.date.isoformat()},TODO,1.0,TODO\n"
+            f"{date.today().isoformat()},{woudc_info.agency},{woudc_info.version},{woudc_info.scientific_authority}\n"
             "\n"
             "#PLATFORM\n"
             "Type,ID,Name,Country,GAW_ID\n"
-            "TODO_STN,315,Eureka,CAN,71917\n"
+            f"STN,{woudc_info.platform_id},{woudc_info.platform_name},{woudc_info.country_iso3},{woudc_info.gaw_id}\n"
             "\n"
             "#INSTRUMENT\n"
             "Name,Model,Number\n"
@@ -370,7 +370,7 @@ class WoudcOutput(Output):
             "\n"
             "#LOCATION\n"
             "Latitude,Longitude,Height\n"
-            f"{position.latitude}, {-position.longitude}, {altitude:.0f}\n"
+            f"{position.latitude},{-position.longitude},{woudc_info.altitude}\n"
         )
 
 
