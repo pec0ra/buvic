@@ -615,32 +615,22 @@ class ResultWidget(VBox):
         vbox.append(info_label)
 
         if results[0].calculation_input.settings.activate_woudc:
-            download_button = FileDownloadLink(
-                results[0].get_woudc_name(),
-                True
-            )
+            download_button = FileDownloadLink(results[0].get_woudc_name(), True)
             vbox.append(download_button)
 
         # UVER file download button
-        download_button = FileDownloadLink(
-            results[0].get_uver_name(),
-            True
-        )
+        download_button = FileDownloadLink(results[0].get_uver_name(), True)
         vbox.append(download_button)
 
         # qasume files download buttons
         for result in results:
-            download_button = FileDownloadLink(
-                result.get_qasume_name(),
-                False
-            )
+            download_button = FileDownloadLink(result.get_qasume_name(), False)
             vbox.append(download_button)
 
         return vbox
 
 
 class FileDownloadLink(gui.FileDownloader):
-
     def __init__(self, filename: str, extra_margin: bool = False):
         super().__init__(filename, path.join(OUTPUT_DIR, filename), style=self._get_style(extra_margin))
 
@@ -689,7 +679,7 @@ class Modal(Backdrop):
     _is_closed: bool = False
 
     def __init__(
-            self, title: str, content: gui.Widget, extra_buttons: List[Tuple[str, Callable[[gui.Widget], None]]] = [], *args, **kwargs
+        self, title: str, content: gui.Widget, extra_buttons: List[Tuple[str, Callable[[gui.Widget], None]]] = [], *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
         modal = VBox()
@@ -830,9 +820,7 @@ class SettingsWidget(VBox):
         ozone_input = LabeledInput("Ozone", self._ozone_spin, style="margin-bottom: 10px")
         self.append(ozone_input)
 
-        self._straylight_checkbox = gui.CheckBoxLabel(
-            "Apply straylight correction", style="min-height: 30px"
-        )
+        self._straylight_checkbox = gui.CheckBoxLabel("Apply straylight correction", style="min-height: 30px")
         self._straylight_checkbox.set_value(settings.default_straylight_correction == StraylightCorrection.APPLIED)
         self.append(self._straylight_checkbox)
 
