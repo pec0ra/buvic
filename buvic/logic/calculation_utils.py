@@ -109,6 +109,9 @@ class CalculationUtils:
         # Execute the jobs
         result_list = self._execute_jobs(calculation_jobs)
 
+        # Generate the output
+        self._generate_output(result_list)
+
         duration = time.time() - start
         if self._finish_progress is not None:
             self._finish_progress(duration)
@@ -178,6 +181,7 @@ class CalculationUtils:
         if len(job_list) == 0:
             return self._handle_empty_input()
 
+        # Get the number of files for which we do calculations (only used as user information)
         valid_input_count = len(
             [calculation_input for calculation_input in calculation_inputs if len(calculation_input.uv_file_entries) > 0]
         )
@@ -194,6 +198,9 @@ class CalculationUtils:
 
         # Execute the jobs
         ret = self._execute_jobs(job_list)
+
+        # Generate the output files
+        self._generate_output(ret)
 
         duration = time.time() - start
         if self._finish_progress is not None:
@@ -334,8 +341,6 @@ class CalculationUtils:
                 for future in future_result:
                     future.cancel()
                 raise e
-
-        self._generate_output(result_list)
 
         # At this point, we have finished calculating the irradiance and writing the results
         LOG.debug("Finished irradiance calculation for '%s'", result_list[0].calculation_input.uv_file_name)
