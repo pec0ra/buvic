@@ -5,3 +5,4 @@ watchdog==0.8.3
 cached-property==1.5.1
 requests==2.22.0
 numpy==1.18.1
+dataclasses-json==0.3.7
