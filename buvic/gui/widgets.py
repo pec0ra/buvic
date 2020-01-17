@@ -870,7 +870,7 @@ class SettingsWidget(VBox):
         woudc_title = Title(Level.H4, "WOUDC output")
         woudc_title.set_style("margin-top: 14px")
         self.append(woudc_title)
-        gawsis_link = gui.Link("https://gawsis.meteoswiss.ch/", "GAWSIS")
+        gawsis_link = gui.Link("https://woudc.org/", "WOUDC")
         woudc_explanation = IconLabel(
             "Create files in the WOUDC format which can be submitted to\xa0", "info_outline", style="margin-bottom: 10px",
         )

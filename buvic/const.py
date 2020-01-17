@@ -37,7 +37,7 @@ if path.exists("version"):
     with open("version") as version_file:
         APP_VERSION = version_file.readline().strip()
 else:
-    result = run("git describe --abbrev=0", stdout=PIPE, shell=True)
+    result = run("git describe --dirty --tags", stdout=PIPE, shell=True)
     if result.returncode == 0:
         APP_VERSION = result.stdout.decode().strip() + "-dirty"
 
