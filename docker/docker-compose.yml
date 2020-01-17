@@ -1,0 +1,39 @@
+version: '2.2'
+
+volumes:
+  buvic-settings:
+
+services:
+  app:
+    image: pmodwrc/buvic:latest
+    container_name: buvic
+    ports:
+      # Change the port you want BUVIC to listen to (default: 80). Value must be <LISTENING_PORT>:4444
+      - 80:4444
+    volumes:
+      - buvic-settings:/settings
+
+      # Adapt the path to your instrument files
+      - ../data/instr:/instr
+
+      # Adapt the path to your uv files
+      - ../data/uvdata/:/uvdata
+
+      # Adapt the path for your output files
+      - ../out:/out
+    environment:
+      # Uncomment next line if you want to use darksky
+      #- DARKSKY_TOKEN=yourdarkskytoken
+
+      - PORT=4444
+
+    # Uncomment next line to allow giving the user to run the image in environment variable `CURRENT_UID` (value must be `<user_id>:<group_id>'
+    #user: ${CURRENT_UID}
+
+    # Uncomment next line to run the image with given another user id and group id
+    #user: 1000:1000
+
+    # Uncomment this line if you want the image to start at boot
+    #restart: always
+
+    init: true
