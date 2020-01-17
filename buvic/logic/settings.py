@@ -20,7 +20,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from enum import Enum
 from logging import getLogger
 from os import path
