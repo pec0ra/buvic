@@ -112,7 +112,7 @@ class Settings:
             dict_settings = json.load(config_file)
             LOG.debug(f"Settings loaded from {SETTINGS_FILE_PATH}")
             try:
-                settings = Settings.from_dict(dict_settings)
+                settings = Settings.from_dict(dict_settings)  # type: ignore
                 LOG.debug(f"Settings loaded from {SETTINGS_FILE_PATH}")
                 return settings
             except AttributeError:

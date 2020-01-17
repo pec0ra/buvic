@@ -23,7 +23,7 @@ import warnings
 from logging import getLogger
 from typing import List
 
-from numpy import multiply, divide, sin, add, pi, mean, exp, maximum, linspace, trapz, cos, isnan, ones
+from numpy import multiply, divide, sin, add, pi, mean, exp, maximum, linspace, trapz, cos, isnan, ones, arcsin
 from scipy.interpolate import UnivariateSpline
 
 from buvic.logic.brewer_infos import StraylightCorrection, correct_straylight
@@ -108,9 +108,13 @@ class IrradianceCalculation:
                 cos_correction,
             )
 
+            sza = self._get_sza(libradtran_result)
+
+            air_mass = self._calculate_air_mass(sza)
+
             LOG.debug("Finished calculation for section %d of %s", index, self._calculation_input.uv_file_name)
 
-            return Result(index, self._calculation_input, self._get_sza(libradtran_result), temperature_correction, spectrum)
+            return Result(index, self._calculation_input, sza, air_mass, temperature_correction, spectrum)
 
         except Exception as e:
             LOG.error("An error occurred while doing the calculation", exc_info=True)
@@ -310,3 +314,19 @@ class IrradianceCalculation:
         :return: the sza
         """
         return libradtran_result.columns["sza"][0]
+
+    @staticmethod
+    def _calculate_air_mass(sza: float):
+        """
+        Calculate the air mass for a given sza (in degree)
+        :param sza: the solar zenith angle
+        :return: the air mass
+        """
+        earth_radius = 6_370_000.0  # in meters
+        h = 22_000.0  # in meters
+        sza_radian = sza * pi / 180
+
+        sin_theta = earth_radius * sin(pi - sza_radian) / (earth_radius + h)
+        theta = arcsin(sin_theta)
+
+        return 1 / cos(theta)

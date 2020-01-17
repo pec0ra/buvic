@@ -33,6 +33,7 @@ class Result:
     index: int
     calculation_input: CalculationInput
     sza: float
+    air_mass: float
     temperature_correction: float
     spectrum: Spectrum
 

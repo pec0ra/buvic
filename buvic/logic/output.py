@@ -34,6 +34,7 @@ from buvic.logic.darksky import DarkskyCloudCover
 from buvic.logic.result import Result
 from buvic.logic.utils import date_to_days, minutes_to_time
 from .job import Job
+from .weighted_irradiance import WeightedIrradianceType
 from .weighted_irradiance_calculation import WeightedIrradianceCalculation
 from ..const import APP_VERSION
 
@@ -304,14 +305,17 @@ class WoudcOutput(Output):
     def _get_multi_result_content(self, results: List[Result]) -> str:
         content = ""
 
+        weighted_irradiance_calculation = WeightedIrradianceCalculation(results, WeightedIrradianceType.ERYTHEMAL)
+        weighted_irradiance = weighted_irradiance_calculation.calculate()
+
         content += self._get_woudc_header(results[0])
-        for result in results:
-            content += self._to_woudc(result)
+        for i, result in enumerate(results):
+            content += self._to_woudc(result, weighted_irradiance.values[i])
 
         return content
 
     @staticmethod
-    def _to_woudc(result: Result) -> str:
+    def _to_woudc(result: Result, erythemal_weighted_irradiance: float) -> str:
         minutes = result.uv_file_entry.raw_values[0].time
         time = minutes_to_time(minutes)
 
@@ -326,8 +330,8 @@ class WoudcOutput(Output):
         content += (
             "#GLOBAL_SUMMARY\n"
             "Time,IntACGIH,IntCIE,ZenAngle,MuValue,AzimAngle,Flag,TempC\n"
-            f"{time.hour:02d}:{time.minute:02d}:{time.second:02d},3.108E-05,1.737E-04,{result.sza},TODO-mu,TODO-azim,,"  # TODO
-            f"{result.uv_file_entry.header.temperature:.1f}\n"
+            f"{time.hour:02d}:{time.minute:02d}:{time.second:02d},,{erythemal_weighted_irradiance / 1000:.3E},{result.sza:.2f},"
+            f"{result.air_mass:.2f},,,{result.uv_file_entry.header.temperature:.1f}\n"
         )
         content += "\n"
         content += "#GLOBAL\n"
@@ -338,7 +342,7 @@ class WoudcOutput(Output):
             time = minutes_to_time(result.spectrum.measurement_times[i])
             content += (
                 f"{result.spectrum.wavelengths[i]:.1f},"
-                f"{'%E' % (result.spectrum.cos_corrected_spectrum[i] / 1000)},"  # convert to W m-2 nm-1
+                f"{(result.spectrum.cos_corrected_spectrum[i] / 1000):.3E},"  # convert to W m-2 nm-1
                 f"{time.hour:02d}:{time.minute:02d}:{time.second:02d}\n"
             )
 

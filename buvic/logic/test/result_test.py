@@ -33,6 +33,7 @@ class FileUtilsTestCase(unittest.TestCase):
             CalculationInput("033", date(2019, 1, 1), Settings(), File("dummy"), File("dummy"), File("dummy"), File("dummy"), None),
             44.4,
             0.0,
+            0.0,
             Spectrum([], [70], [], [], [], []),
         )
         name = result.get_qasume_name()
@@ -45,6 +46,7 @@ class FileUtilsTestCase(unittest.TestCase):
             ),
             44.4,
             0.0,
+            0.0,
             Spectrum([], [70], [], [], [], []),
         )
         name = result.get_qasume_name()
@@ -54,6 +56,7 @@ class FileUtilsTestCase(unittest.TestCase):
             0,
             CalculationInput("033", date(2019, 1, 1), Settings(), None, File("path/to/b/dummy"), File("dummy"), File("dummy"), None),
             44.4,
+            0.0,
             0.0,
             Spectrum([], [70], [], [], [], []),
         )
@@ -65,6 +68,7 @@ class FileUtilsTestCase(unittest.TestCase):
             CalculationInput("033", date(2019, 1, 1), Settings(), File("path/to/uv/dummy"), None, File("dummy"), File("dummy"), None),
             44.4,
             0.0,
+            0.0,
             Spectrum([], [70], [], [], [], []),
         )
         name = result.get_qasume_name()
@@ -74,6 +78,7 @@ class FileUtilsTestCase(unittest.TestCase):
             0,
             CalculationInput("033", date(2019, 1, 1), Settings(), None, None, File("dummy"), File("dummy"), None),
             44.4,
+            0.0,
             0.0,
             Spectrum([], [70], [], [], [], []),
         )

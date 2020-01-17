@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from logging import getLogger
 from os import path
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 import numpy
 from numpy import multiply, trapz
@@ -143,13 +143,18 @@ class WeightedIrradianceCalculation:
 
     _results: List[Result]
 
-    def __init__(self, results: List[Result]):
+    def __init__(self, results: List[Result], weighted_irradiance_type: Optional[WeightedIrradianceType] = None):
         self._results = results
-        self._weighted_irradiance_type = self._results[0].calculation_input.settings.weighted_irradiance_type
+        if weighted_irradiance_type is not None:
+            self._weighted_irradiance_type = weighted_irradiance_type
+        else:
+            self._weighted_irradiance_type = self._results[0].calculation_input.settings.weighted_irradiance_type
 
     def calculate(self) -> WeightedIrradiance:
         """
-        Calculate the weighted irradiance for the results
+        Calculate the weighted irradiance for the results.
+
+        The result is in mW/m^2
 
         :return: the weighted irradiance
         """
@@ -173,7 +178,7 @@ class WeightedIrradianceCalculation:
     @staticmethod
     def calculate_daily_dosis(weighted_irradiance: WeightedIrradiance) -> float:
         """
-        Integrate weighted irradiance over a whole day
+        Integrate weighted irradiance over a whole day in Jul/m^2
 
         :param weighted_irradiance: the irradiance to integrate
         :return: the integrated irradiance
