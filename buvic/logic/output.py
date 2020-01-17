@@ -355,6 +355,7 @@ class WoudcOutput(Output):
         brewer_type = result.calculation_input.brewer_type.upper() if result.calculation_input.brewer_type is not None else "UNKNOWN"
         return (
             f"*SOFTWARE: BUVIC {APP_VERSION}\n"
+            f"*https://github.com/pec0ra/buvic\n"
             "\n"
             "#CONTENT\n"
             "Class,Category,Level,Form\n"
