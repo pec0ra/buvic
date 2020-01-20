@@ -23,10 +23,10 @@ import re
 from dataclasses import dataclass, field
 from datetime import date
 from logging import getLogger
-from os import listdir, makedirs
+from os import listdir, makedirs, path
 from os.path import join, exists, isdir
-from pprint import PrettyPrinter
-from typing import Dict, List, Tuple, Callable, Pattern, Match, Optional
+from time import time
+from typing import Dict, List, Tuple, Callable, Match, Optional
 
 from buvic.logic.calculation_input import CalculationInput
 from buvic.logic.file import File
@@ -35,8 +35,6 @@ from buvic.logic.settings import Settings, DataSource
 from buvic.logic.utils import days_to_date, date_range, date_to_days
 
 LOG = getLogger(__name__)
-
-pp = PrettyPrinter(indent=2)
 
 
 class FileUtils:
@@ -53,13 +51,15 @@ class FileUtils:
     def __init__(self, input_dir: str):
         self._instr_dir = join(input_dir, "instr")
         self._uvdata_dir = join(input_dir, "uvdata")
-        self.refresh()
 
-    def refresh(self) -> None:
+    def refresh(self, remove_empty=True) -> None:
         """
         Scan the files to find all relevant files
+
+        :param remove_empty: If set to true, will ignore brewer ids without UVR nor UV files
         """
 
+        start_time = time()
         self._file_dict = {}
 
         if not exists(self._instr_dir):
@@ -67,42 +67,20 @@ class FileUtils:
         if not exists(self._uvdata_dir):
             makedirs(self._uvdata_dir)
 
-        # Find all arf files
-        self._find_file_recursive(self._instr_dir, self.ARF_FILE_NAME_REGEX, self._match_arf_file)
+        self._find_files_recursive(self._instr_dir)
+        self._find_files_recursive(self._uvdata_dir)
 
-        # Find all uvr files
-        self._find_file_recursive(
-            self._instr_dir,
-            self.UVR_FILE_NAME_REGEX,
-            lambda file_path, res: self._match_file(file_path, res, self._instr_dir, lambda i: i.uvr_files),
-        )
-
-        # Find all uv files
-        self._find_file_recursive(
-            self._uvdata_dir,
-            self.UV_FILE_NAME_REGEX,
-            lambda file_path, res: self._match_file(file_path, res, self._uvdata_dir, lambda i: i.uv_files),
-        )
-
-        # Find all b files
-        self._find_file_recursive(
-            self._uvdata_dir,
-            self.B_FILE_NAME_REGEX,
-            lambda file_path, res: self._match_file(file_path, res, self._uvdata_dir, lambda i: i.b_files),
-        )
-
-        # Find all parameter files
-        self._find_file_recursive(self._instr_dir, self.PARAMETER_FILE_NAME_REGEX, self._match_parameter_file)
-
-        for brewer_id, instrument_files in list(self._file_dict.items()):
-            if len(instrument_files.uvr_files) == 0:
-                # Remove the instruments without UVR files
-                LOG.warning(f"No UVR file exists for brewer id {brewer_id}, skipping")
-                del self._file_dict[brewer_id]
-            elif len(instrument_files.uv_files) == 0:
-                # Remove the instruments without UV files
-                LOG.warning(f"No UV file exists for brewer id {brewer_id}, skipping")
-                del self._file_dict[brewer_id]
+        if remove_empty:
+            for brewer_id, instrument_files in list(self._file_dict.items()):
+                if len(instrument_files.uvr_files) == 0:
+                    # Remove the instruments without UVR files
+                    LOG.warning(f"No UVR file exists for brewer id {brewer_id}, skipping")
+                    del self._file_dict[brewer_id]
+                elif len(instrument_files.uv_files) == 0:
+                    # Remove the instruments without UV files
+                    LOG.warning(f"No UV file exists for brewer id {brewer_id}, skipping")
+                    del self._file_dict[brewer_id]
+        LOG.info(f"Scanned files in {time() - start_time}ms")
 
     def get_calculation_inputs_between(
         self, start_date: date, end_date: date, brewer_id, settings: Settings, uvr_file: Optional[str] = None
@@ -127,7 +105,7 @@ class FileUtils:
             days = date_to_days(d)
 
             LOG.debug("Creating input for date %s as days %d and year %d", d.isoformat(), days, year)
-            calculation_input = self._input_from_files(f"{days:03}", f"{year:02}", brewer_id, settings, uvr_file)
+            calculation_input = self.input_from_files(f"{days:03}", f"{year:02}", brewer_id, settings, uvr_file)
             if calculation_input is not None:
                 input_list.append(calculation_input)
 
@@ -153,7 +131,7 @@ class FileUtils:
 
                 uvr_file = files.uvr_files[0].file_name
 
-                calculation_input = self._input_from_files(f"{days}", f"{year:02}", brewer_id, settings, uvr_file)
+                calculation_input = self.input_from_files(f"{days}", f"{year:02}", brewer_id, settings, uvr_file)
                 if calculation_input is not None:
                     LOG.debug("Creating input for %s", file.file_name)
                     input_list.append(calculation_input)
@@ -173,8 +151,8 @@ class FileUtils:
                 return brewer_type
         return None
 
-    def _input_from_files(
-        self, days: str, year: str, brewer_id: str, settings: Settings, uvr_file: Optional[str]
+    def input_from_files(
+        self, days: str, year: str, brewer_id: str, settings: Settings, uvr_file: Optional[str] = None
     ) -> Optional[CalculationInput]:
         """
         Create calculation inputs for a given date given as days since new year and the year, for a given brewer id, for given settings
@@ -224,23 +202,101 @@ class FileUtils:
             parameter_file_name=parameter_file,
         )
 
-    def _find_file_recursive(self, directory: str, pattern: Pattern, match_handler: Callable[[str, Match[str]], None]) -> None:
+    def handle_file(self, file_path) -> bool:
         """
-        Recursively search in a given directory for all files matching a pattern. Call a handler for each of the file matching this pattern.
+        Find the type of the given file and add it to the corresponding list
+        :param file_path: the file to add
+        :return: whether the file is a "uvdata" file
+        """
+
+        file_name = path.basename(file_path)
+
+        res = re.match(self.UV_FILE_NAME_REGEX, file_name)
+        if res is not None:
+            LOG.info(f"Matched UV file {file_path}")
+            self._match_file(file_path, res, self._uvdata_dir, lambda i: i.uv_files)
+            return True
+
+        res = re.match(self.B_FILE_NAME_REGEX, file_name)
+        if res is not None:
+            LOG.info(f"Matched B file {file_path}")
+            self._match_file(file_path, res, self._uvdata_dir, lambda i: i.b_files)
+            return True
+
+        res = re.match(self.UVR_FILE_NAME_REGEX, file_name)
+        if res is not None:
+            LOG.info(f"Matched UVR file {file_path}")
+            self._match_file(file_path, res, self._instr_dir, lambda i: i.uvr_files)
+            return False
+
+        res = re.match(self.ARF_FILE_NAME_REGEX, file_name)
+        if res is not None:
+            LOG.info(f"Matched ARF file {file_path}")
+            self._match_arf_file(file_path, res)
+            return False
+
+        res = re.match(self.PARAMETER_FILE_NAME_REGEX, file_name)
+        if res is not None:
+            LOG.info(f"Matched parameter file {file_path}")
+            self._match_file(file_path, res, self._instr_dir, lambda i: i.parameter_files)
+            return False
+
+        LOG.info(f"Found an unknown file type: {file_path}")
+        return False
+
+    def untrack_file(self, file_path) -> None:
+        """
+        Remove a given file from the lists
+        :param file_path: the file to untrack
+        """
+
+        file_name = path.basename(file_path)
+
+        res = re.match(self.UV_FILE_NAME_REGEX, file_name)
+        if res is not None:
+            LOG.info(f"Matched UV file to remove {file_path}")
+            self._untrack_file(file_path, res, lambda i: i.uv_files)
+            return
+
+        res = re.match(self.B_FILE_NAME_REGEX, file_name)
+        if res is not None:
+            LOG.info(f"Matched B file to remove {file_path}")
+            self._untrack_file(file_path, res, lambda i: i.b_files)
+            return
+
+        res = re.match(self.UVR_FILE_NAME_REGEX, file_name)
+        if res is not None:
+            LOG.info(f"Matched UVR file to remove {file_path}")
+            self._untrack_file(file_path, res, lambda i: i.uvr_files)
+            return
+
+        res = re.match(self.ARF_FILE_NAME_REGEX, file_name)
+        if res is not None:
+            LOG.info(f"Matched ARF file to remove {file_path}")
+            self._untrack_arf_file(file_path, res)
+            return
+
+        res = re.match(self.PARAMETER_FILE_NAME_REGEX, file_name)
+        if res is not None:
+            LOG.info(f"Matched parameter file to remove {file_path}")
+            self._untrack_file(file_path, res, lambda i: i.parameter_files)
+            return
+
+        LOG.info(f"Found an unknown file type: {file_path}")
+        return
+
+    def _find_files_recursive(self, directory: str) -> None:
+        """
+        Recursively search in a given directory for all files and add them to their corresponding lists.
 
         :param directory: the directory to search for the files in
-        :param pattern: the file name pattern
-        :param match_handler: the handler to call on the files matching the pattern
         """
         for file_name in listdir(directory):
             file_path = join(directory, file_name)
             if isdir(file_path):
-                self._find_file_recursive(file_path, pattern, match_handler)
+                self._find_files_recursive(file_path)
             else:
-                res = re.match(pattern, file_name)
-                if res is not None:
-                    # File is matching the patter. Call the handler.
-                    match_handler(file_path, res)
+                self.handle_file(file_path)
 
     def _match_arf_file(self, file_path: str, res: Match[str]) -> None:
         """
@@ -251,9 +307,14 @@ class FileUtils:
         :param res: the result of the regex match
         """
         brewer_id: str = res.group("brewer_id")
-        if brewer_id in self._file_dict:
+
+        if brewer_id not in self._file_dict:
+            self._file_dict[brewer_id] = InstrumentFiles(None)
+
+        if self._file_dict[brewer_id].arf_file is not None:
             raise ValueError(f"Multiple ARF files found for brewer with id {brewer_id}.")
-        self._file_dict[brewer_id] = InstrumentFiles(File(file_path, self._uvdata_dir))
+
+        self._file_dict[brewer_id].arf_file = File(file_path, self._uvdata_dir)
 
     def _match_file(self, file_path: str, res: Match[str], parent_dir: str, field_getter: Callable[[InstrumentFiles], List[File]]) -> None:
         """
@@ -274,18 +335,42 @@ class FileUtils:
 
         field_getter(self._file_dict[brewer_id]).append(File(file_path, parent_dir))
 
-    def _match_parameter_file(self, file_path: str, res: Match[str]):
+    def _untrack_file(self, file_path: str, res: Match[str], field_getter: Callable[[InstrumentFiles], List[File]]) -> None:
         """
-        Action to perform on matched parameter files.
+        Remove a given file.
+
+        This from the relevant list of files from an InstrumentFile. The correct list is retrieved with a given getter.
 
         See `_find_file_recursive`
-        :param file_path: the path of the matched file
+        :param file_path: the path of the file
         :param res: the result of the regex match
+        :param field_getter: a function to apply on an InstrumentFile to get the list of files of the correct type
         """
         brewer_id = res.group("brewer_id")
+
         if brewer_id not in self._file_dict:
-            self._file_dict[brewer_id] = InstrumentFiles(None)
-        self._file_dict[brewer_id].parameter_files.append(File(file_path, self._instr_dir))
+            LOG.warning(f"Trying to remove a file for an unknown brewer: {file_path}")
+            return
+
+        LOG.info(f"Removing file {file_path}")
+        file_list = field_getter(self._file_dict[brewer_id])
+        file = next((file for file in file_list if file.full_path == file_path), None)
+        file_list.remove(file)
+
+    def _untrack_arf_file(self, file_path: str, res: Match[str]) -> None:
+        """
+        Remove a given arf files.
+
+        :param file_path: the path of the file
+        :param res: the result of the regex match
+        """
+        brewer_id: str = res.group("brewer_id")
+
+        if brewer_id not in self._file_dict:
+            LOG.warning(f"Trying to remove an arf file for an unknown brewer: {file_path}")
+            return
+
+        self._file_dict[brewer_id].arf_file = None
 
     def get_brewer_ids(self) -> List[str]:
         """
@@ -442,9 +527,3 @@ class InstrumentFiles:
     uv_files: List[File] = field(default_factory=list)
     b_files: List[File] = field(default_factory=list)
     parameter_files: List[File] = field(default_factory=list)
-
-
-@dataclass
-class UVFileCombo:
-    uv_file: File
-    b_file: Optional[File]

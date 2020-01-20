@@ -19,21 +19,26 @@
 #
 import re
 from logging import getLogger
-from typing import Callable
+from typing import Callable, List
 
 from watchdog.events import FileSystemEventHandler, FileSystemMovedEvent, FileSystemEvent
 
+from buvic.logic.calculation_input import CalculationInput
+from buvic.logic.file_utils import FileUtils
+from buvic.logic.result import Result
 from buvic.logic.settings import Settings
 
 LOG = getLogger(__name__)
 
 
 class CalculationEventHandler(FileSystemEventHandler):
-    ACCEPTED_FILE_REGEX = re.compile(r".*(?P<file_type>B|UV)(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d{3})$")
+    DATE_AND_BREWER_REGEX = re.compile(r"(B|UV)(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d+)$")
 
-    def __init__(self, on_new_file: Callable[[str, str, str, str, Settings], None], settings: Settings):
+    def __init__(self, input_dir: str, on_new_file: Callable[[CalculationInput], List[Result]], settings: Settings):
         self._on_new_file = on_new_file
-        self._parameters = settings
+        self._settings = settings
+        self._file_utils = FileUtils(input_dir)
+        self._file_utils.refresh(False)
 
     def on_modified(self, event):
         self._on_created_or_modified(event)
@@ -41,23 +46,36 @@ class CalculationEventHandler(FileSystemEventHandler):
     def on_moved(self, event: FileSystemMovedEvent):
         self._on_created_or_modified(event)
 
+    def on_deleted(self, event):
+        self._file_utils.untrack_file(event.src_path)
+
     def _on_created_or_modified(self, event: FileSystemEvent):
         if event.is_directory:
             return
 
         if isinstance(event, FileSystemMovedEvent):
+            self._file_utils.untrack_file(event.src_path)
             file_path = event.dest_path
         else:
             file_path = event.src_path
 
-        res = self.ACCEPTED_FILE_REGEX.match(file_path)
-        if res:
-            LOG.info("File matched for event " + type(event).__name__)
-            file_type = res.group("file_type")
-            days = res.group("days")
-            year = res.group("year")
-            brewer_id = res.group("brewer_id")
-            try:
-                self._on_new_file(file_type, days, year, brewer_id, self._parameters)
-            except Exception:
-                LOG.error("An error occurred while handling file", exc_info=True)
+        LOG.info("File matched for event " + type(event).__name__)
+        try:
+            self._handle_file(file_path)
+        except Exception:
+            LOG.error("An error occurred while handling file", exc_info=True)
+
+    def _handle_file(self, file_path):
+        # Add file to file utils
+        must_calculate = self._file_utils.handle_file(file_path)
+        if must_calculate:
+            res = re.search(self.DATE_AND_BREWER_REGEX, file_path)
+            if res is None:
+                LOG.warning(f"Incorrect file name: {file_path}")
+            else:
+                brewer_id = res.group("brewer_id")
+                calculation_input = self._file_utils.input_from_files(
+                    res.group("days"), res.group("year"), brewer_id, self._settings, self._file_utils.get_uvr_files(brewer_id)[0].file_name
+                )
+                if calculation_input is not None:
+                    self._on_new_file(calculation_input)

@@ -25,23 +25,18 @@ import os
 import time
 from concurrent.futures.thread import ThreadPoolExecutor
 from logging import getLogger
-from os import path
-from typing import Callable, List, Any, Optional, Tuple
+from typing import Callable, List, Any, Tuple
 
 from watchdog.observers import Observer
 
-from buvic.const import ARF_FILES_SUBDIR, UV_FILES_SUBDIR, B_FILES_SUBDIR, PARAMETER_FILES_SUBDIR
 from buvic.logic.calculation_event_handler import CalculationEventHandler
-from buvic.logic.file import File
-from buvic.logic.ozone import BFileOzoneProvider
 from buvic.logic.result import Result
 from buvic.logic.settings import Settings
-from buvic.logic.utils import days_to_date
 from .calculation_input import CalculationInput
 from .irradiance_calculation import IrradianceCalculation
 from .job import Job
 from .output import QasumeOutput, UverOutput, WoudcOutput
-from .warnings import warn, get_warnings, clear_warnings
+from .warnings import get_warnings, clear_warnings
 
 LOG = getLogger(__name__)
 
@@ -127,8 +122,7 @@ class CalculationUtils:
 
     def watch(self, settings: Settings) -> None:
         """
-        TODO: fix me
-        Watch a directory for new UV or B files.
+        Watch a directory for new files.
 
         This will create a watchdog on the input directory. Every time a UV file or a B file (recognized by their names) is modified, it
         will calculate the irradiance and generate the corresponding output (csv).
@@ -139,9 +133,9 @@ class CalculationUtils:
         """
         self._init_progress = None
         self._progress_handler = None
-        event_handler = CalculationEventHandler(self._on_new_file, settings)
+        event_handler = CalculationEventHandler(self._input_dir, self.calculate_for_input, settings)
         observer = Observer()
-        observer.schedule(event_handler, self._input_dir)
+        observer.schedule(event_handler, self._input_dir, True)
         observer.start()
         try:
             while True:
@@ -232,74 +226,6 @@ class CalculationUtils:
 
         LOG.debug("Finished creating jobs for %s", calculation_input.date.isoformat())
         return calculation_jobs
-
-    def _on_new_file(self, file_type: str, days: str, year: str, brewer_id: str, settings: Settings) -> None:
-        """
-        TODO: fix me
-        """
-        if file_type == "UV":
-            calculation_input = self._input_from_files(days, year, brewer_id, settings, File("TODO", "TODO"))
-            if calculation_input is not None:
-                self.calculate_for_input(calculation_input)
-        if file_type == "B":
-            calculation_input = self._input_from_files(days, year, brewer_id, settings, File("TODO", "TODO"))
-            if calculation_input is not None:
-                self.calculate_for_input(calculation_input)
-
-    def _input_from_files(self, days: str, year: str, brewer_id: str, settings: Settings, uvr_file: File):
-        """
-        TODO: deprecated
-
-        use FileUtils._input_from_files instead
-        """
-        uv_file_name = "UV" + days + year + "." + brewer_id
-        b_file_name = "B" + days + year + "." + brewer_id
-        arf_file_name = "arf_" + brewer_id + ".dat"
-        parameter_file_name = year + ".par"
-
-        uv_file: File = File(path.join(self._input_dir, UV_FILES_SUBDIR, uv_file_name), path.join(self._input_dir, UV_FILES_SUBDIR))
-        if not path.exists(uv_file.full_path):
-            LOG.info("UV file '" + str(uv_file) + "' not found, skipping")
-            return None
-
-        b_file: Optional[File] = File(path.join(self._input_dir, B_FILES_SUBDIR, b_file_name), path.join(self._input_dir, B_FILES_SUBDIR))
-        if b_file is not None and not path.exists(b_file.full_path):
-            LOG.warning(
-                f"Corresponding B file '{b_file}' not found for UV file '{uv_file}', will use default ozone "
-                "values and straylight correction will be applied as default"
-            )
-            warn(
-                f"Corresponding B file '{b_file}' not found for UV file '{uv_file}', default ozone value is used"
-                f"and straylight correction is applied"
-            )
-            b_file = None
-
-        arf_file: Optional[File] = File(
-            path.join(self._input_dir, ARF_FILES_SUBDIR, arf_file_name), path.join(self._input_dir, ARF_FILES_SUBDIR)
-        )
-        if arf_file is not None and not path.exists(arf_file.full_path):
-            LOG.warning("ARF file was not found for UV file '" + uv_file.file_name + "', cos correction will not be applied")
-            warn(f"ARF file was not found for UV file '{uv_file.file_name}', cos correction has not been applied")
-            arf_file = None
-
-        parameter_file: Optional[File] = File(
-            path.join(self._input_dir, PARAMETER_FILES_SUBDIR, parameter_file_name), path.join(self._input_dir, PARAMETER_FILES_SUBDIR)
-        )
-        if parameter_file is not None and not path.exists(parameter_file.full_path):
-            parameter_file = None
-
-        # If everything is ok, return a calculation input
-        return CalculationInput(
-            brewer_id,
-            days_to_date(int(days), int(year)),
-            settings,
-            uv_file,
-            b_file,
-            uvr_file,
-            arf_file,
-            BFileOzoneProvider(b_file).get_brewer_type(),
-            parameter_file_name=parameter_file,
-        )
 
     def _execute_jobs(self, jobs: List[Job[Any, Result]]) -> List[Result]:
         """
