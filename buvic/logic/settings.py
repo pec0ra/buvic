@@ -97,23 +97,22 @@ class Settings:
     activate_woudc: bool = DEFAULT_ACTIVATE_WOUDC
     woudc_info: WOUDCInfo = WOUDCInfo()
 
-    def write(self):
-        with open(SETTINGS_FILE_PATH, "w") as config_file:
+    def write(self, file_path: str = SETTINGS_FILE_PATH):
+        with open(file_path, "w") as config_file:
             config_file.write(self.to_json())
-        LOG.debug(f"Settings saved successfully to {SETTINGS_FILE_PATH}")
+        LOG.debug(f"Settings saved successfully to {file_path}")
 
     @staticmethod
-    def load() -> Settings:
-        if not path.exists(SETTINGS_FILE_PATH):
-            LOG.debug(f"No setting file found, using default")
+    def load(file_path: str = SETTINGS_FILE_PATH) -> Settings:
+        if not path.exists(file_path):
+            LOG.info(f"No setting file found, using default")
             return Settings()
 
-        with open(SETTINGS_FILE_PATH, "r") as config_file:
+        with open(file_path, "r") as config_file:
             dict_settings = json.load(config_file)
-            LOG.debug(f"Settings loaded from {SETTINGS_FILE_PATH}")
             try:
                 settings = Settings.from_dict(dict_settings)  # type: ignore
-                LOG.debug(f"Settings loaded from {SETTINGS_FILE_PATH}")
+                LOG.debug(f"Settings loaded from {file_path}")
                 return settings
             except AttributeError:
                 LOG.warning("Setting file could not be parsed. Using default settings")

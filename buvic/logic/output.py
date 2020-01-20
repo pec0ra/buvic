@@ -249,9 +249,9 @@ class QasumeOutput(Output):
         second_line_parts = {
             "type": result.uv_file_entry.header.type,
             "coscor": f"{cos_cor_to_apply.value}{cloud_cover_value}",
-            "tempcor": f"{result.temperature_correction}",
+            "tempcor": f"{round(result.temperature_correction, 3)}",
             "straylightcor": straylight_correction.value,
-            "o3": f"{ozone}DU",
+            "o3": f"{round(float(ozone), 3)}DU",
             "albedo": str(albedo),
             "alpha": str(aerosol.alpha),
             "beta": str(aerosol.beta),

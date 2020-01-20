@@ -34,7 +34,6 @@ from buvic.logic.calculation_utils import CalculationUtils
 from buvic.logic.file import File
 from buvic.logic.file_utils import FileUtils
 from buvic.logic.ozone import BFileOzoneProvider
-from buvic.logic.parameter_file import Angstrom
 from buvic.logic.settings import Settings
 from buvic.logic.utils import name_to_date_and_brewer_id
 from buvic.logutils import init_logging
@@ -44,9 +43,7 @@ pp = PrettyPrinter(indent=2)
 DEFAULT_DATA_DIR = "data/"
 DEFAULT_OUTPUT = "out/"
 
-settings = Settings()
-
-parser = ArgumentParser(description="Calculate irradiance spectra")
+parser = ArgumentParser(description="Brewer UV Irradiance Calculator")
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument(
     "--dates-and-brewer-id",
@@ -68,30 +65,14 @@ group.add_argument(
 
 group.add_argument("--all", action="store_true", help="Finds and converts all UV files in the input directory")
 
-group.add_argument(
-    "--watch", "-w", action="store_true", help="Watches the input directory for file changes and automatically converts changed UV files"
-)
+# TODO: Deprecated
+# group.add_argument(
+#     "--watch", "-w", action="store_true", help="Watches the input directory for file changes and automatically converts changed UV files"
+# )
 
 parser.add_argument("--input-dir", "-i", help="The directory to get the files from")
 parser.add_argument("--output-dir", "-o", help="The directory to save the results in", default=DEFAULT_OUTPUT)
-parser.add_argument("--albedo", "-a", type=float, help="The albedo value to use for the calculations", default=settings.default_albedo)
-parser.add_argument(
-    "--aerosol",
-    "-e",
-    type=float,
-    nargs=2,
-    metavar=("ALPHA", "BETA"),
-    default=settings.default_aerosol,
-    help="The aerosol angstrom's alpha and beta values to use for the calculations.",
-)
-parser.add_argument(
-    "--ozone",
-    "-z",
-    type=float,
-    help="The ozone value in DU to use for the calculations if no value is found in a B file",
-    default=settings.default_ozone,
-)
-parser.add_argument("--no-coscor", "-c", help="Don't apply cos correction", action="store_true")
+parser.add_argument("--config", "-c", help="The path to the config file to use", default=None)
 
 args = parser.parse_args()
 pp.pprint(vars(args))
@@ -99,17 +80,15 @@ pp.pprint(vars(args))
 dates_and_brewer_id = args.dates_and_brewer_id
 paths = args.paths
 do_all = args.all
-watch = args.watch
-albedo = args.albedo
-aerosol = Angstrom(args.aerosol[0], args.aerosol[1])
-ozone = args.ozone
+# watch = args.watch
 output_dir = args.output_dir
 input_dir = args.input_dir
-no_coscor = args.no_coscor
+config_path = args.config
 
-settings.default_albedo = albedo
-settings.default_aerosol = aerosol
-settings.default_ozone = ozone
+if config_path is not None:
+    settings = Settings.load(config_path)
+else:
+    settings = Settings()
 
 if not os.path.exists(TMP_FILE_DIR):
     os.makedirs(TMP_FILE_DIR)
@@ -191,7 +170,6 @@ elif do_all:
     inputs = file_utils.get_calculation_inputs(settings)
     cmd.calculate_for_inputs(inputs)
 
-elif watch:
-    init_logging(logging.INFO)
-
-    cmd.watch(settings)
+# elif watch:
+#     init_logging(logging.INFO)
+#     cmd.watch(settings)
