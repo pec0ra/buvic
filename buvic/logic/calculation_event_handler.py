@@ -74,8 +74,13 @@ class CalculationEventHandler(FileSystemEventHandler):
                 LOG.warning(f"Incorrect file name: {file_path}")
             else:
                 brewer_id = res.group("brewer_id")
+                uvr_files = self._file_utils.get_uvr_files(brewer_id)
+                if len(uvr_files) == 0:
+                    uvr_file_name = None
+                else:
+                    uvr_file_name = uvr_files[0].file_name
                 calculation_input = self._file_utils.input_from_files(
-                    res.group("days"), res.group("year"), brewer_id, self._settings, self._file_utils.get_uvr_files(brewer_id)[0].file_name
+                    res.group("days"), res.group("year"), brewer_id, self._settings, uvr_file_name
                 )
                 if calculation_input is not None:
                     self._on_new_file(calculation_input)

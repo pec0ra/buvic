@@ -99,7 +99,7 @@ class Settings:
 
     def write(self, file_path: str = SETTINGS_FILE_PATH):
         with open(file_path, "w") as config_file:
-            config_file.write(self.to_json())
+            config_file.write(self.to_json())  # type: ignore
         LOG.debug(f"Settings saved successfully to {file_path}")
 
     @staticmethod

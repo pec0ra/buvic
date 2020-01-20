@@ -355,7 +355,8 @@ class FileUtils:
         LOG.info(f"Removing file {file_path}")
         file_list = field_getter(self._file_dict[brewer_id])
         file = next((file for file in file_list if file.full_path == file_path), None)
-        file_list.remove(file)
+        if file is not None:
+            file_list.remove(file)
 
     def _untrack_arf_file(self, file_path: str, res: Match[str]) -> None:
         """

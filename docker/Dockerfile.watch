@@ -23,9 +23,9 @@ RUN apt-get update && apt-get install -y \
 
 # Install LibRadtran
 RUN mkdir -p /opt/ \
-  && curl -SL http://www.libradtran.org/download/libRadtran-2.0.2.tar.gz \
+  && curl -SL http://www.libradtran.org/download/libRadtran-2.0.3.tar.gz \
     | tar -xzC /opt/ \
-  && mv /opt/libRadtran-2.0.2 /opt/libRadtran \
+  && mv /opt/libRadtran-2.0.3 /opt/libRadtran \
   && cd /opt/libRadtran \
   && ./configure && make
 
@@ -35,13 +35,20 @@ ENV PATH /opt/libRadtran/bin:$PATH
 # Install python libraries dependencies
 COPY requirements.txt ./
 RUN pip3 install -r requirements.txt
+RUN rm requirements.txt
 
 # Copy code and data
 COPY run_cmd.py ./
+
+RUN mkdir /config
+COPY data/instr ./instr
+COPY data/uvdata ./uvdata
+RUN mkdir /data
+RUN ln -s /instr /data/instr
+RUN ln -s /uvdata /data/uvdata
+
 COPY buvic ./buvic
 COPY docker/libradtran_command.py ./buvic/
-COPY data ./data
-COPY version ./
 
 # Start server
-CMD python3.7 run_cmd.py -w -i /in -o /out -c
+CMD python3.7 run_cmd.py -w -i /data -o /out -c /config/settings.json
