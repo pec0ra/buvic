@@ -213,31 +213,31 @@ class FileUtils:
 
         res = re.match(self.UV_FILE_NAME_REGEX, file_name)
         if res is not None:
-            LOG.info(f"Matched UV file {file_path}")
+            LOG.debug(f"Matched UV file {file_path}")
             self._match_file(file_path, res, self._uvdata_dir, lambda i: i.uv_files)
             return True
 
         res = re.match(self.B_FILE_NAME_REGEX, file_name)
         if res is not None:
-            LOG.info(f"Matched B file {file_path}")
+            LOG.debug(f"Matched B file {file_path}")
             self._match_file(file_path, res, self._uvdata_dir, lambda i: i.b_files)
             return True
 
         res = re.match(self.UVR_FILE_NAME_REGEX, file_name)
         if res is not None:
-            LOG.info(f"Matched UVR file {file_path}")
+            LOG.debug(f"Matched UVR file {file_path}")
             self._match_file(file_path, res, self._instr_dir, lambda i: i.uvr_files)
             return False
 
         res = re.match(self.ARF_FILE_NAME_REGEX, file_name)
         if res is not None:
-            LOG.info(f"Matched ARF file {file_path}")
+            LOG.debug(f"Matched ARF file {file_path}")
             self._match_arf_file(file_path, res)
             return False
 
         res = re.match(self.PARAMETER_FILE_NAME_REGEX, file_name)
         if res is not None:
-            LOG.info(f"Matched parameter file {file_path}")
+            LOG.debug(f"Matched parameter file {file_path}")
             self._match_file(file_path, res, self._instr_dir, lambda i: i.parameter_files)
             return False
 
