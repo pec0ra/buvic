@@ -42,6 +42,7 @@ Information about BUVIC's usage and implementation can be found in the [wiki](ht
     * [Requirements](https://github.com/pec0ra/buvic/wiki/Usage%3A-Requirements)
     * [Docker](https://github.com/pec0ra/buvic/wiki/Usage%3A-Docker)
     * [Python App](https://github.com/pec0ra/buvic/wiki/Usage%3A-Python-App)
+    * [Settings](https://github.com/pec0ra/buvic/wiki/Usage%3A-Settings)
   * [Contributing](https://github.com/pec0ra/buvic/wiki/Contributing)
     * [License](https://github.com/pec0ra/buvic/wiki/Contributing%3A-License)
     * [Code Style](https://github.com/pec0ra/buvic/wiki/Contributing%3A-Code-Style)

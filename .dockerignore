@@ -1,0 +1,9 @@
+*~
+*.swp
+*.iml
+.idea
+__pycache__
+venv
+out
+tmp
+.mypy_cache

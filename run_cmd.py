@@ -73,7 +73,7 @@ group.add_argument(
 
 parser.add_argument("--input-dir", "-i", help="The directory to get the files from")
 parser.add_argument("--output-dir", "-o", help="The directory to save the results in", default=DEFAULT_OUTPUT)
-parser.add_argument("--config", "-c", help="The path to the config file to use", default=None)
+parser.add_argument("--config", "-c", help="The path to the setting file to use", default=None)
 
 args = parser.parse_args()
 pp.pprint(vars(args))
