@@ -425,18 +425,6 @@ class SimpleMainForm(MainForm):
         self._file_utils.refresh()
         self.check_fields()
 
-    @property
-    def brewer_id(self):
-        return self._brewer_id
-
-    @property
-    def date_start(self):
-        return self._date_start
-
-    @property
-    def date_end(self):
-        return self._date_end
-
     def _on_bid_change(self, widget: gui.Widget, value: str):
         del widget  # remove unused parameter
         self._brewer_id = value

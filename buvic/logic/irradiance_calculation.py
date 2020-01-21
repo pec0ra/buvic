@@ -67,9 +67,13 @@ class IrradianceCalculation:
         try:
             LOG.debug("Starting calculation for section %d of '%s'", index, self._calculation_input.uv_file_name)
 
+            # Get the raw data corresponding to the given index
             uv_file_entry: UVFileEntry = self._calculation_input.uv_file_entries[index]
 
+            # Execute libradtran
             libradtran_result = self._execute_libradtran(uv_file_entry)
+
+            # Convert raw data to calibrated spectrum
             calibrated_spectrum = self._to_calibrated_spectrum(uv_file_entry, self._calculation_input.calibration)
 
             # Apply temperature correction
@@ -84,15 +88,13 @@ class IrradianceCalculation:
             cos_cor_to_apply = self._calculation_input.cos_correction_to_apply(minutes)
             if cos_cor_to_apply == CosCorrection.DIFFUSE:
                 LOG.debug("Using diffuse correction for time %s", minutes_to_time(minutes).isoformat())
-                cos_correction = divide(
-                    [1] * len(libradtran_result.columns["sza"]), self._calculate_coscor_diff(self._calculation_input.arf)
-                )
+                cos_correction = divide(ones(len(calibrated_spectrum)), self._calculate_coscor_diff(self._calculation_input.arf))
             elif cos_cor_to_apply == CosCorrection.CLEAR_SKY:
                 LOG.debug("Using clear sky correction for time %s", minutes_to_time(minutes).isoformat())
                 cos_correction = self._cos_correction(self._calculation_input.arf, libradtran_result)
             else:
                 LOG.debug("Using no cos correction")
-                cos_correction = ones(len(libradtran_result.columns["sza"]))
+                cos_correction = ones(len(calibrated_spectrum))
 
             # Set nan to 1
             cos_correction_no_nan = cos_correction.copy()
@@ -134,6 +136,7 @@ class IrradianceCalculation:
         raw_values = [v.events for v in uv_file_entry.raw_values]
         corrected_values = [v - uv_file_header.dark for v in raw_values]
 
+        # Remove straylight if needed
         straylight_correction = correct_straylight(self._calculation_input.brewer_type)
         if straylight_correction == StraylightCorrection.UNDEFINED:
             straylight_correction = self._calculation_input.settings.default_straylight_correction
@@ -171,7 +174,7 @@ class IrradianceCalculation:
         """
 
         # Interpolate ARF over smaller steps to get a better precision
-        angles = multiply(pi / 180, arf.szas)
+        angles = multiply(pi / 180, arf.szas)  # Convert to radians
         spline = UnivariateSpline(angles, arf.values)
         theta = linspace(0, pi / 2, 160)
 
