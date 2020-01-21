@@ -49,6 +49,9 @@ class CalculationEventHandler(FileSystemEventHandler):
     def on_deleted(self, event):
         self._file_utils.untrack_file(event.src_path)
 
+    def on_created(self, event):
+        LOG.debug(f"New file created: {event.src_path}")
+
     def _on_created_or_modified(self, event: FileSystemEvent):
         if event.is_directory:
             return

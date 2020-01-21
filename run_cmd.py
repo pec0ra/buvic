@@ -173,5 +173,5 @@ elif do_all:
     cmd.calculate_for_inputs(inputs)
 
 elif watch:
-    init_logging(logging.INFO)
+    init_logging(logging.DEBUG)
     cmd.watch(settings)

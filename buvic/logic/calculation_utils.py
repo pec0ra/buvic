@@ -25,6 +25,7 @@ import os
 import time
 from concurrent.futures.thread import ThreadPoolExecutor
 from logging import getLogger
+from os import path
 from typing import Callable, List, Any, Tuple
 
 from watchdog.observers import Observer
@@ -135,7 +136,8 @@ class CalculationUtils:
         self._progress_handler = None
         event_handler = CalculationEventHandler(self._input_dir, self.calculate_for_input, settings)
         observer = Observer()
-        observer.schedule(event_handler, self._input_dir, True)
+        observer.schedule(event_handler, path.join(self._input_dir, "instr"), True)
+        observer.schedule(event_handler, path.join(self._input_dir, "uvdata"), True)
         observer.start()
         try:
             while True:

@@ -51,4 +51,4 @@ COPY buvic ./buvic
 COPY docker/libradtran_command.py ./buvic/
 
 # Start server
-CMD python3.7 run_cmd.py -w -i /data -o /out -c /config/settings.json
+CMD python3.7 run_cmd.py -w -i / -o /out -c /config/settings.json
