@@ -325,12 +325,23 @@ class CalculationUtils:
 
         return []
 
-    def _generate_output(self, results: List[Result]):
+    def _generate_output(self, results: List[Result]) -> None:
+        """
+        Generate the output files for a given list of results
+        :param results: the results to generate the output for
+        """
         start = time.time()
         output_jobs = []
+
+        # Sort the result by date
         sorted_results = sorted(results, key=lambda r: r.uv_file_entry.header.date)
 
+        # Group the results by date and iterate through the group, date by date
+        # For each date, we create output generation jobs that we will later execute on a thread pool
         for date, result_iter in itertools.groupby(sorted_results, key=lambda r: r.uv_file_entry.header.date):
+
+            # result_iter contains all the results for one day.
+            # We sort the results by measurement time.
             results = sorted(result_iter, key=lambda r: r.spectrum.measurement_times[0])
             if len(results) != 0:
                 qasume_jobs = QasumeOutput(self._output_dir, results).get_jobs()

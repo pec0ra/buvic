@@ -71,7 +71,9 @@ group.add_argument(
     "--watch", "-w", action="store_true", help="Watches the input directory for file changes and automatically converts changed UV files"
 )
 
-parser.add_argument("--input-dir", "-i", help="The directory to get the files from")
+parser.add_argument(
+    "--input-dir", "-i", help="The directory to get the files from. It must contain two subdirectories called 'instr' and 'uvdata'"
+)
 parser.add_argument("--output-dir", "-o", help="The directory to save the results in", default=DEFAULT_OUTPUT)
 parser.add_argument("--config", "-c", help="The path to the setting file to use", default=None)
 

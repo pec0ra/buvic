@@ -173,6 +173,104 @@ Here is an example of a (truncated) qasume file `1751130G.117`:
 
 ## Instructions
 
+The best way to run this image is with the [installer](#installer) or with [docker-compose](#docker-compose)
+
+
+### Installer
+
+[`installer.py`](https://github.com/pec0ra/buvic/blob/master/installer.py) is a small script to help deploy the docker UV Server image.
+
+**Instructions:**
+
+`installer.py` requires python 3+.
+To run the script:
+```
+python installer.py
+```
+or on linux simply:
+```
+./installer.py
+```
+Then follow the instructions on terminal
+
+**Upgrading BUVIC**
+
+To upgrade, just run the installer again and choose the version you want.
+
+
+### Docker Compose
+
+It is possible to use [Docker Compose](https://docs.docker.com/compose/) to easily configure and start BUVIC's docker image.
+
+**Instructions:**
+
+Docker Compose needs to be installed first.
+If you use Windows or Mac, you are lucky because Docker Compose comes preinstalled with docker.
+If you use another OS, see the [install instructions](https://docs.docker.com/compose/install/).
+
+Clone [BUVIC's repository](https://github.com/pec0ra/buvic) or download the
+[`docker-compose.yml`](https://github.com/pec0ra/buvic/blob/master/docker/docker-compose.yml) file:
+
+```yaml
+version: '3.7'
+
+volumes:
+  buvic-settings:
+
+services:
+  app:
+    image: pmodwrc/buvic:latest
+    container_name: buvic
+    ports:
+      # Change the port you want BUVIC to listen to (default: 80). Value must be <LISTENING_PORT>:4444
+      - 80:4444
+    volumes:
+      - buvic-settings:/settings
+
+      # Adapt the path to your instrument files
+      - ../data/instr:/instr
+
+      # Adapt the path to your uv files
+      - ../data/uvdata/:/uvdata
+
+      # Adapt the path for your output files
+      - ../out:/out
+    environment:
+      # Uncomment next line if you want to use darksky
+      #- DARKSKY_TOKEN=yourdarkskytoken
+
+      - PORT=4444
+
+    # Uncomment next line to allow giving the user to run the image in environment variable `CURRENT_UID` (value must be `<user_id>:<group_id>'
+    #user: ${CURRENT_UID}
+
+    # Uncomment next line to run the image with given another user id and group id
+    #user: 1000:1000
+
+    # Uncomment this line if you want the image to start at boot
+    #restart: always
+
+    init: true
+```
+
+Open a terminal and navigate to the directory where the `docker-compose.yml` file is (it's in `docker/` if you cloned the repository)
+and make the needed changes (see comments).
+
+Then run
+```
+docker-compose up -d
+```
+The option `-d` tells docker-compose to run as a daemon (in the background). If you want the image to run in the terminal, skip this option.
+
+
+**Upgrading BUVIC**
+
+To upgrade BUVIC, run the following commands in the same directory as the `docker-compose.yml` file:
+```shell script
+docker-compose down
+docker pull pmodwrc/buvic
+docker-compose up
+```
 
 #### Demo command
 
