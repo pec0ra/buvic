@@ -19,6 +19,7 @@
 #
 import unittest
 from datetime import date
+from typing import Optional
 
 from buvic.logic.calculation_input import CalculationInput
 from buvic.logic.file import File
@@ -26,81 +27,29 @@ from buvic.logic.result import Result, Spectrum
 from buvic.logic.settings import Settings
 
 
-class FileUtilsTestCase(unittest.TestCase):
+class ResultTestCase(unittest.TestCase):
     def test(self):
-        result = Result(
-            0,
-            CalculationInput("033", date(2019, 1, 1), Settings(), File("dummy"), File("dummy"), File("dummy"), File("dummy"), None),
-            44.4,
-            0.0,
-            0.0,
-            Spectrum([], [70], [], [], [], []),
-        )
-        name = result.get_qasume_name()
-        self.assertEqual("0010110G.033", name)
+        self._test_paths("0010110G.033", File("dummy"), File("dummy"))
 
-        result = Result(
-            0,
-            CalculationInput(
-                "033", date(2019, 1, 1), Settings(), File("path/to/dummy"), File("path/to/dummy"), File("dummy"), File("dummy"), None
-            ),
-            44.4,
-            0.0,
-            0.0,
-            Spectrum([], [70], [], [], [], []),
-        )
-        name = result.get_qasume_name()
-        self.assertEqual("path/to/0010110G.033", name)
+        self._test_paths("path/to/0010110G.033", File("path/to/dummy"), File("path/to/dummy"))
+        self._test_paths("path/to/0010110G.033", File("path/to/uv/dummy"), File("path/to/b/dummy"))
 
-        result = Result(
-            0,
-            CalculationInput(
-                "033",
-                date(2019, 1, 1),
-                Settings(no_coscor=True),
-                File("path/to/dummy"),
-                File("path/to/dummy"),
-                File("dummy"),
-                File("dummy"),
-                None,
-            ),
-            44.4,
-            0.0,
-            0.0,
-            Spectrum([], [70], [], [], [], []),
-        )
-        name = result.get_qasume_name()
-        self.assertEqual("nocoscor/path/to/0010110G.033", name)
+        self._test_paths("nocoscor/path/to/0010110G.033", File("path/to/uv/dummy"), File("path/to/b/dummy"), no_coscor=True)
 
-        result = Result(
-            0,
-            CalculationInput("033", date(2019, 1, 1), Settings(), None, File("path/to/b/dummy"), File("dummy"), File("dummy"), None),
-            44.4,
-            0.0,
-            0.0,
-            Spectrum([], [70], [], [], [], []),
-        )
-        name = result.get_qasume_name()
-        self.assertEqual("path/to/b/0010110G.033", name)
+        self._test_paths("path/to/b/0010110G.033", None, File("path/to/b/dummy"))
 
-        result = Result(
-            0,
-            CalculationInput("033", date(2019, 1, 1), Settings(), File("path/to/uv/dummy"), None, File("dummy"), File("dummy"), None),
-            44.4,
-            0.0,
-            0.0,
-            Spectrum([], [70], [], [], [], []),
-        )
-        name = result.get_qasume_name()
-        self.assertEqual("path/to/uv/0010110G.033", name)
+        self._test_paths("path/to/uv/0010110G.033", File("path/to/uv/dummy"))
 
+        self._test_paths("033/2019/0010110G.033")
+
+    def _test_paths(self, expected_output_path: str, uv_file: Optional[File] = None, b_file: Optional[File] = None, **kwargs):
         result = Result(
             0,
-            CalculationInput("033", date(2019, 1, 1), Settings(), None, None, File("dummy"), File("dummy"), None),
+            CalculationInput("033", date(2019, 1, 1), Settings(**kwargs), uv_file, b_file, File("dummy"), File("dummy"), None),
             44.4,
             0.0,
             0.0,
             Spectrum([], [70], [], [], [], []),
         )
         name = result.get_qasume_name()
-        self.assertEqual("033/2019/0010110G.033", name)
+        self.assertEqual(expected_output_path, name)
