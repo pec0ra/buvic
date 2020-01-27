@@ -33,7 +33,6 @@ from buvic.logic.calculation_input import CalculationInput
 from buvic.logic.calculation_utils import CalculationUtils
 from buvic.logic.file import File
 from buvic.logic.file_utils import FileUtils
-from buvic.logic.ozone import BFileOzoneProvider
 from buvic.logic.settings import Settings
 from buvic.logic.utils import name_to_date_and_brewer_id
 from buvic.logutils import init_logging
@@ -156,13 +155,7 @@ elif paths is not None:
     b_file = File(input_dir + paths[1], input_dir) if paths[1] is not None else None
     arf_file = File(input_dir + paths[3], input_dir) if paths[3] is not None else None
     calculation_input = CalculationInput(
-        brewer_id,
-        d,
-        settings,
-        File(input_dir + paths[0], input_dir),
-        b_file,
-        File(input_dir + paths[2], input_dir),
-        arf_file,
+        brewer_id, d, settings, File(input_dir + paths[0], input_dir), b_file, File(input_dir + paths[2], input_dir), arf_file,
     )
 
     cmd.calculate_for_input(calculation_input)

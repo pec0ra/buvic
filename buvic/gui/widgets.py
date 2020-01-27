@@ -852,7 +852,9 @@ class SettingsWidget(VBox):
         for source in DataSource:
             self._brewer_model_source_selection.append(gui.DropDownItem(source))
         self._brewer_model_source_selection.set_value(settings.brewer_model_data_source)
-        brewer_model_source_input = LabeledInput("Brewer model data source", self._brewer_model_source_selection, style="margin-bottom: 10px")
+        brewer_model_source_input = LabeledInput(
+            "Brewer model data source", self._brewer_model_source_selection, style="margin-bottom: 10px"
+        )
         self._source_container.append(brewer_model_source_input)
 
         self.append(self._source_container)

@@ -27,7 +27,7 @@ from buvic.logic.settings import Settings
 
 class IrradianceCalculationTestCase(unittest.TestCase):
     def test_air_mass_calculation(self):
-        calculation = IrradianceCalculationTest(CalculationInput("033", date.today(), Settings(), None, None, None, None, None, None, []))
+        calculation = IrradianceCalculationTest(CalculationInput("033", date.today(), Settings(), None, None, None, None, None, []))
 
         air_mass = calculation.calculate_air_mass(75.0)
         self.assertAlmostEqual(3.69, air_mass, 2)

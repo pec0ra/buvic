@@ -256,7 +256,7 @@ class QasumeOutput(Output):
             "albedo": str(albedo),
             "alpha": str(aerosol.alpha),
             "beta": str(aerosol.beta),
-            "uvr_source": result.calculation_input.calibration.source
+            "uvr_source": result.calculation_input.calibration.source,
         }
         # We join the second line parts like <key>=<value> and separate them with a tabulation (\t)
         content += "% " + ("\t".join("=".join(_) for _ in second_line_parts.items())) + "\n"

@@ -43,9 +43,10 @@ class BrewerModelProvider:
 
 
 class EubrewnetBrewerModelProvider(BrewerModelProvider):
-
     def __init__(self, brewer_id: str, d: date):
-        self._url_string = f"http://rbcce.aemet.es/eubrewnet/data/get/ConfigbyDate?brewerid={brewer_id}&date={d.isoformat()}&fields=brewer_model"
+        self._url_string = (
+            f"http://rbcce.aemet.es/eubrewnet/data/get/ConfigbyDate?brewerid={brewer_id}&date={d.isoformat()}&fields=brewer_model"
+        )
 
     def get_brewer_type(self) -> Optional[str]:
 

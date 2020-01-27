@@ -30,7 +30,6 @@ from typing import Dict, List, Tuple, Callable, Match, Optional
 
 from buvic.logic.calculation_input import CalculationInput
 from buvic.logic.file import File
-from buvic.logic.ozone import BFileOzoneProvider
 from buvic.logic.settings import Settings, DataSource
 from buvic.logic.utils import days_to_date, date_range, date_to_days
 
