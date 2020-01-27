@@ -198,13 +198,7 @@ class UVFileReaderTestCase(unittest.TestCase):
 
     def test_arf_sources(self):
         calculation_input = CalculationInput(
-            "033",
-            date(2019, 6, 20),
-            Settings(),
-            File("dummy"),
-            File("dummy"),
-            File("dummy"),
-            File("buvic/logic/test/arf_example"),
+            "033", date(2019, 6, 20), Settings(), File("dummy"), File("dummy"), File("dummy"), File("buvic/logic/test/arf_example"),
         )
 
         arf = calculation_input.arf
