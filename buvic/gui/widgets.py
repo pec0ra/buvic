@@ -637,11 +637,11 @@ class Modal(Backdrop):
     _is_closed: bool = False
 
     def __init__(
-        self, title: str, content: gui.Widget, extra_buttons: List[Tuple[str, Callable[[gui.Widget], None]]] = None, *args, **kwargs
+        self, title: str, content: gui.Widget, extra_buttons: List[Tuple[str, Callable[[gui.Widget], None]]] = None, **kwargs
     ):
         if extra_buttons is None:
             extra_buttons = []
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
         modal = VBox()
         modal.add_class("modal")
         title = Title(Level.H2, title, style="padding-left: 30px; padding-right: 30px")

@@ -7,3 +7,5 @@ venv
 out
 tmp
 .mypy_cache
+.coverage
+coverage.xml
