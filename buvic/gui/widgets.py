@@ -636,9 +636,7 @@ class Modal(Backdrop):
     _extra_buttons: Dict[str, gui.Button]
     _is_closed: bool = False
 
-    def __init__(
-        self, title: str, content: gui.Widget, extra_buttons: List[Tuple[str, Callable[[gui.Widget], None]]] = None, **kwargs
-    ):
+    def __init__(self, title: str, content: gui.Widget, extra_buttons: List[Tuple[str, Callable[[gui.Widget], None]]] = None, **kwargs):
         if extra_buttons is None:
             extra_buttons = []
         super().__init__(**kwargs)
