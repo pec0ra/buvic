@@ -237,6 +237,7 @@ class QasumeOutput(Output):
             cloud_cover_value = f"(darksky:{result.calculation_input.cloud_cover.darksky_value(minutes)})"
 
         content += f"% Generated with Brewer UV Irradiance Calculation {APP_VERSION} at {datetime.now().replace(microsecond=0)}\n"
+        content += f"% https://github.com/pec0ra/buvic\n"
 
         content += (
             f"% {result.uv_file_entry.header.place} {result.uv_file_entry.header.position.latitude}N "
@@ -255,6 +256,7 @@ class QasumeOutput(Output):
             "albedo": str(albedo),
             "alpha": str(aerosol.alpha),
             "beta": str(aerosol.beta),
+            "uvr_source": result.calculation_input.calibration.source
         }
         # We join the second line parts like <key>=<value> and separate them with a tabulation (\t)
         content += "% " + ("\t".join("=".join(_) for _ in second_line_parts.items())) + "\n"

@@ -138,19 +138,6 @@ class FileUtils:
 
         return input_list
 
-    def get_brewer_type(self, brewer_id: str) -> Optional[str]:
-        if brewer_id is None:
-            raise ValueError(f"brewer id should not be None.")
-        if brewer_id not in self._file_dict:
-            return None
-
-        b_files = self._file_dict[brewer_id].b_files
-        for b_file in b_files:
-            brewer_type = BFileOzoneProvider(b_file).get_brewer_type()
-            if brewer_type is not None:
-                return brewer_type
-        return None
-
     def input_from_files(
         self, days: str, year: str, brewer_id: str, settings: Settings, uvr_file: Optional[str] = None
     ) -> Optional[CalculationInput]:
@@ -188,8 +175,6 @@ class FileUtils:
 
         parameter_file = self.get_parameter_file(brewer_id, year)
 
-        brewer_type = self.get_brewer_type(brewer_id)
-
         return CalculationInput(
             brewer_id,
             days_to_date(int(days), int(year)),
@@ -198,7 +183,6 @@ class FileUtils:
             b_file,
             calibration_file,
             arf_file,
-            brewer_type,
             parameter_file_name=parameter_file,
         )
 

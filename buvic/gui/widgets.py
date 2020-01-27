@@ -293,11 +293,13 @@ class PathMainForm(MainForm):
         if self._uv_file is not None and self._calibration_file is not None:
 
             d, brewer_id = name_to_date_and_brewer_id(self._uv_file)
-            brewer_type = BFileOzoneProvider(File(self._b_file) if self._b_file is not None else None).get_brewer_type()
-            if brewer_type is None:
-                self.show_warning(
-                    f"Straylight correction cannot be determined. Using default:" f"{self.settings.default_straylight_correction.value}"
-                )
+
+            if self.settings.ozone_data_source == DataSource.FILES:
+                brewer_type = BFileOzoneProvider(File(self._b_file) if self._b_file is not None else None).get_brewer_type()
+                if brewer_type is None:
+                    self.show_warning(
+                        f"Straylight correction cannot be determined. Using default:" f"{self.settings.default_straylight_correction.value}"
+                    )
             # If all fields are valid, we initialize a CalculationInput and enable the button
             self._calculation_input = CalculationInput(
                 brewer_id,
@@ -307,7 +309,6 @@ class PathMainForm(MainForm):
                 File(self._b_file) if self._b_file is not None else None,
                 File(self._calibration_file),
                 File(self._arf_file) if self._arf_file is not None else None,
-                brewer_type,
             )
             self._calculate_button.set_enabled(True)
         else:
@@ -470,12 +471,6 @@ class SimpleMainForm(MainForm):
             if arf is None:
                 self.show_warning("No arf file exists for this brewer id. Cos correction will not be applied")
 
-        if self._brewer_id is not None:
-            brewer_type = self._file_utils.get_brewer_type(self._brewer_id)
-            if brewer_type is None:
-                straylight_correction = self.settings.default_straylight_correction
-                self.show_warning(f"Straylight correction cannot be determined. Using default: {straylight_correction.value}")
-
         if self.settings.uvr_data_source == DataSource.EUBREWNET:
             hide(self._uvr_input)
         else:
@@ -484,6 +479,7 @@ class SimpleMainForm(MainForm):
     def start_calculation(self, calculation_utils: CalculationUtils) -> List[Result]:
         if self._brewer_id is None or self._date_start is None or self._date_end is None:
             raise Exception("Calculation should not be available with None values")
+
         calculation_inputs = self._file_utils.get_calculation_inputs_between(
             self._date_start, self._date_end, self._brewer_id, self.settings, self._uvr_file
         )
@@ -852,6 +848,13 @@ class SettingsWidget(VBox):
         uvr_source_input = LabeledInput("UVR data source", self._uvr_source_selection, style="margin-bottom: 10px")
         self._source_container.append(uvr_source_input)
 
+        self._brewer_model_source_selection = gui.DropDown()
+        for source in DataSource:
+            self._brewer_model_source_selection.append(gui.DropDownItem(source))
+        self._brewer_model_source_selection.set_value(settings.brewer_model_data_source)
+        brewer_model_source_input = LabeledInput("Brewer model data source", self._brewer_model_source_selection, style="margin-bottom: 10px")
+        self._source_container.append(brewer_model_source_input)
+
         self.append(self._source_container)
         self._update_manual_mode(settings.manual_mode)
 
@@ -936,6 +939,7 @@ class SettingsWidget(VBox):
         uv_data_source = self._uv_source_selection.get_value()
         ozone_data_source = self._ozone_source_selection.get_value()
         uvr_data_source = self._uvr_source_selection.get_value()
+        brewer_model_data_source = self._brewer_model_source_selection.get_value()
 
         activate_woudc = self._woudc_checkbox.get_value()
 
@@ -964,6 +968,7 @@ class SettingsWidget(VBox):
             DataSource(uv_data_source),
             DataSource(ozone_data_source),
             DataSource(uvr_data_source),
+            DataSource(brewer_model_data_source),
             activate_woudc,
             woudc_info,
         )

@@ -53,7 +53,7 @@ class EubrewnetCalibrationProvider(CalibrationProvider):
         wavelengths = [value / 10 for value in data[1]]
         values = data[2]
 
-        return Calibration(wavelengths, values)
+        return Calibration(data[0][1], wavelengths, values)
 
 
 class UVRFileCalibrationProvider(CalibrationProvider):
@@ -83,11 +83,12 @@ class UVRFileCalibrationProvider(CalibrationProvider):
 
             LOG.debug("Finished parsing file: %s", self._file_name)
 
-            return Calibration(wavelengths, values)
+            return Calibration(self._file_name, wavelengths, values)
 
 
 @dataclass
 class Calibration:
+    source: str
     wavelengths: List[float]
     values: List[float]
 

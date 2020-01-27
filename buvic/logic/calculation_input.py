@@ -37,6 +37,7 @@ from buvic.logic.settings import Settings, DataSource
 from buvic.logic.utils import date_to_days
 from buvic.logic.uv_file import UVFileUVProvider, UVFileEntry, EubrewnetUVProvider, UVProvider
 from .arf_file import ARF, FileARFProvider
+from .brewer_infos import BFileBrewerModelProvider, EubrewnetBrewerModelProvider
 from .warnings import warn
 
 LOG = getLogger(__name__)
@@ -55,7 +56,6 @@ class CalculationInput:
     b_file_name: Optional[File]
     calibration_file_name: Optional[File]  # None if the data source is EUBREWNET
     arf_file_name: Optional[File]
-    brewer_type: Optional[str]
     parameter_file_name: Optional[File] = None
     warnings: List[str] = field(default_factory=list)
 
@@ -75,6 +75,13 @@ class CalculationInput:
             return BFileOzoneProvider(self.b_file_name).get_ozone_data()
         else:
             return EubrewnetOzoneProvider(self.brewer_id, self.date).get_ozone_data()
+
+    @cached_property
+    def brewer_type(self) -> Optional[str]:
+        if self.settings.brewer_model_data_source == DataSource.FILES:
+            return BFileBrewerModelProvider(self.b_file_name).get_brewer_type()
+        else:
+            return EubrewnetBrewerModelProvider(self.brewer_id, self.date).get_brewer_type()
 
     @cached_property
     def calibration(self) -> Calibration:
@@ -125,12 +132,14 @@ class CalculationInput:
         if len(uv_file_entries) == 0:
             return
         ozone = self.ozone
+        brewer_type = self.brewer_type
         calibration = self.calibration
         arf = self.arf
         coscor_to_apply = self.cos_correction_to_apply(0)
         parameters = self.parameters
         del uv_file_entries
         del ozone
+        del brewer_type
         del calibration
         del arf
         del coscor_to_apply

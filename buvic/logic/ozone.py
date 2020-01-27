@@ -129,32 +129,6 @@ class BFileOzoneProvider(OzoneProvider):
             except Exception as e:
                 raise BFileParsingError("An error occurred while parsing the B File") from e
 
-    def get_brewer_type(self) -> Optional[str]:
-        if self._file is None or not path.exists(self._file.full_path):
-            return None
-
-        LOG.debug("Parsing file: %s", self._file.file_name)
-
-        with open(self._file.full_path, newline="\r\n") as f:
-            try:
-                brewer_type = None
-                for raw_line in f:
-                    line = raw_line.replace("\r", " ").replace("\n", "").strip()
-                    res_constants = re.match(self.INSTRUMENT_CONSTANTS_LINE_REGEX, line)
-                    if res_constants is not None:
-                        brewer_type = res_constants.group("brewer_type")
-                        break
-
-                LOG.debug("Finished parsing file: %s", self._file.file_name)
-
-                if brewer_type is None:
-                    LOG.warning(f"No brewer type found in b file {self._file.file_name}")
-                    return None
-
-                return brewer_type
-            except Exception as e:
-                raise BFileParsingError("An error occurred while parsing the B File") from e
-
 
 @dataclass
 class Ozone:

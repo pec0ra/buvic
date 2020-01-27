@@ -93,6 +93,7 @@ class Settings:
     uv_data_source: DataSource = DataSource.FILES
     ozone_data_source: DataSource = DataSource.FILES
     uvr_data_source: DataSource = DataSource.FILES
+    brewer_model_data_source: DataSource = DataSource.FILES
 
     activate_woudc: bool = DEFAULT_ACTIVATE_WOUDC
     woudc_info: WOUDCInfo = WOUDCInfo()

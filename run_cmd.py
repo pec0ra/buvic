@@ -163,7 +163,6 @@ elif paths is not None:
         b_file,
         File(input_dir + paths[2], input_dir),
         arf_file,
-        BFileOzoneProvider(b_file).get_brewer_type(),
     )
 
     cmd.calculate_for_input(calculation_input)
