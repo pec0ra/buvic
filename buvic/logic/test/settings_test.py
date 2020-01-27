@@ -62,7 +62,6 @@ class SettingsTestCase(unittest.TestCase):
 
         try:
             loaded_settings = Settings.load("test_settings.json")
-            loaded_settings.arf_column = 5
             self.assertEqual(settings, loaded_settings)
         finally:
             os.remove("test_settings.json")
