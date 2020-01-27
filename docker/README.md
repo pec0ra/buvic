@@ -1,6 +1,5 @@
 <img src="https://raw.githubusercontent.com/pec0ra/buvic/master/assets/logo_github_header.png" width="100%" >
 
-
 # Brewer UV Irradiance Calculation
 
 Brewer UV Irradiance Calculation (BUVIC) is a tool to calculate the cosine corrected irradiance from brewer raw UV measurements.
@@ -10,7 +9,6 @@ A more complete documentation can be found on [BUVIC's wiki](https://github.com/
 ## Requirements
 
 Docker needs to be installed in order to run this tool
-
 
 ### Directory structure
 
@@ -36,10 +34,9 @@ instr/
     ...
 ```
 It contains:
-* ARF files with the name pattern `arf_<brewer_id>.dat`
-* Calibration files with the name pattern `UVRXXXXX.<brewer_id>`
-* Parameter files with the name pattern `par_<year>.<brewer_id>` where *year* is the last two digits of the year (e.g. 19)
-
+*   ARF files with the name pattern `arf_<brewer_id>.dat`
+*   Calibration files with the name pattern `UVRXXXXX.<brewer_id>`
+*   Parameter files with the name pattern `par_<year>.<brewer_id>` where *year* is the last two digits of the year (e.g. 19)
 
 The uv data directory is where you put your measurement files.
 ```
@@ -56,9 +53,9 @@ uvdata/
     ...
 ```
 It contains:
-* B files with the name pattern `B<days><year>.<brewer_id>` where *days* is the number of days since new year and *year* is the last two
+*   B files with the name pattern `B<days><year>.<brewer_id>` where *days* is the number of days since new year and *year* is the last two
 digits of the year (e.g. 19)
-* UV files with the name pattern `UV<days><year>.<brewer_id>` where *days* is the number of days since new year and *year* is the last two
+*   UV files with the name pattern `UV<days><year>.<brewer_id>` where *days* is the number of days since new year and *year* is the last two
 digits of the year (e.g. 19)
 
 Inside the instrument and uv data directories, you may use any directory structure that you want.
@@ -108,7 +105,6 @@ uvdata/
 
 The output directory is the place where BUVIC will write its output files. BUVIC will automatically create a structure to group files by year.
 
-
 ### File formats
 
 #### Parameter files
@@ -130,7 +126,6 @@ Here is an example of a parameter file content `par_19.033`:
 12;0.3;;;0
 14;0.5;1.5;0.5;
 ```
-
 
 #### Output files
 
@@ -169,12 +164,9 @@ Here is an example of a (truncated) qasume file `1751130G.117`:
 ...
 ```
 
-
-
 ## Instructions
 
 The best way to run this image is with the [installer](#installer) or with [docker-compose](#docker-compose)
-
 
 ### Installer
 
@@ -196,7 +188,6 @@ Then follow the instructions on terminal
 **Upgrading BUVIC**
 
 To upgrade, just run the installer again and choose the version you want.
-
 
 ### Docker Compose
 
@@ -262,7 +253,6 @@ docker-compose up -d
 ```
 The option `-d` tells docker-compose to run as a daemon (in the background). If you want the image to run in the terminal, skip this option.
 
-
 **Upgrading BUVIC**
 
 To upgrade BUVIC, run the following commands in the same directory as the `docker-compose.yml` file:
@@ -284,7 +274,6 @@ The flag `-d` tells docker to run this container as a daemon (in the background)
 
 After running this command, you can access the web app in your browser at `http://localhost:<HOST_PORT>`.
 This instance of BUVIC however only uses some demo measurement files as input.
-
 
 #### Mapping directories
 
@@ -308,7 +297,6 @@ where `<INSTR_DIRECTORY>` is the *absolute* path to the instrument directory on 
 `/home/user/buvic/instr` on Linux), `<UVDATA_DIRECTORY>` is the *absolute* path to the uv data directory on the host and `<OUTPUT_DIRECTORY>`
 is the *absolute* path to the directory you want to save the outputs in.
 
-
 #### Permissions
 
 On linux machines, you may want to specify which user/group runs the docker container to avoid permission issues when writing to the output
@@ -327,7 +315,6 @@ Example:
 docker run -d -p <HOST_PORT>:4444 --user 1000:1000 -e PORT=4444 --name buvic pmodwrc/buvic
 ```
 Notice that for the `-p` option, we don't use 80 anymore but the port specified with the `PORT` environment variable (4444 in this example).
-
 
 #### Darksky
 
