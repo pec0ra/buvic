@@ -54,6 +54,26 @@ class FileUtilsTestCase(unittest.TestCase):
 
         result = Result(
             0,
+            CalculationInput(
+                "033",
+                date(2019, 1, 1),
+                Settings(no_coscor=True),
+                File("path/to/dummy"),
+                File("path/to/dummy"),
+                File("dummy"),
+                File("dummy"),
+                None,
+            ),
+            44.4,
+            0.0,
+            0.0,
+            Spectrum([], [70], [], [], [], []),
+        )
+        name = result.get_qasume_name()
+        self.assertEqual("nocoscor/path/to/0010110G.033", name)
+
+        result = Result(
+            0,
             CalculationInput("033", date(2019, 1, 1), Settings(), None, File("path/to/b/dummy"), File("dummy"), File("dummy"), None),
             44.4,
             0.0,

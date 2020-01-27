@@ -29,9 +29,8 @@ from buvic.logic.brewer_infos import StraylightCorrection, EUBREWNET_AVAILABLE_B
 from buvic.logic.file import File
 from buvic.logic.file_utils import FileUtils
 from buvic.logic.ozone import BFileOzoneProvider
-from buvic.logic.parameter_file import Angstrom
 from buvic.logic.result import Result
-from buvic.logic.settings import Settings, DataSource, WOUDCInfo
+from buvic.logic.settings import Settings, DataSource, WOUDCInfo, Angstrom
 from buvic.logic.utils import name_to_date_and_brewer_id
 from buvic.logic.weighted_irradiance import WeightedIrradianceType
 from .utils import show, hide

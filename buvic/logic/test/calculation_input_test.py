@@ -115,15 +115,83 @@ class UVFileReaderTestCase(unittest.TestCase):
         entries = calculation_input.uv_file_entries
         self.assertEqual(13, len(entries))
 
-        # Test that uv, uvr and ozone data can be retrieved from EUBREWNET
+    def test_uvr_sources(self):
+        calculation_input = CalculationInput(
+            "033",
+            date(2019, 12, 20),
+            Settings(uvr_data_source=DataSource.FILES),
+            File("dummy"),
+            File("dummy"),
+            File("buvic/logic/test/uvr_example"),
+            File("dummy"),
+        )
+
+        calibration = calculation_input.calibration
+        self.assertEqual("buvic/logic/test/uvr_example", calibration.source)
+
+        calculation_input = CalculationInput(
+            "033",
+            date(2018, 12, 20),
+            Settings(uvr_data_source=DataSource.EUBREWNET),
+            File("dummy"),
+            File("dummy"),
+            File("dummy"),
+            File("dummy"),
+        )
+
+        calibration = calculation_input.calibration
+        self.assertEqual("2018-12-19", calibration.source)
+
+    def test_ozone_sources(self):
         calculation_input = CalculationInput(
             "033",
             date(2019, 6, 20),
-            Settings(uv_data_source=DataSource.EUBREWNET, uvr_data_source=DataSource.EUBREWNET, ozone_data_source=DataSource.EUBREWNET),
+            Settings(ozone_data_source=DataSource.FILES),
+            File("dummy"),
+            File("buvic/logic/test/b_example"),
             File("dummy"),
             File("dummy"),
-            File("dummy"),
-            None,
         )
 
-        calculation_input.init_properties()
+        ozone = calculation_input.ozone
+        self.assertEqual(318.8, ozone.values[0])
+
+        calculation_input = CalculationInput(
+            "033",
+            date(2019, 6, 20),
+            Settings(ozone_data_source=DataSource.EUBREWNET),
+            File("dummy"),
+            File("dummy"),
+            File("dummy"),
+            File("dummy"),
+        )
+
+        ozone = calculation_input.ozone
+        self.assertAlmostEqual(318.3, ozone.values[0], 1)
+
+    def test_brewer_model_sources(self):
+        calculation_input = CalculationInput(
+            "033",
+            date(2019, 6, 20),
+            Settings(brewer_model_data_source=DataSource.FILES),
+            File("dummy"),
+            File("buvic/logic/test/b_example"),
+            File("dummy"),
+            File("dummy"),
+        )
+
+        brewer_type = calculation_input.brewer_type
+        self.assertEqual("mkii", brewer_type)
+
+        calculation_input = CalculationInput(
+            "033",
+            date(2019, 6, 20),
+            Settings(brewer_model_data_source=DataSource.EUBREWNET),
+            File("dummy"),
+            File("dummy"),
+            File("dummy"),
+            File("dummy"),
+        )
+
+        brewer_type = calculation_input.brewer_type
+        self.assertEqual("mkii", brewer_type)

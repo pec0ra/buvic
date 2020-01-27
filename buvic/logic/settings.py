@@ -28,7 +28,6 @@ from os import path
 from dataclasses_json import dataclass_json
 
 from buvic.logic.brewer_infos import StraylightCorrection
-from buvic.logic.parameter_file import Angstrom
 from buvic.logic.weighted_irradiance import WeightedIrradianceType
 
 LOG = getLogger(__name__)
@@ -57,7 +56,6 @@ class DataSource(str, Enum):
 @dataclass_json
 @dataclass
 class WOUDCInfo:
-
     # Data generation info
     agency: str = ""
     version: str = DEFAULT_WOUDC_VERSION
@@ -69,6 +67,13 @@ class WOUDCInfo:
     country_iso3: str = ""
     gaw_id: str = ""
     altitude: int = 0
+
+
+@dataclass_json
+@dataclass
+class Angstrom:
+    alpha: float = DEFAULT_ALPHA_VALUE
+    beta: float = DEFAULT_BETA_VALUE
 
 
 @dataclass_json
@@ -86,7 +91,7 @@ class Settings:
     temperature_correction_ref: float = DEFAULT_TEMPERATURE_CORRECTION_REF
 
     default_albedo: float = DEFAULT_ALBEDO_VALUE
-    default_aerosol: Angstrom = Angstrom(DEFAULT_ALPHA_VALUE, DEFAULT_BETA_VALUE)
+    default_aerosol: Angstrom = Angstrom()
     default_ozone: float = DEFAULT_OZONE_VALUE
     default_straylight_correction: StraylightCorrection = StraylightCorrection.APPLIED
 

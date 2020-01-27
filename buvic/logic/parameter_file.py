@@ -24,10 +24,10 @@ from logging import getLogger
 from os import path
 from typing import List, Optional
 
-from dataclasses_json import dataclass_json
 from scipy.interpolate import interp1d
 
 from buvic.logic.file import File
+from .settings import Angstrom
 from .warnings import warn
 
 LOG = getLogger(__name__)
@@ -141,13 +141,6 @@ class Parameters:
 
         index = self.days.index(day)
         return self.cloud_covers[index]
-
-
-@dataclass_json
-@dataclass
-class Angstrom:
-    alpha: float
-    beta: float
 
 
 class ParameterFileParsingError(ValueError):

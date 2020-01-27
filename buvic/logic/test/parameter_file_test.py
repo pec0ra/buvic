@@ -20,7 +20,8 @@
 import unittest
 
 from buvic.logic.file import File
-from buvic.logic.parameter_file import Parameters, ParameterFileParsingError, Angstrom, FileParameterProvider
+from buvic.logic.parameter_file import Parameters, ParameterFileParsingError, FileParameterProvider
+from buvic.logic.settings import Angstrom
 
 
 class UVFileReaderTestCase(unittest.TestCase):

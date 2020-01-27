@@ -22,7 +22,7 @@ import unittest
 from buvic.logic.ozone import Ozone
 
 
-class UVFileReaderTestCase(unittest.TestCase):
+class OzoneTestCase(unittest.TestCase):
     def test_interpolation(self):
         ozone = Ozone([10, 12, 14], [300, 320, 350])
 

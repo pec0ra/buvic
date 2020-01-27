@@ -1,0 +1,14 @@
+{
+  "arf_column": 4,
+  "default_aerosol": {
+    "beta": 0.4
+  },
+  "default_straylight_correction": "Not applied",
+  "brewer_model_data_source": "EUBREWNET",
+  "activate_woudc": true,
+  "woudc_info": {
+    "agency": "Agency",
+    "version": "2.3",
+    "altitude": 444
+  }
+}
