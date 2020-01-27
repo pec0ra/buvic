@@ -66,7 +66,7 @@ class EubrewnetBrewerModelProvider(BrewerModelProvider):
             else:
                 LOG.warning(f"Unknown brewer model found on eubrewnet: {brewer_number}")
                 warn(f"Unknown brewer model found on eubrewnet: {brewer_number}")
-            return brewer_number
+                return None
         except Exception as e:
             raise Exception(f"Error while trying to access eubrewnet ({self._url_string}). {e}") from e
 

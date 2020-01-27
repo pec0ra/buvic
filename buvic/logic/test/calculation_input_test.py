@@ -37,14 +37,14 @@ class UVFileReaderTestCase(unittest.TestCase):
             "033",
             date(2019, 12, 20),
             Settings(),
-            File("dummy"),
-            File("dummy"),
+            File("buvic/logic/test/uv_example"),
+            File("buvic/logic/test/b_example"),
             File("buvic/logic/test/calibration_example"),
-            File("dummy"),
+            File("buvic/logic/test/arf_example"),
+            parameter_file_name=File("buvic/logic/test/parameter_example"),
         )
 
-        c = calculation_input.calibration
-        del c
+        calculation_input.init_properties()
 
         calculation_input.calibration_file_name = "does_not_exist"
         # No exception is thrown since the calibration value used is cached
@@ -98,8 +98,8 @@ class UVFileReaderTestCase(unittest.TestCase):
         )
 
         entries = calculation_input.uv_file_entries
-        # 30 sections are present in `uv_example`
-        self.assertEqual(30, len(entries))
+        # 12 sections are present in `uv_example`
+        self.assertEqual(12, len(entries))
 
         calculation_input = CalculationInput(
             "033",
@@ -195,3 +195,17 @@ class UVFileReaderTestCase(unittest.TestCase):
 
         brewer_type = calculation_input.brewer_type
         self.assertEqual("mkii", brewer_type)
+
+    def test_arf_sources(self):
+        calculation_input = CalculationInput(
+            "033",
+            date(2019, 6, 20),
+            Settings(),
+            File("dummy"),
+            File("dummy"),
+            File("dummy"),
+            File("buvic/logic/test/arf_example"),
+        )
+
+        arf = calculation_input.arf
+        self.assertEqual(0.974, arf.values[2])
