@@ -120,9 +120,7 @@ class Libradtran:
         return file_name
 
     def _check_consistency(self) -> None:
-        """
-        Check that LibRadtran's inputs and outputs are corrects. Throw an error if this is not the case
-        """
+        """Check that LibRadtran's inputs and outputs are corrects. Throw an error if this is not the case"""
         if LibradtranInput.WAVELENGTH not in self._inputs:
             raise ValueError("At least wavelength needs to be set as input")
 
@@ -159,7 +157,7 @@ class LibradtranResult:
                 )
 
             # We add each of the values to the list of its corresponding output
-            for i in range(len(column_names)):
+            for i, _ in enumerate(column_names):
                 output_value = column_names[i]
                 self.columns[output_value].append(float(line_values[i]))
 

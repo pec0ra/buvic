@@ -21,11 +21,13 @@ from remi.gui import Widget, VBox, HBox
 
 
 def show(widget: Widget):
-    if isinstance(widget, HBox) or isinstance(widget, VBox):
+    """Make a given widget visible"""
+    if isinstance(widget, (HBox, VBox)):
         widget.set_style("display: flex")
     else:
         widget.set_style("display: block")
 
 
 def hide(widget: Widget):
+    """Hide a given widget"""
     widget.set_style("display: none")

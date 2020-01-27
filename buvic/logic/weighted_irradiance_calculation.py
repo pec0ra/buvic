@@ -286,4 +286,3 @@ class WeightedIrradianceCalculation:
             return result.spectrum.cos_corrected_spectrum[-1] * self.max_363_correction_spline.get_value(result.sza, ozone)
         else:
             return 0
-        pass

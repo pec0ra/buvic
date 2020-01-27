@@ -46,7 +46,8 @@ class EubrewnetCalibrationProvider(CalibrationProvider):
 
         LOG.info("Retrieving calibration data from %s", self._url_string)
         try:
-            with urllib.request.urlopen(self._url_string) as url:
+            req = urllib.request.Request(self._url_string)
+            with urllib.request.urlopen(req) as url:
                 data = json.loads(url.read().decode())
         except HTTPError as e:
             raise Exception(f"Error while trying to access eubrewnet ({self._url_string}). {e}") from e

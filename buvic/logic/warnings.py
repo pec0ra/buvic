@@ -46,8 +46,6 @@ def get_warnings() -> List[str]:
 
 
 def clear_warnings() -> None:
-    """
-    Clear all recorded warning messages for the current thread
-    """
+    """Clear all recorded warning messages for the current thread"""
     if hasattr(local, "warnings"):
         local.warnings.clear()

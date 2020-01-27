@@ -45,9 +45,7 @@ LOG = getLogger(__name__)
 
 @dataclass
 class CalculationInput:
-    """
-    An input for the `IrradianceCalculation`
-    """
+    """An input for the `IrradianceCalculation`"""
 
     brewer_id: str
     date: date
@@ -125,9 +123,7 @@ class CalculationInput:
             return CosCorrection.CLEAR_SKY
 
     def init_properties(self) -> None:
-        """
-        Call all cached properties to initialize them.
-        """
+        """Call all cached properties to initialize them."""
         uv_file_entries = self.uv_file_entries
         if len(uv_file_entries) == 0:
             return

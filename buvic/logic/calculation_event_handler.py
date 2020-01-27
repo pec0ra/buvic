@@ -49,6 +49,7 @@ class CalculationEventHandler(FileSystemEventHandler):
     def on_deleted(self, event):
         self._file_utils.untrack_file(event.src_path)
 
+    # pylint: disable=no-self-use
     def on_created(self, event):
         LOG.debug(f"New file created: {event.src_path}")
 
@@ -62,7 +63,7 @@ class CalculationEventHandler(FileSystemEventHandler):
         else:
             file_path = event.src_path
 
-        LOG.info("File matched for event " + type(event).__name__)
+        LOG.info("File matched for event %s", type(event).__name__)
         try:
             self._handle_file(file_path)
         except Exception:

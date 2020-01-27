@@ -29,7 +29,8 @@ from buvic.logutils import init_logging
 
 
 class UVFileReaderTestCase(unittest.TestCase):
-    def test_cache(self):
+    @staticmethod
+    def test_cache():
         init_logging(logging.DEBUG)
 
         calculation_input = CalculationInput(

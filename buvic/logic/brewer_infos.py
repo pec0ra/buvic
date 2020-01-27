@@ -111,7 +111,7 @@ class StraylightCorrection(str, Enum):
     UNDEFINED = "Undefined"
 
 
-brewer_types = {
+BREWER_TYPES = {
     "mki": StraylightCorrection.APPLIED,
     "mkii": StraylightCorrection.APPLIED,
     "mkiii": StraylightCorrection.NOT_APPLIED,
@@ -120,13 +120,14 @@ brewer_types = {
 
 
 def correct_straylight(brewer_type: Optional[str]) -> StraylightCorrection:
-    if brewer_type in brewer_types:
-        return brewer_types[brewer_type]
+    """Get the straylight correction type for a given brewer type"""
+    if brewer_type in BREWER_TYPES:
+        return BREWER_TYPES[brewer_type]
     else:
         return StraylightCorrection.UNDEFINED
 
 
-eubrewnet_available_brewer_ids = [
+EUBREWNET_AVAILABLE_BREWER_IDS = [
     "001",
     "005",
     "006",

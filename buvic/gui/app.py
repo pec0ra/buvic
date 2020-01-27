@@ -194,9 +194,7 @@ class BUVIC(App):
             LOG.warning("Trying to show an error with no message")
 
     def _on_settings_changed(self) -> None:
-        """
-        Called when the settings have been changed
-        """
+        """Called when the settings have been changed"""
         self._main_form.update_settings(self._settings)
         self._secondary_form.update_settings(self._settings)
         if self._settings.manual_mode:

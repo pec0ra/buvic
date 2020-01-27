@@ -52,7 +52,8 @@ def get_cloud_cover(latitude: float, longitude: float, d: date) -> CloudCover:
     url_string = f"https://api.darksky.net/forecast/{DARKSKY_TOKEN}/{latitude},{-longitude},{t}?exclude=minutely,currently,daily&units=si"
     LOG.debug("Retrieving weather data from %s", url_string)
     try:
-        with urllib.request.urlopen(url_string) as url:
+        req = urllib.request.Request(url_string)
+        with urllib.request.urlopen(req) as url:
             data = json.loads(url.read().decode())
     except HTTPError as e:
         raise Exception("Error while trying to access darksky. Please check your configuration and your quota.") from e

@@ -30,7 +30,7 @@ class FileUtilsTestCase(unittest.TestCase):
 
         with ThreadPoolExecutor(max_workers=4) as pool:
             results = []
-            for i in range(0, 8):
+            for _ in range(0, 8):
                 results.append(pool.submit(self._test_warnings))
             for result in results:
                 result.result(timeout=5)

@@ -23,9 +23,7 @@ from os.path import join, relpath, dirname, basename
 
 
 class File:
-    """
-    An object representing a file
-    """
+    """An object representing a file"""
 
     # The path to the file, relative to its root container directory (`uvdata` or `instr` - exclusive)
     path: str

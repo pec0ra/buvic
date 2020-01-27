@@ -502,9 +502,7 @@ class FileUtils:
 
 @dataclass
 class InstrumentFiles:
-    """
-    The arf, uvr, uv, b and parameter files for one brewer instrument
-    """
+    """The arf, uvr, uv, b and parameter files for one brewer instrument"""
 
     arf_file: Optional[File]
     uvr_files: List[File] = field(default_factory=list)

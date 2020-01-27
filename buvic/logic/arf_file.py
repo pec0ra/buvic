@@ -68,8 +68,8 @@ class FileARFProvider(ARFProvider):
                     if len(line_values) <= self._arf_column:
                         if len(values) == 0:
                             warn(
-                                f"Could not read column {self._arf_column} from arf file, file has only {len(line_values)} columns. Used last column"
-                                f" instead."
+                                f"Could not read column {self._arf_column} from arf file, file has only {len(line_values)} columns."
+                                f"Used last column instead."
                             )
                         values.append(float(line_values[-1]))
                     else:

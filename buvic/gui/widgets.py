@@ -25,7 +25,7 @@ from typing import Any, Callable, List, Dict, Optional, Tuple
 
 import remi.gui as gui
 
-from buvic.logic.brewer_infos import StraylightCorrection, eubrewnet_available_brewer_ids
+from buvic.logic.brewer_infos import StraylightCorrection, EUBREWNET_AVAILABLE_BREWER_IDS
 from buvic.logic.file import File
 from buvic.logic.file_utils import FileUtils
 from buvic.logic.ozone import BFileOzoneProvider
@@ -42,9 +42,7 @@ from ..logic.utils import date_to_days
 
 
 class VBox(gui.VBox):
-    """
-    A Vertical Box with left alignment
-    """
+    """A Vertical Box with left alignment"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -59,9 +57,7 @@ class Level(Enum):
 
 
 class Title(gui.Label):
-    """
-    A title with a `Level`
-    """
+    """A title with a `Level`"""
 
     def __init__(self, level: Level, text, *args, **kwargs):
         super().__init__(text, *args, **kwargs)
@@ -116,9 +112,7 @@ class FileSelector(VBox):
 
 
 class ResultInfo(gui.HBox):
-    """
-    An result info with a label and a value
-    """
+    """An result info with a label and a value"""
 
     def __init__(self, label: str, value: Any):
         super().__init__()
@@ -129,9 +123,7 @@ class ResultInfo(gui.HBox):
 
 
 class Loader(VBox):
-    """
-    A loading bar with text
-    """
+    """A loading bar with text"""
 
     def __init__(self):
         super().__init__(style="width: 100%; max-width: 500px")
@@ -202,16 +194,10 @@ class MainForm(VBox):
         self.check_fields()
 
     def _init_elements(self) -> None:
-        """
-        Initialize the widgets and add them `self`
-        """
-        pass
+        """Initialize the widgets and add them `self`"""
 
     def check_fields(self) -> None:
-        """
-        Check the fields' values and enable or disable the `Calculate` button accordingly
-        """
-        pass
+        """Check the fields' values and enable or disable the `Calculate` button accordingly"""
 
     def show_warning(self, text: str):
         warning_label = IconLabel(text, "warning")
@@ -245,9 +231,7 @@ class PathMainForm(MainForm):
         self.append(file_form)
 
     def _on_uv_file_change(self, file_uploader: gui.Widget, file_data: bytes, file_name):
-        """
-        UV file upload handler
-        """
+        """UV file upload handler"""
         del file_uploader, file_data  # remove unused parameters
         if file_name is not None:
             self._uv_file = path.join(TMP_FILE_DIR, file_name)
@@ -256,9 +240,7 @@ class PathMainForm(MainForm):
         self.check_fields()
 
     def _on_calibration_file_change(self, file_uploader: gui.Widget, file_data: bytes, file_name):
-        """
-        Calibration (UVR) file upload handler
-        """
+        """Calibration (UVR) file upload handler"""
         del file_uploader, file_data  # remove unused parameters
         if file_name is not None:
             self._calibration_file = path.join(TMP_FILE_DIR, file_name)
@@ -267,9 +249,7 @@ class PathMainForm(MainForm):
         self.check_fields()
 
     def _on_b_file_change(self, file_uploader: gui.Widget, file_data: bytes, file_name):
-        """
-        B file upload handler
-        """
+        """B file upload handler"""
         del file_uploader, file_data  # remove unused parameters
         if file_name is not None:
             self._b_file = path.join(TMP_FILE_DIR, file_name)
@@ -278,9 +258,7 @@ class PathMainForm(MainForm):
         self.check_fields()
 
     def _on_arf_file_change(self, file_uploader: gui.Widget, file_data: bytes, file_name):
-        """
-        ARF file upload handler
-        """
+        """ARF file upload handler"""
         del file_uploader, file_data  # remove unused parameters
         if file_name is not None:
             self._arf_file = path.join(TMP_FILE_DIR, file_name)
@@ -373,7 +351,7 @@ class SimpleMainForm(MainForm):
         if self.settings.uv_data_source == DataSource.FILES or self.settings.uvr_data_source == DataSource.FILES:
             brewer_ids = self._file_utils.get_brewer_ids()
         else:
-            brewer_ids = eubrewnet_available_brewer_ids
+            brewer_ids = EUBREWNET_AVAILABLE_BREWER_IDS
         self._brewer_dd.empty()
         for bid in brewer_ids:
             item = gui.DropDownItem(bid)
@@ -487,9 +465,7 @@ class SimpleMainForm(MainForm):
 
 
 class LabeledInput(VBox):
-    """
-    An input with a label above an input widget
-    """
+    """An input with a label above an input widget"""
 
     def __init__(self, label: str, input_widget: gui.Widget, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -501,9 +477,7 @@ class LabeledInput(VBox):
 
 
 class ResultWidget(VBox):
-    """
-    A result widget containing a title, a list of generated files and other infos
-    """
+    """A result widget containing a title, a list of generated files and other infos"""
 
     def __init__(self):
         super().__init__(style="margin-bottom: 20px; width: 100%")
@@ -564,7 +538,7 @@ class ResultWidget(VBox):
         info = ResultInfo("Total files", len(files))
         vbox.append(info)
 
-        info = ResultInfo("Total sections", sum([len(r) for r in files.values()]))
+        info = ResultInfo("Total sections", sum(len(r) for r in files.values()))
         vbox.append(info)
 
         return vbox
@@ -663,8 +637,10 @@ class Modal(Backdrop):
     _is_closed: bool = False
 
     def __init__(
-        self, title: str, content: gui.Widget, extra_buttons: List[Tuple[str, Callable[[gui.Widget], None]]] = [], *args, **kwargs
+        self, title: str, content: gui.Widget, extra_buttons: List[Tuple[str, Callable[[gui.Widget], None]]] = None, *args, **kwargs
     ):
+        if extra_buttons is None:
+            extra_buttons = []
         super().__init__(*args, **kwargs)
         modal = VBox()
         modal.add_class("modal")

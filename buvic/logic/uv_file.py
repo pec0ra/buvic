@@ -86,9 +86,9 @@ class UVFileUVProvider(UVProvider):
 
         self._file_name: str = file_name
         with open(file_name, newline="\r\n") as file:
-            self._uv_file_entries: List[UVFileEntry] = self.__parse(file)
+            self._uv_file_entries: List[UVFileEntry] = self._parse(file)
 
-    def __parse(self, file: TextIO) -> List[UVFileEntry]:
+    def _parse(self, file: TextIO) -> List[UVFileEntry]:
         """
         Parse the given file and return the corresponding instances of `UVFileEntry`
         :param file: the file to parse
@@ -98,7 +98,7 @@ class UVFileUVProvider(UVProvider):
         LOG.debug("Parsing file: %s", self._file_name)
 
         entries = []
-        header_line = self.__read_line(file)
+        header_line = self._read_line(file)
 
         # Loop until end of file. Each iteration in the loop corresponds to one entry (header + values)
         while header_line.strip() != "\x1A" and header_line.strip() != "":
@@ -110,15 +110,15 @@ class UVFileUVProvider(UVProvider):
 
             # Parse the values
             values = []
-            next_line = self.__read_line(file)
+            next_line = self._read_line(file)
             while "dark" not in next_line and "end" not in next_line and next_line != "":
                 values.append(RawUVValue.from_value_line(next_line))
-                next_line = self.__read_line(file)
+                next_line = self._read_line(file)
 
             dark_match = re.match(r"^dark\s+(?P<dark>\S+)\s+$", next_line)
             if dark_match is not None:
                 header.dark = (header.dark + float(dark_match.group("dark"))) / 2
-                next_line = self.__read_line(file)
+                next_line = self._read_line(file)
                 for i in range(len(values) - 1, -1, -1):
                     old_value = values[i]
                     new_value = RawUVValue.from_value_line(next_line)
@@ -126,7 +126,7 @@ class UVFileUVProvider(UVProvider):
                     old_value.events = (old_value.events + new_value.events) / 2
                     old_value.step = (old_value.step + new_value.step) / 2
                     old_value.std = divide(1, sqrt(old_value.events))
-                    next_line = self.__read_line(file)
+                    next_line = self._read_line(file)
 
                 if "end" not in next_line and next_line != "":
                     raise UVFileParsingError("Failed parsing uv section. Expected 'end' but found " + next_line)
@@ -135,7 +135,7 @@ class UVFileUVProvider(UVProvider):
             entry = UVFileEntry(header, values)
             entries.append(entry)
 
-            header_line = self.__read_line(file)
+            header_line = self._read_line(file)
 
         LOG.debug("Parsed %s entries from file '%s'", len(entries), self._file_name)
         return entries
@@ -151,11 +151,11 @@ class UVFileUVProvider(UVProvider):
         return self._uv_file_entries
 
     @staticmethod
-    def __read_line(file: TextIO) -> str:
-        """
+    def _read_line(file: TextIO) -> str:
+        r"""
         Read the next line of the file
 
-        The resulting line will have its Carriage Returns ('\r') replaced by spaces and the new line ('\n') at the end
+        The resulting line will have its Carriage Returns ('\\r') replaced by spaces and the new line ('\\n') at the end
         removed
 
         :param file: the file to read the line from
@@ -177,7 +177,8 @@ class EubrewnetUVProvider(UVProvider):
         )
         LOG.info("Retrieved scan types from %s", url_string)
         try:
-            with urllib.request.urlopen(url_string) as url:
+            req = urllib.request.Request(url_string)
+            with urllib.request.urlopen(req) as url:
                 scan_types = json.loads(url.read().decode())
         except HTTPError as e:
             raise Exception(f"Error while trying to access eubrewnet ({url_string}). {e}") from e
@@ -190,7 +191,8 @@ class EubrewnetUVProvider(UVProvider):
             )
             LOG.info("Retrieved uv data from %s", url_string)
             try:
-                with urllib.request.urlopen(url_string) as url:
+                req = urllib.request.Request(url_string)
+                with urllib.request.urlopen(req) as url:
                     data = json.loads(url.read().decode())
                     for d in [data[i : i + 5] for i in range(0, len(data), 5)]:  # noqa: E203
                         header_list = d[0]

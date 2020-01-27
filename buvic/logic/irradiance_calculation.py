@@ -153,7 +153,7 @@ class IrradianceCalculation:
 
         # Correct for linearity
         photon_rate0 = photon_rate
-        for i in range(25):
+        for _ in range(25):
             photon_rate = multiply(photon_rate0, exp(multiply(photon_rate, uv_file_header.dead_time)))
 
         # Set negative values to 0

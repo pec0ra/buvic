@@ -43,9 +43,7 @@ LOG = getLogger(__name__)
 
 
 class CalculationUtils:
-    """
-    A utility to create and schedule calculation jobs.
-    """
+    """A utility to create and schedule calculation jobs."""
 
     def __init__(
         self,
@@ -307,9 +305,7 @@ class CalculationUtils:
         return result
 
     def _make_progress(self) -> None:
-        """
-        Notify the progressbar of progress.
-        """
+        """Notify the progressbar of progress."""
         if self._progress_handler is not None:
             self._progress_handler(1)
 

@@ -47,7 +47,7 @@ class Colors:
     ENDC = "\x1b[0m"
 
 
-def p(text, color):
+def print_(text, color):
     print(color + text + Colors.ENDC)
 
 
@@ -123,9 +123,9 @@ def input_check(check_value, error_message=None, default_value=None, none_defaul
             return check_value(value)
         except Exception as e:
             if error_message is None:
-                p(str(e), Colors.WARNING)
+                print_(str(e), Colors.WARNING)
             else:
-                p(error_message, Colors.WARNING)
+                print_(error_message, Colors.WARNING)
 
 
 def check_container_name(name):
@@ -166,15 +166,15 @@ def check_version(value, versions):
 
 def run_installer():
     print()
-    p("                                                                    ", Colors.HEADER)
-    p("                   Irradiance calculator installer                  ", Colors.HEADER)
-    p("                                                                    ", Colors.HEADER)
+    print_("                                                                    ", Colors.HEADER)
+    print_("                   Irradiance calculator installer                  ", Colors.HEADER)
+    print_("                                                                    ", Colors.HEADER)
     print()
     print("* Checking requirements...")
 
     if not check_command(["docker", "-v"]):
         print()
-        p("ERROR: Docker is not installed or doesn't work correctly!", Colors.ERROR)
+        print_("ERROR: Docker is not installed or doesn't work correctly!", Colors.ERROR)
         print("Exiting")
         sys.exit(1)
     print()
@@ -251,13 +251,15 @@ def run_installer():
         # If the environment variable `DOCKER_REPOSITORY` is defined, we use it as registry
         docker_repository = os.path.join(os.environ["DOCKER_REPOSITORY"], "")
         link = f"https://{docker_repository}v2/pmodwrc/buvic/tags/list"
-        with urllib.request.urlopen(link) as url:
+        req = urllib.request.Request(link)
+        with urllib.request.urlopen(req) as url:
             data = json.loads(url.read().decode())
         tags = data["tags"]
     else:
         docker_repository = ""
         link = "https://registry.hub.docker.com/v1/repositories/pmodwrc/buvic/tags"
-        with urllib.request.urlopen(link) as url:
+        req = urllib.request.Request(link)
+        with urllib.request.urlopen(req) as url:
             data = json.loads(url.read().decode())
         tags = [d["name"] for d in data]
 
@@ -289,7 +291,7 @@ def run_installer():
         result = call(["docker", "pull", f"{docker_repository}pmodwrc/buvic{version}"])
         print(Colors.ENDC, end="", flush=True)
         if result != 0:
-            p("ERROR: An error occurred while pulling image!", Colors.ERROR)
+            print_("ERROR: An error occurred while pulling image!", Colors.ERROR)
             print("Exiting")
             sys.exit(1)
 
@@ -316,7 +318,7 @@ def run_installer():
         result = run("docker volume create --name buvic-settings", shell=True)
         print(Colors.ENDC, end="", flush=True)
         if result.returncode != 0:
-            p("ERROR: An error occurred while creating the buvic settings volume!", Colors.ERROR)
+            print_("ERROR: An error occurred while creating the buvic settings volume!", Colors.ERROR)
             print("Exiting")
             sys.exit(1)
         print()
@@ -349,15 +351,15 @@ def run_installer():
     result = run(" ".join(docker_command), shell=True)
     print(Colors.ENDC, end="", flush=True)
     if result.returncode != 0:
-        p("ERROR: An error occurred while starting the server!", Colors.ERROR)
+        print_("ERROR: An error occurred while starting the server!", Colors.ERROR)
         print("Exiting")
         sys.exit(1)
 
     print()
-    p("                                                                    ", Colors.HEADER)
-    p("                     Server started successfully.                   ", Colors.HEADER)
-    p(f"         Application can be accessed at http://localhost:{str(port).ljust(5)}      ", Colors.HEADER)
-    p("                                                                    ", Colors.HEADER)
+    print_("                                                                    ", Colors.HEADER)
+    print_("                     Server started successfully.                   ", Colors.HEADER)
+    print_(f"         Application can be accessed at http://localhost:{str(port).ljust(5)}      ", Colors.HEADER)
+    print_("                                                                    ", Colors.HEADER)
     print()
 
     save_config(port, instr_path, uvdata_path, output_path, user, container_name, persist, darksky_token)
