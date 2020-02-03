@@ -78,7 +78,7 @@ def date_range(start_date: date, end_date: date) -> Iterable[date]:
         yield start_date + timedelta(n)
 
 
-_FILE_NAME_REGEX = re.compile(r"[A-Z]+(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d{3})")
+_FILE_NAME_REGEX = re.compile(r"[a-zA-Z]+(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d{3})")
 
 
 def name_to_date_and_brewer_id(file_name: str) -> Tuple[date, str]:

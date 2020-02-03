@@ -19,6 +19,7 @@
 #
 from __future__ import annotations
 
+import os
 import re
 from dataclasses import dataclass, field
 from datetime import date
@@ -37,8 +38,8 @@ LOG = getLogger(__name__)
 
 
 class FileUtils:
-    UV_FILE_NAME_REGEX = re.compile(r"UV(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d+)")
-    B_FILE_NAME_REGEX = re.compile(r"B(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d+)")
+    UV_FILE_NAME_REGEX = re.compile(r"(:?UV|uv)(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d+)")
+    B_FILE_NAME_REGEX = re.compile(r"(:?B|b)(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d+)")
     ARF_FILE_NAME_REGEX = re.compile(r"arf_[a-zA-Z]*(?P<brewer_id>\d+)\.dat")
     UVR_FILE_NAME_REGEX = re.compile(r"(:?UVR|uvr)\S+\.(?P<brewer_id>\d+)")
     PARAMETER_FILE_NAME_REGEX = re.compile(r"par_(?P<year>\d{2})\.(?P<brewer_id>\d+)")
@@ -275,12 +276,10 @@ class FileUtils:
 
         :param directory: the directory to search for the files in
         """
-        for file_name in listdir(directory):
-            file_path = join(directory, file_name)
-            if isdir(file_path):
-                self._find_files_recursive(file_path)
-            else:
-                self.handle_file(file_path)
+
+        for root, dirs, files in os.walk(directory, topdown=False):
+            for name in files:
+                self.handle_file(path.join(root, name))
 
     def _match_arf_file(self, file_path: str, res: Match[str]) -> None:
         """

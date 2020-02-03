@@ -32,7 +32,7 @@ LOG = getLogger(__name__)
 
 
 class CalculationEventHandler(FileSystemEventHandler):
-    DATE_AND_BREWER_REGEX = re.compile(r"(B|UV)(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d+)$")
+    DATE_AND_BREWER_REGEX = re.compile(r"(B|UV|b|uv)(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d+)$")
 
     def __init__(self, input_dir: str, on_new_file: Callable[[CalculationInput], List[Result]], settings: Settings):
         self._on_new_file = on_new_file
