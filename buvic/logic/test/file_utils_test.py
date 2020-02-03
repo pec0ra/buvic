@@ -28,7 +28,7 @@ from buvic.logic.settings import Settings
 class FileUtilsTestCase(unittest.TestCase):
     def test(self):
         file_utils = FileUtils("buvic/logic/test/")
-        file_utils.refresh()
+        file_utils.refresh(Settings())
         self.assertEqual(0, len(file_utils.get_calculation_inputs_between(date(2010, 1, 1), date(2020, 1, 1), "033", Settings())))
         self.assertEqual(0, len(file_utils.get_calculation_inputs(Settings())))
 

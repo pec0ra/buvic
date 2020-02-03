@@ -38,7 +38,7 @@ class CalculationEventHandler(FileSystemEventHandler):
         self._on_new_file = on_new_file
         self._settings = settings
         self._file_utils = FileUtils(input_dir)
-        self._file_utils.refresh(False)
+        self._file_utils.refresh(settings, False)
 
     def on_modified(self, event):
         self._on_created_or_modified(event)

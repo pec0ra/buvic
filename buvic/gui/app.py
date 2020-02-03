@@ -62,7 +62,7 @@ class BUVIC(App):
         head: gui.HEAD = self.page.get_child("head")
         head.add_child("google_icons", '<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">')
         self._file_utils = FileUtils(DATA_DIR)
-        self._file_utils.refresh()
+        self._file_utils.refresh(self._settings)
 
         self._main_container = gui.VBox()
 

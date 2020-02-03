@@ -134,7 +134,7 @@ if input_dir is None:
 cmd = CalculationUtils(input_dir, output_dir, init_progress=init_progress, progress_handler=show_progress, finish_progress=finish_progress)
 
 file_utils = FileUtils(input_dir)
-file_utils.refresh()
+file_utils.refresh(settings)
 
 if dates_and_brewer_id is not None:
     init_logging(logging.INFO)

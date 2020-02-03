@@ -400,7 +400,7 @@ class SimpleMainForm(MainForm):
 
     def _refresh(self, widget: gui.Widget):
         del widget  # remove unused parameter
-        self._file_utils.refresh()
+        self._file_utils.refresh(self.settings)
         self.check_fields()
 
     def _on_bid_change(self, widget: gui.Widget, value: str):

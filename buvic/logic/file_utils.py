@@ -51,10 +51,11 @@ class FileUtils:
         self._instr_dir = join(input_dir, "instr")
         self._uvdata_dir = join(input_dir, "uvdata")
 
-    def refresh(self, remove_empty=True) -> None:
+    def refresh(self, settings: Settings, remove_empty=True) -> None:
         """
         Scan the files to find all relevant files
 
+        :param settings: the current settings
         :param remove_empty: If set to true, will ignore brewer ids without UVR nor UV files
         """
 
@@ -71,11 +72,11 @@ class FileUtils:
 
         if remove_empty:
             for brewer_id, instrument_files in list(self._file_dict.items()):
-                if len(instrument_files.uvr_files) == 0:
+                if len(instrument_files.uvr_files) == 0 and settings.uvr_data_source == DataSource.FILES:
                     # Remove the instruments without UVR files
                     LOG.warning(f"No UVR file exists for brewer id {brewer_id}, skipping")
                     del self._file_dict[brewer_id]
-                elif len(instrument_files.uv_files) == 0:
+                elif len(instrument_files.uv_files) == 0 and settings.uv_data_source == DataSource.FILES:
                     # Remove the instruments without UV files
                     LOG.warning(f"No UV file exists for brewer id {brewer_id}, skipping")
                     del self._file_dict[brewer_id]
