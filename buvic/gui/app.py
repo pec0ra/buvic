@@ -120,8 +120,6 @@ class BUVIC(App):
 
         self._reset_errors()
         self._loader.reset()
-        self._loader.set_label("Loading")
-        self._loader.reset()
         show(self._loader)
         hide(self._forms)
         hide(self._result_container)

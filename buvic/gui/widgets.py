@@ -132,18 +132,16 @@ class Loader(VBox, ProgressHandler):
     def __init__(self):
         super().__init__(style="width: 100%; max-width: 500px")
         hide(self)
-        self._label = gui.Label("Calculating...")
+        self._label = gui.Label("Loading...")
         self._bar = gui.Progress(0, 100, style="width:100%")
         self.append(self._label)
         self.append(self._bar)
         self._current_value = 0
 
     def reset(self):
+        self._label = gui.Label("Loading...")
         self._current_value = 0
         self._bar.set_value(0)
-
-    def set_label(self, label: str):
-        self._label.set_text(label)
 
     def init_progress(self, total: int, legend: str = "Calculating..."):
         self._label.set_text(legend)
