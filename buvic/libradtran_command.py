@@ -17,4 +17,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-LIBRADTRAN_COMMAND = "docker run --rm -i siarhei/libradtran uvspec"
+from buvic.const import IS_DOCKER
+
+if IS_DOCKER:
+    LIBRADTRAN_COMMAND = "uvspec"
+else:
+    LIBRADTRAN_COMMAND = "docker run --rm -i siarhei/libradtran uvspec"

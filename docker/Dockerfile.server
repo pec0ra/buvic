@@ -42,6 +42,9 @@ RUN mkdir /settings && chmod 777 /settings
 ENV HOME /settings
 VOLUME /settings
 
+# Create platform environment variable
+ENV PLATFORM docker
+
 # Copy code and data
 COPY docker/run_docker.py ./
 COPY assets ./assets
@@ -53,7 +56,6 @@ RUN ln -s /instr /data/instr
 RUN ln -s /uvdata /data/uvdata
 
 COPY buvic ./buvic
-COPY docker/libradtran_command.py ./buvic/
 
 ARG DOCKER_TAG
 ENV DOCKER_TAG $DOCKER_TAG

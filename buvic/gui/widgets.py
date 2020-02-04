@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
+import multiprocessing
+from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import date, timedelta
 from enum import Enum
 from os import path
@@ -37,6 +39,7 @@ from .utils import show, hide
 from ..const import TMP_FILE_DIR, OUTPUT_DIR
 from ..logic.calculation_input import CalculationInput
 from ..logic.calculation_utils import CalculationUtils
+from ..logic.progress_handler import ProgressHandler
 from ..logic.utils import date_to_days
 
 
@@ -121,8 +124,10 @@ class ResultInfo(gui.HBox):
         self.append(info_value)
 
 
-class Loader(VBox):
+class Loader(VBox, ProgressHandler):
     """A loading bar with text"""
+
+    _lock = multiprocessing.Manager().Lock()
 
     def __init__(self):
         super().__init__(style="width: 100%; max-width: 500px")
@@ -140,14 +145,16 @@ class Loader(VBox):
     def set_label(self, label: str):
         self._label.set_text(label)
 
-    def init(self, total: int):
+    def init_progress(self, total: int, legend: str = "Calculating..."):
+        self._label.set_text(legend)
         self._current_value = 0
         self._bar.set_value(0)
         self._bar.set_max(total)
 
-    def progress(self, value: float):
-        self._current_value = self._current_value + value
-        self._bar.set_value(self._current_value)
+    def progress(self):
+        with self._lock:
+            self._current_value = self._current_value + 1
+            self._bar.set_value(self._current_value)
 
 
 class MainForm(VBox):
@@ -299,20 +306,35 @@ class PathMainForm(MainForm):
 
 
 class SimpleMainForm(MainForm):
+    _handle_error: Callable[[Exception], None]
     _file_utils: FileUtils
     _brewer_id: Optional[str] = None
     _date_start: Optional[date] = None
     _date_end: Optional[date] = None
     _uvr_file: Optional[str] = None
 
-    def __init__(self, calculate: Callable[[Callable[[CalculationUtils], List[Result]]], None], file_utils: FileUtils, settings: Settings):
+    def __init__(
+        self,
+        calculate: Callable[[Callable[[CalculationUtils], List[Result]]], None],
+        file_utils: FileUtils,
+        settings: Settings,
+        handle_error: Callable[[Exception], None],
+    ):
+        self._handle_error = handle_error
         self._file_utils = file_utils
         super().__init__(calculate, settings)
         self.check_fields()
+        self._executor = ThreadPoolExecutor(1)
 
     def _init_elements(self):
         self._date_end = date.today()
         self._date_start = self._date_end - timedelta(days=3)
+
+        self._scanning_file_message = gui.HBox(style="align-self: flex-start; margin-bottom: 10px")
+        self._scanning_file_message.append(gui.Image("/res:spinner.gif", style="margin-right: 4px"))
+        self._scanning_file_message.append(gui.Label("Scanning files"))
+        self.append(self._scanning_file_message)
+        hide(self._scanning_file_message)
 
         file_form = gui.HBox(style="margin-bottom: 20px; flex-wrap: wrap")
 
@@ -342,7 +364,7 @@ class SimpleMainForm(MainForm):
         self.append(file_form)
 
         self._refresh_button = gui.Button("Refresh files", style="margin-bottom: 10px")
-        self._refresh_button.onclick.do(self._refresh)
+        self._refresh_button.onclick.do(self.refresh)
 
         self.append(self._refresh_button)
 
@@ -398,10 +420,22 @@ class SimpleMainForm(MainForm):
         self._date_end_selector.attributes["min"] = date_range[0].isoformat()
         self._date_end_selector.attributes["max"] = date_range[1].isoformat()
 
-    def _refresh(self, widget: gui.Widget):
+    def refresh(self, widget: Optional[gui.Widget] = None):
         del widget  # remove unused parameter
-        self._file_utils.refresh(self.settings)
-        self.check_fields()
+        self.clean_warnings()
+        show(self._scanning_file_message)
+        self._refresh_button.set_enabled(False)
+        self._calculate_button.set_enabled(False)
+        self._executor.submit(self._refresh_files_job)
+
+    def _refresh_files_job(self):
+        try:
+            self._file_utils.refresh(self.settings)
+            self._refresh_button.set_enabled(True)
+            hide(self._scanning_file_message)
+            self.check_fields()
+        except Exception as e:
+            self._handle_error(e)
 
     def _on_bid_change(self, widget: gui.Widget, value: str):
         del widget  # remove unused parameter

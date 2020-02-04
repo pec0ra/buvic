@@ -26,7 +26,7 @@ import time
 from concurrent.futures.thread import ThreadPoolExecutor
 from logging import getLogger
 from os import path
-from typing import Callable, List, Any, Tuple
+from typing import List, Any, Tuple
 
 from watchdog.observers import Observer
 
@@ -37,6 +37,7 @@ from .calculation_input import CalculationInput
 from .irradiance_calculation import IrradianceCalculation
 from .job import Job
 from .output import QasumeOutput, UverOutput, WoudcOutput
+from .progress_handler import ProgressHandler
 from .warnings import get_warnings, clear_warnings
 
 LOG = getLogger(__name__)
@@ -45,29 +46,16 @@ LOG = getLogger(__name__)
 class CalculationUtils:
     """A utility to create and schedule calculation jobs."""
 
-    def __init__(
-        self,
-        input_dir: str,
-        output_dir: str,
-        init_progress: Callable[[int, str], None] = None,
-        finish_progress: Callable[[float], None] = None,
-        progress_handler: Callable[[float], None] = None,
-    ):
+    def __init__(self, input_dir: str, output_dir: str, progress_handler: ProgressHandler = None):
         """
         Create an instance of JobUtils with the given parameters
         :param input_dir: the directory to get the files from
         :param output_dir: the directory to save the csv in
-        :param init_progress: will be called at the beginning of the calculation with the total number of calculations
-                              as parameter
-        :param finish_progress: will be called at the end of the calculation
-        :param progress_handler: will be called every time progress is made with the amount of progress given as
-                                 parameter
+        :param progress_handler: A handler called when progress is made
         """
 
         self._input_dir = input_dir
         self._output_dir = output_dir
-        self._init_progress = init_progress
-        self._finish_progress = finish_progress
         self._progress_handler = progress_handler
 
     def calculate_for_input(self, calculation_input: CalculationInput) -> List[Result]:
@@ -97,8 +85,8 @@ class CalculationUtils:
         LOG.debug("Scheduling %d jobs for file '%s'", len(calculation_jobs), calculation_input.uv_file_name)
 
         # Initialize the progress bar
-        if self._init_progress is not None:
-            self._init_progress(len(calculation_jobs), "Calculating...")
+        if self._progress_handler is not None:
+            self._progress_handler.init_progress(len(calculation_jobs), "Calculating...")
 
         # Execute the jobs
         result_list = self._execute_jobs(calculation_jobs)
@@ -107,8 +95,8 @@ class CalculationUtils:
         self._generate_output(result_list)
 
         duration = time.time() - start
-        if self._finish_progress is not None:
-            self._finish_progress(duration)
+        if self._progress_handler is not None:
+            self._progress_handler.finish_progress(duration)
         LOG.info(
             "Finished calculations for '%s', '%s', '%s' and '%s' in %ds",
             calculation_input.uv_file_name,
@@ -130,7 +118,6 @@ class CalculationUtils:
 
         :param settings: the settings to use for calculation
         """
-        self._init_progress = None
         self._progress_handler = None
         event_handler = CalculationEventHandler(self._input_dir, self.calculate_for_input, settings)
         observer = Observer()
@@ -157,8 +144,8 @@ class CalculationUtils:
             return self._handle_empty_input()
 
         # Initialize the progress bar
-        if self._init_progress is not None:
-            self._init_progress(
+        if self._progress_handler is not None:
+            self._progress_handler.init_progress(
                 len(calculation_inputs),
                 f"Collecting data for {len(calculation_inputs)} " f"day{'s' if len(calculation_inputs) > 1 else ''}...",
             )
@@ -182,8 +169,8 @@ class CalculationUtils:
         LOG.info("Starting calculation of %d file sections in %d files", len(job_list), valid_input_count)
 
         # Init progress bar
-        if self._init_progress is not None:
-            self._init_progress(
+        if self._progress_handler is not None:
+            self._progress_handler.init_progress(
                 len(job_list),
                 f"Calculating irradiance for {len(job_list)} "
                 f"section{'s' if len(job_list) > 1 else ''} in {valid_input_count} "
@@ -197,8 +184,8 @@ class CalculationUtils:
         self._generate_output(ret)
 
         duration = time.time() - start
-        if self._finish_progress is not None:
-            self._finish_progress(duration)
+        if self._progress_handler is not None:
+            self._progress_handler.finish_progress(duration)
         LOG.info("Finished calculation batch in %ds", duration)
         return ret
 
@@ -307,15 +294,13 @@ class CalculationUtils:
     def _make_progress(self) -> None:
         """Notify the progressbar of progress."""
         if self._progress_handler is not None:
-            self._progress_handler(1)
+            self._progress_handler.progress()
 
     def _handle_empty_input(self) -> List[Result]:
         # Init progress bar
-        if self._init_progress is not None:
-            self._init_progress(0, "Calculating...")
-
-        if self._finish_progress is not None:
-            self._finish_progress(0)
+        if self._progress_handler is not None:
+            self._progress_handler.init_progress(0)
+            self._progress_handler.finish_progress(0)
 
         LOG.warning("No input file found for the given parameters")
 
@@ -351,8 +336,8 @@ class CalculationUtils:
                     output_jobs.extend(woudc_jobs)
 
         # Initialize the progress bar
-        if self._init_progress is not None:
-            self._init_progress(
+        if self._progress_handler is not None:
+            self._progress_handler.init_progress(
                 len(output_jobs), f"Generating output files",
             )
 

@@ -26,12 +26,6 @@ OUTPUT_DIR = "out/"
 DATA_DIR = "data/"
 ASSETS_DIR = "assets/"
 
-UV_FILES_SUBDIR = "uvdata/"
-B_FILES_SUBDIR = "uvdata/"
-CALIBRATION_FILES_SUBDIR = "instr/"
-ARF_FILES_SUBDIR = "instr/"
-PARAMETER_FILES_SUBDIR = "instr/"
-
 APP_VERSION = "test-version"
 if path.exists("version"):
     with open("version") as version_file:
@@ -45,3 +39,8 @@ if "DARKSKY_TOKEN" not in os.environ:
     DARKSKY_TOKEN = None
 else:
     DARKSKY_TOKEN = os.environ["DARKSKY_TOKEN"]
+
+if "PLATFORM" in os.environ and os.environ["PLATFORM"] == "docker":
+    IS_DOCKER = True
+else:
+    IS_DOCKER = False

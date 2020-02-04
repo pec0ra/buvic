@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-import multiprocessing
 from concurrent.futures import ThreadPoolExecutor
 from logging import getLogger
 from typing import List, Callable, Optional
@@ -47,22 +46,23 @@ class BUVIC(App):
     _loader: Loader
     _result_container: ResultWidget
     _error_label: Label
-    _lock = multiprocessing.Manager().Lock()
     _modal: Optional[Modal] = None
+
+    _executor: ThreadPoolExecutor
+    _duration: float
 
     def __init__(self, *args):
         self._settings = Settings.load()
         super(BUVIC, self).__init__(*args, static_file_path={"plots": OUTPUT_DIR, "res": ASSETS_DIR})
 
+    def main(self):
+
         self._executor = ThreadPoolExecutor(1)
         self._duration = 0
-
-    def main(self):
 
         head: gui.HEAD = self.page.get_child("head")
         head.add_child("google_icons", '<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">')
         self._file_utils = FileUtils(DATA_DIR)
-        self._file_utils.refresh(self._settings)
 
         self._main_container = gui.VBox()
 
@@ -82,7 +82,7 @@ class BUVIC(App):
         settings_button.onclick.do(self._open_settings)
         self._forms.append(settings_button)
 
-        self._main_form = SimpleMainForm(self._calculate, self._file_utils, self._settings)
+        self._main_form = SimpleMainForm(self._calculate, self._file_utils, self._settings, self._handle_error)
         self._secondary_form = PathMainForm(self._calculate, self._settings)
         hide(self._secondary_form)
         self._forms.append(self._main_form)
@@ -108,6 +108,8 @@ class BUVIC(App):
         self._main_container.append(version)
 
         self._on_settings_changed()
+
+        self._main_form.refresh()
 
         # returning the root widget
         return self._main_container
@@ -137,13 +139,7 @@ class BUVIC(App):
         :param calculation: the calculation to execute
         """
         try:
-            job_utils = CalculationUtils(
-                DATA_DIR,
-                OUTPUT_DIR,
-                init_progress=self._init_progress,
-                progress_handler=self._make_progress,
-                finish_progress=self._finish_progress,
-            )
+            job_utils = CalculationUtils(DATA_DIR, OUTPUT_DIR, progress_handler=self._loader,)
             results = calculation(job_utils)
             self._show_result(results)
         except Exception as e:
@@ -152,17 +148,6 @@ class BUVIC(App):
     def _reset_errors(self):
         hide(self._error_label)
         self._error_label.set_text("")
-
-    def _init_progress(self, total: int, text: str = "Calculating..."):
-        self._loader.set_label(text)
-        self._loader.init(total)
-
-    def _finish_progress(self, duration: float):
-        self._duration = duration
-
-    def _make_progress(self, value: float):
-        with self._lock:
-            self._loader.progress(value)
 
     def _show_result(self, results: List[Result]):
         self._result_container.display(results, self._duration)

@@ -24,8 +24,8 @@ import re
 from dataclasses import dataclass, field
 from datetime import date
 from logging import getLogger
-from os import listdir, makedirs, path
-from os.path import join, exists, isdir
+from os import makedirs, path
+from os.path import join, exists
 from time import time
 from typing import Dict, List, Tuple, Callable, Match, Optional
 
@@ -38,11 +38,11 @@ LOG = getLogger(__name__)
 
 
 class FileUtils:
-    UV_FILE_NAME_REGEX = re.compile(r"(:?UV|uv)(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d+)")
-    B_FILE_NAME_REGEX = re.compile(r"(:?B|b)(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d+)")
-    ARF_FILE_NAME_REGEX = re.compile(r"arf_[a-zA-Z]*(?P<brewer_id>\d+)\.dat")
-    UVR_FILE_NAME_REGEX = re.compile(r"(:?UVR|uvr)\S+\.(?P<brewer_id>\d+)")
-    PARAMETER_FILE_NAME_REGEX = re.compile(r"par_(?P<year>\d{2})\.(?P<brewer_id>\d+)")
+    UV_FILE_NAME_REGEX = re.compile(r"(:?UV|uv)(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d{3})")
+    B_FILE_NAME_REGEX = re.compile(r"(:?B|b)(?P<days>\d{3})(?P<year>\d{2})\.(?P<brewer_id>\d{3})")
+    ARF_FILE_NAME_REGEX = re.compile(r"arf_[a-zA-Z]*(?P<brewer_id>\d{3})\.dat")
+    UVR_FILE_NAME_REGEX = re.compile(r"(:?UVR|uvr)\S+\.(?P<brewer_id>\d{3})")
+    PARAMETER_FILE_NAME_REGEX = re.compile(r"par_(?P<year>\d{2})\.(?P<brewer_id>\d{3})")
 
     _instr_dir: str
     _uvdata_dir: str
@@ -51,6 +51,7 @@ class FileUtils:
     def __init__(self, input_dir: str):
         self._instr_dir = join(input_dir, "instr")
         self._uvdata_dir = join(input_dir, "uvdata")
+        self._file_dict = {}
 
     def refresh(self, settings: Settings, remove_empty=True) -> None:
         """
@@ -159,11 +160,15 @@ class FileUtils:
         if settings.uv_data_source == DataSource.FILES:
             uv_file = self.get_uv_file(brewer_id, f"UV{days}{year}.{brewer_id}")
             if uv_file is None:
-                return None
+                uv_file = self.get_uv_file(brewer_id, f"uv{days}{year}.{brewer_id}")
+                if uv_file is None:
+                    return None
         else:
             uv_file = None
 
         b_file = self.get_b_file(brewer_id, f"B{days}{year}.{brewer_id}")
+        if b_file is None:
+            b_file = self.get_b_file(brewer_id, f"b{days}{year}.{brewer_id}")
 
         arf_file = self.get_arf_file(brewer_id)
 
@@ -198,35 +203,29 @@ class FileUtils:
 
         res = re.match(self.UV_FILE_NAME_REGEX, file_name)
         if res is not None:
-            LOG.debug(f"Matched UV file {file_path}")
             self._match_file(file_path, res, self._uvdata_dir, lambda i: i.uv_files)
             return True
 
         res = re.match(self.B_FILE_NAME_REGEX, file_name)
         if res is not None:
-            LOG.debug(f"Matched B file {file_path}")
             self._match_file(file_path, res, self._uvdata_dir, lambda i: i.b_files)
             return True
 
         res = re.match(self.UVR_FILE_NAME_REGEX, file_name)
         if res is not None:
-            LOG.debug(f"Matched UVR file {file_path}")
             self._match_file(file_path, res, self._instr_dir, lambda i: i.uvr_files)
             return False
 
         res = re.match(self.ARF_FILE_NAME_REGEX, file_name)
         if res is not None:
-            LOG.debug(f"Matched ARF file {file_path}")
             self._match_arf_file(file_path, res)
             return False
 
         res = re.match(self.PARAMETER_FILE_NAME_REGEX, file_name)
         if res is not None:
-            LOG.debug(f"Matched parameter file {file_path}")
             self._match_file(file_path, res, self._instr_dir, lambda i: i.parameter_files)
             return False
 
-        LOG.info(f"Found an unknown file type: {file_path}")
         return False
 
     def untrack_file(self, file_path) -> None:
@@ -277,7 +276,7 @@ class FileUtils:
         :param directory: the directory to search for the files in
         """
 
-        for root, dirs, files in os.walk(directory, topdown=False):
+        for root, dirs, files in os.walk(directory, topdown=True):
             for name in files:
                 self.handle_file(path.join(root, name))
 

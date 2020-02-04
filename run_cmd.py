@@ -20,15 +20,13 @@
 from __future__ import annotations
 
 import logging
-import multiprocessing
 import os
 from argparse import ArgumentParser
 from datetime import date
 from pprint import PrettyPrinter
 
-import progressbar
-
 from buvic.const import TMP_FILE_DIR
+from buvic.gui.cmd_progress_handler import CMDProgressHandler
 from buvic.logic.calculation_input import CalculationInput
 from buvic.logic.calculation_utils import CalculationUtils
 from buvic.logic.file import File
@@ -95,43 +93,9 @@ else:
 if not os.path.exists(TMP_FILE_DIR):
     os.makedirs(TMP_FILE_DIR)
 
-widgets = [
-    " ",
-    progressbar.RotatingMarker(),
-    " ",
-    progressbar.Percentage(),
-    " ",
-    progressbar.Bar("#", "[", "]"),
-    " | ",
-    progressbar.Timer(),
-    " | ",
-    progressbar.ETA(),
-]
-progress = progressbar.ProgressBar(initial_value=0, min_value=0, max_value=0, widgets=widgets)
-m = multiprocessing.Manager()
-lock = m.Lock()
-
-
-def init_progress(total: int, text: str):
-    del text  # Remove unused variable
-    progress.start(total)
-    progress.update(0)
-
-
-def finish_progress(duration: float):
-    del duration  # Remove unused variable
-    progress.finish()
-
-
-def show_progress(value: float):
-    if progress is not None:
-        with lock:
-            progress.update(progress.value + value)
-
-
 if input_dir is None:
     input_dir = DEFAULT_DATA_DIR
-cmd = CalculationUtils(input_dir, output_dir, init_progress=init_progress, progress_handler=show_progress, finish_progress=finish_progress)
+cmd = CalculationUtils(input_dir, output_dir, progress_handler=CMDProgressHandler())
 
 file_utils = FileUtils(input_dir)
 file_utils.refresh(settings)
