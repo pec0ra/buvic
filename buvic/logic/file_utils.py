@@ -69,8 +69,13 @@ class FileUtils:
         if not exists(self._uvdata_dir):
             makedirs(self._uvdata_dir)
 
-        self._find_files_recursive(self._instr_dir)
-        self._find_files_recursive(self._uvdata_dir)
+        for root, dirs, files in os.walk(self._instr_dir, followlinks=True):
+            for name in files:
+                self._handle_instr_file(path.join(root, name))
+
+        for root, dirs, files in os.walk(self._uvdata_dir, followlinks=True):
+            for name in files:
+                self._handle_uvdata_file(path.join(root, name))
 
         if remove_empty:
             for brewer_id, instrument_files in list(self._file_dict.items()):
@@ -198,7 +203,17 @@ class FileUtils:
         :param file_path: the file to add
         :return: whether the file is a "uvdata" file
         """
+        if self._handle_uvdata_file(file_path):
+            return True
 
+        self._handle_instr_file(file_path)
+
+    def _handle_uvdata_file(self, file_path) -> bool:
+        """
+        Find the type of the given file and add it to the corresponding list
+        :param file_path: the file to add
+        :return: whether the file has been recognized
+        """
         file_name = path.basename(file_path)
 
         res = re.match(self.UV_FILE_NAME_REGEX, file_name)
@@ -211,20 +226,30 @@ class FileUtils:
             self._match_file(file_path, res, self._uvdata_dir, lambda i: i.b_files)
             return True
 
+        return False
+
+    def _handle_instr_file(self, file_path) -> bool:
+        """
+        Find the type of the given file and add it to the corresponding list
+        :param file_path: the file to add
+        :return: whether the file has been recognized
+        """
+        file_name = path.basename(file_path)
+
         res = re.match(self.UVR_FILE_NAME_REGEX, file_name)
         if res is not None:
             self._match_file(file_path, res, self._instr_dir, lambda i: i.uvr_files)
-            return False
+            return True
 
         res = re.match(self.ARF_FILE_NAME_REGEX, file_name)
         if res is not None:
             self._match_arf_file(file_path, res)
-            return False
+            return True
 
         res = re.match(self.PARAMETER_FILE_NAME_REGEX, file_name)
         if res is not None:
             self._match_file(file_path, res, self._instr_dir, lambda i: i.parameter_files)
-            return False
+            return True
 
         return False
 
@@ -268,17 +293,6 @@ class FileUtils:
 
         LOG.info(f"Found an unknown file type: {file_path}")
         return
-
-    def _find_files_recursive(self, directory: str) -> None:
-        """
-        Recursively search in a given directory for all files and add them to their corresponding lists.
-
-        :param directory: the directory to search for the files in
-        """
-
-        for root, _, files in os.walk(directory, topdown=True):
-            for name in files:
-                self.handle_file(path.join(root, name))
 
     def _match_arf_file(self, file_path: str, res: Match[str]) -> None:
         """
