@@ -276,7 +276,7 @@ class FileUtils:
         :param directory: the directory to search for the files in
         """
 
-        for root, dirs, files in os.walk(directory, topdown=True):
+        for root, _, files in os.walk(directory, topdown=True):
             for name in files:
                 self.handle_file(path.join(root, name))
 

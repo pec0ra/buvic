@@ -49,7 +49,6 @@ class BUVIC(App):
     _modal: Optional[Modal] = None
 
     _executor: ThreadPoolExecutor
-    _duration: float
 
     def __init__(self, *args):
         self._settings = Settings.load()
@@ -58,7 +57,6 @@ class BUVIC(App):
     def main(self):
 
         self._executor = ThreadPoolExecutor(1)
-        self._duration = 0
 
         head: gui.HEAD = self.page.get_child("head")
         head.add_child("google_icons", '<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">')
@@ -150,7 +148,7 @@ class BUVIC(App):
         self._error_label.set_text("")
 
     def _show_result(self, results: List[Result]):
-        self._result_container.display(results, self._duration)
+        self._result_container.display(results, self._loader.duration)
 
         if len(results) == 0:
             self._show_error("No result produced for the given parameters")
