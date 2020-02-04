@@ -139,7 +139,7 @@ class Loader(VBox, ProgressHandler):
         self._current_value = 0
 
     def reset(self):
-        self._label = gui.Label("Loading...")
+        self._label.set_text("Loading...")
         self._current_value = 0
         self._bar.set_value(0)
 
