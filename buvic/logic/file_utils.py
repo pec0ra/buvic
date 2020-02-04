@@ -207,6 +207,7 @@ class FileUtils:
             return True
 
         self._handle_instr_file(file_path)
+        return False
 
     def _handle_uvdata_file(self, file_path) -> bool:
         """
