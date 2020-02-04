@@ -306,7 +306,6 @@ class PathMainForm(MainForm):
 
 
 class SimpleMainForm(MainForm):
-    _handle_error: Callable[[Exception], None]
     _file_utils: FileUtils
     _brewer_id: Optional[str] = None
     _date_start: Optional[date] = None
