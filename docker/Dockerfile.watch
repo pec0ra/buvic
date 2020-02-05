@@ -37,10 +37,17 @@ COPY requirements.txt ./
 RUN pip3 install -r requirements.txt
 RUN rm requirements.txt
 
+# Create settings directory
+RUN mkdir /settings && chmod 777 /settings
+ENV HOME /settings
+VOLUME /settings
+
+# Create platform environment variable
+ENV PLATFORM docker
+
 # Copy code and data
 COPY run_cmd.py ./
 
-RUN mkdir /config
 COPY data/instr ./instr
 COPY data/uvdata ./uvdata
 RUN mkdir /data
@@ -48,7 +55,6 @@ RUN ln -s /instr /data/instr
 RUN ln -s /uvdata /data/uvdata
 
 COPY buvic ./buvic
-COPY docker/libradtran_command.py ./buvic/
 
 # Start server
-CMD python3.7 run_cmd.py -w -i / -o /out -c /config/settings.json
+CMD python3.7 run_cmd.py -w -i / -o /out -c /settings/settings.json
