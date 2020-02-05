@@ -69,11 +69,11 @@ class FileUtils:
         if not exists(self._uvdata_dir):
             makedirs(self._uvdata_dir)
 
-        for root, dirs, files in os.walk(self._instr_dir, followlinks=True):
+        for root, _, files in os.walk(self._instr_dir, followlinks=True):
             for name in files:
                 self._handle_instr_file(path.join(root, name))
 
-        for root, dirs, files in os.walk(self._uvdata_dir, followlinks=True):
+        for root, _, files in os.walk(self._uvdata_dir, followlinks=True):
             for name in files:
                 self._handle_uvdata_file(path.join(root, name))
 
