@@ -3,9 +3,9 @@ FROM ubuntu:19.04
 # Update repository cache
 RUN apt-get update
 
-# Install python 3.7 and git
+# Install python 3.10 and git
 RUN apt-get install -y \
-        python3.7 \
+        python3.10 \
         python3-pip \
         git
 
