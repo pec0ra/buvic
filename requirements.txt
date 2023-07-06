@@ -1,5 +1,5 @@
 git+https://github.com/pec0ra/remi
-scipy==1.3.3
+scipy==1.10.0
 progressbar2==3.47.0
 watchdog==0.8.3
 cached-property==1.5.1
